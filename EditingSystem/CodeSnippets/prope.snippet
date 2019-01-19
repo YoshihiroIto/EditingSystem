@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+    <CodeSnippet Format="1.0.0">
+        <Header>
+            <Title>prope</Title>
+            <Shortcut>prope</Shortcut>
+            <Description>Code snippet for EditableModelBase's property</Description>
+            <Author>Yoshihiro Ito (yo.i.jewelry.bab@gmail.com)</Author>
+        </Header>
+        <Snippet>
+            <Declarations>
+                <Literal>
+                    <ID>type</ID>
+                    <ToolTip>Property type</ToolTip>
+                    <Default>int</Default>
+                </Literal>
+                <Literal>
+                    <ID>name</ID>
+                    <ToolTip>Property name</ToolTip>
+                    <Default>MyProperty</Default>
+                </Literal>
+            </Declarations>
+            <Code Language="csharp"><![CDATA[#region $name$
+                private $type$ _$name$;
+
+                public $type$ $name$
+                {
+                get => _$name$;
+                set => SetEditableProperty(v => _$name$, _$name$, value);
+                }
+
+                #endregion
+
+                $end$]]></Code>
+        </Snippet>
+    </CodeSnippet>
+</CodeSnippets>
