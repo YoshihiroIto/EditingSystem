@@ -111,7 +111,7 @@ namespace EditingSystem.Tests
         }
 
         [Fact]
-        public void Undoable_If_CanUndo_Is_False()
+        public void Undoable_if_CanUndo_is_false()
         {
             var history = new History();
 
@@ -120,7 +120,7 @@ namespace EditingSystem.Tests
         }
 
         [Fact]
-        public void Redoable_If_CanRedo_Is_False()
+        public void Redoable_if_CanRedo_is_false()
         {
             var history = new History();
 
@@ -129,7 +129,7 @@ namespace EditingSystem.Tests
         }
 
         [Fact]
-        public void History_Is_Null()
+        public void History_is_null()
         {
             var model = new TestModel(null);
 

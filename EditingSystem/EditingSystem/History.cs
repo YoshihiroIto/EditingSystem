@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 
 namespace EditingSystem
 {
@@ -16,6 +17,12 @@ namespace EditingSystem
 
         public void Push(Action undo, Action redo)
         {
+            if (IsInBatch)
+            {
+                _batchHistory.Push(undo, redo);
+                return;
+            }
+
             _undoStack.Push(new HistoryAction(undo, redo));
 
             if (_undoStack.Count == 1)
@@ -32,6 +39,9 @@ namespace EditingSystem
 
         public void Undo()
         {
+            if (IsInBatch)
+                throw new InvalidOperationException("Can't call Undo() during batch recording.");
+
             if (CanUndo == false)
                 return;
 
@@ -52,6 +62,15 @@ namespace EditingSystem
 
         public void Redo()
         {
+            if (IsInBatch)
+                throw new InvalidOperationException("Can't call Redo() during batch recording.");
+
+            if (_batchHistory != null)
+            {
+                _batchHistory.Redo();
+                return;
+            }
+
             if (CanRedo == false)
                 return;
 
@@ -73,7 +92,7 @@ namespace EditingSystem
         private static readonly PropertyChangedEventArgs CanUndoArgs = new PropertyChangedEventArgs(nameof(CanUndo));
         private static readonly PropertyChangedEventArgs CanRedoArgs = new PropertyChangedEventArgs(nameof(CanRedo));
 
-        private class HistoryAction
+        private struct HistoryAction
         {
             public readonly Action Undo;
             public readonly Action Redo;
@@ -84,5 +103,64 @@ namespace EditingSystem
                 Redo = redo;
             }
         }
+
+        #region Batch
+
+        private int _batchDepth;
+        private BatchHistory _batchHistory;
+
+        private bool IsInBatch => _batchDepth > 0;
+
+        public void BeginBatch()
+        {
+            ++_batchDepth;
+
+            if (_batchDepth == 1)
+                BeginBatchInternal();
+        }
+
+        public void EndBatch()
+        {
+            if (_batchDepth == 0)
+                throw new InvalidOperationException("Batch recording has not begun.");
+
+            --_batchDepth;
+
+            if (_batchDepth == 0)
+                EndBatchInternal();
+        }
+
+        private void BeginBatchInternal()
+        {
+            Debug.Assert(_batchHistory == null);
+
+            _batchHistory = new BatchHistory();
+        }
+
+        private void EndBatchInternal()
+        {
+            Debug.Assert(_batchHistory != null);
+
+            Push(_batchHistory.UndoAll, _batchHistory.RedoAll);
+
+            _batchHistory = null;
+        }
+
+        private class BatchHistory : History
+        {
+            public void UndoAll()
+            {
+                while (CanUndo)
+                    Undo();
+            }
+
+            public void RedoAll()
+            {
+                while (CanRedo)
+                    Redo();
+            }
+        }
+
+        #endregion
     }
 }
