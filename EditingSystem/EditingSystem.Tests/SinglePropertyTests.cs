@@ -127,25 +127,39 @@ namespace EditingSystem.Tests
             Assert.False(history.CanRedo);
             history.Redo();
         }
-    }
 
-    public class TestModel : EditableModelBase
-    {
-        public TestModel(History history)
+        [Fact]
+        public void History_Is_Null()
         {
-            SetupEditingSystem(history);
+            var model = new TestModel(null);
+
+            Assert.Equal(0, model.IntValue);
+
+            model.IntValue = 123;
+            Assert.Equal(123, model.IntValue);
+
+            model.IntValue = 456;
+            Assert.Equal(456, model.IntValue);
         }
 
-        #region IntValue
-
-        private int _IntValue;
-
-        public int IntValue
+        public class TestModel : EditableModelBase
         {
-            get => _IntValue;
-            set => SetEditableProperty(v => _IntValue = v, _IntValue, value);
-        }
+            public TestModel(History history)
+            {
+                SetupEditingSystem(history);
+            }
 
-        #endregion
+            #region IntValue
+
+            private int _IntValue;
+
+            public int IntValue
+            {
+                get => _IntValue;
+                set => SetEditableProperty(v => _IntValue = v, _IntValue, value);
+            }
+
+            #endregion
+        }
     }
 }

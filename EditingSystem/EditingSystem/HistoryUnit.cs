@@ -28,13 +28,19 @@ namespace EditingSystem
             }
         }
 
+        internal bool IsInUndoing { get; private set; }
+
         public void Undo()
         {
             if (CanUndo == false)
                 return;
 
             var action = _undoStack.Pop();
+
+            IsInUndoing = true;
             action.Undo();
+            IsInUndoing = false;
+
             _redoStack.Push(action);
 
             if (_undoStack.Count == 0)
@@ -50,7 +56,11 @@ namespace EditingSystem
                 return;
 
             var action = _redoStack.Pop();
+
+            IsInUndoing = true;
             action.Redo();
+            IsInUndoing = false;
+
             _undoStack.Push(action);
 
             if (_redoStack.Count == 0)
