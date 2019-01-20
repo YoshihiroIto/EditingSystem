@@ -30,11 +30,11 @@ namespace EditingSystem
 
             // INotifyCollectionChanged
             {
-                if (currentValue is INotifyCollectionChanged cc)
-                    UnregisterCollection(cc);
+                if (currentValue is INotifyCollectionChanged current)
+                    current.CollectionChanged -= CollectionOnCollectionChanged;
 
-                if (nextValue is INotifyCollectionChanged nc)
-                    RegisterCollection(nc);
+                if (nextValue is INotifyCollectionChanged next)
+                    next.CollectionChanged += CollectionOnCollectionChanged;
             }
 
             RaisePropertyChanged(propertyName);
@@ -75,22 +75,6 @@ namespace EditingSystem
         #endregion
 
         #region INotifyCollectionChanged
-
-        protected void RegisterCollection(INotifyCollectionChanged collection)
-        {
-            if (collection == null)
-                return;
-
-            collection.CollectionChanged += CollectionOnCollectionChanged;
-        }
-
-        protected void UnregisterCollection(INotifyCollectionChanged collection)
-        {
-            if (collection == null)
-                return;
-
-            collection.CollectionChanged -= CollectionOnCollectionChanged;
-        }
 
         private void CollectionOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
