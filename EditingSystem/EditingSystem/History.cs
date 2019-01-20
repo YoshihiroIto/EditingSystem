@@ -10,33 +10,6 @@ namespace EditingSystem
         public bool CanUndo => _undoStack.Count > 0;
         public bool CanRedo => _redoStack.Count > 0;
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        private readonly Stack<HistoryAction> _undoStack = new Stack<HistoryAction>();
-        private readonly Stack<HistoryAction> _redoStack = new Stack<HistoryAction>();
-
-        public void Push(Action undo, Action redo)
-        {
-            if (IsInBatch)
-            {
-                _batchHistory.Push(undo, redo);
-                return;
-            }
-
-            _undoStack.Push(new HistoryAction(undo, redo));
-
-            if (_undoStack.Count == 1)
-                PropertyChanged?.Invoke(this, CanUndoArgs);
-
-            if (_redoStack.Count > 0)
-            {
-                _redoStack.Clear();
-                PropertyChanged?.Invoke(this, CanRedoArgs);
-            }
-        }
-
-        internal bool IsInUndoing { get; private set; }
-
         public void Undo()
         {
             if (IsInBatch)
@@ -88,6 +61,32 @@ namespace EditingSystem
             if (_undoStack.Count == 1)
                 PropertyChanged?.Invoke(this, CanUndoArgs);
         }
+
+        public void Push(Action undo, Action redo)
+        {
+            if (IsInBatch)
+            {
+                _batchHistory.Push(undo, redo);
+                return;
+            }
+
+            _undoStack.Push(new HistoryAction(undo, redo));
+
+            if (_undoStack.Count == 1)
+                PropertyChanged?.Invoke(this, CanUndoArgs);
+
+            if (_redoStack.Count > 0)
+            {
+                _redoStack.Clear();
+                PropertyChanged?.Invoke(this, CanRedoArgs);
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        internal bool IsInUndoing { get; private set; }
+
+        private readonly Stack<HistoryAction> _undoStack = new Stack<HistoryAction>();
+        private readonly Stack<HistoryAction> _redoStack = new Stack<HistoryAction>();
 
         private static readonly PropertyChangedEventArgs CanUndoArgs = new PropertyChangedEventArgs(nameof(CanUndo));
         private static readonly PropertyChangedEventArgs CanRedoArgs = new PropertyChangedEventArgs(nameof(CanRedo));
@@ -148,13 +147,13 @@ namespace EditingSystem
 
         private class BatchHistory : History
         {
-            public void UndoAll()
+            internal void UndoAll()
             {
                 while (CanUndo)
                     Undo();
             }
 
-            public void RedoAll()
+            internal void RedoAll()
             {
                 while (CanRedo)
                     Redo();
