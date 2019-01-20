@@ -9,6 +9,7 @@ namespace EditingSystem
     {
         public bool CanUndo => _undoStack.Count > 0;
         public bool CanRedo => _redoStack.Count > 0;
+        public bool CanClear => CanUndo || CanRedo;
 
         public void Undo()
         {
@@ -82,6 +83,25 @@ namespace EditingSystem
             }
         }
 
+        public void Clear()
+        {
+            var oldCanUndo = CanUndo;
+            var oldCanRedo = CanRedo;
+            var oldCanClear = CanClear;
+
+            _undoStack.Clear();
+            _redoStack.Clear();
+
+            if (oldCanUndo != CanUndo)
+                PropertyChanged?.Invoke(this, CanUndoArgs);
+
+            if (oldCanRedo != CanRedo)
+                PropertyChanged?.Invoke(this, CanRedoArgs);
+
+            if (oldCanClear != CanClear)
+                PropertyChanged?.Invoke(this, CanClearArgs);
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
         internal bool IsInUndoing { get; private set; }
 
@@ -90,6 +110,7 @@ namespace EditingSystem
 
         private static readonly PropertyChangedEventArgs CanUndoArgs = new PropertyChangedEventArgs(nameof(CanUndo));
         private static readonly PropertyChangedEventArgs CanRedoArgs = new PropertyChangedEventArgs(nameof(CanRedo));
+        private static readonly PropertyChangedEventArgs CanClearArgs = new PropertyChangedEventArgs(nameof(CanClear));
 
         private struct HistoryAction
         {

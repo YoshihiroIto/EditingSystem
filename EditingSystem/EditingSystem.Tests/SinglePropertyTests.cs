@@ -84,11 +84,13 @@ namespace EditingSystem.Tests
 
             var canUndoCount = 0;
             var canRedoCount = 0;
+            var canClearCount = 0;
 
             void HistoryOnPropertyChanged(object sender, PropertyChangedEventArgs e)
             {
                 if (e.PropertyName == "CanUndo") ++canUndoCount;
                 if (e.PropertyName == "CanRedo") ++canRedoCount;
+                if (e.PropertyName == "CanClear") ++canClearCount;
             }
 
             history.PropertyChanged += HistoryOnPropertyChanged;
@@ -96,18 +98,63 @@ namespace EditingSystem.Tests
             model.IntValue = 123;
             Assert.Equal(1, canUndoCount);
             Assert.Equal(0, canRedoCount);
+            Assert.Equal(0, canClearCount);
 
             model.IntValue = 456;
             Assert.Equal(1, canUndoCount);
             Assert.Equal(0, canRedoCount);
+            Assert.Equal(0, canClearCount);
 
             history.Undo();
             Assert.Equal(1, canUndoCount);
             Assert.Equal(1, canRedoCount);
+            Assert.Equal(0, canClearCount);
 
             history.Undo();
             Assert.Equal(2, canUndoCount);
             Assert.Equal(1, canRedoCount);
+            Assert.Equal(0, canClearCount);
+        }
+
+        [Fact]
+        public void Clear()
+        {
+            var history = new History();
+            var model = new TestModel(history);
+
+            Assert.Equal(0, model.IntValue);
+            Assert.False(history.CanUndo);
+            Assert.False(history.CanRedo);
+            Assert.False(history.CanClear);
+
+            //------------------------------------------------
+            model.IntValue = 123;
+            Assert.Equal(123, model.IntValue);
+            Assert.True(history.CanUndo);
+            Assert.False(history.CanRedo);
+            Assert.True(history.CanClear);
+
+            history.Clear();
+            Assert.False(history.CanUndo);
+            Assert.False(history.CanRedo);
+            Assert.False(history.CanClear);
+
+            //------------------------------------------------
+            model.IntValue = 456;
+            Assert.Equal(456, model.IntValue);
+            Assert.True(history.CanUndo);
+            Assert.False(history.CanRedo);
+            Assert.True(history.CanClear);
+
+            history.Undo();
+            Assert.False(history.CanUndo);
+            Assert.True(history.CanRedo);
+            Assert.True(history.CanClear);
+
+            history.Clear();
+            Assert.False(history.CanUndo);
+            Assert.False(history.CanRedo);
+            Assert.False(history.CanClear);
         }
 
         [Fact]
