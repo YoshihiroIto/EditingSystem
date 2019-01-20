@@ -186,7 +186,6 @@ namespace EditingSystem.Tests
             );
         }
 
-        #if false
         [Fact]
         public void ClearEx()
         {
@@ -202,9 +201,16 @@ namespace EditingSystem.Tests
 
             Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
 
-            model.IntCollection.ClearEx();
+            model.IntCollection.ClearEx(history);
+
+            Assert.True(model.IntCollection.SequenceEqual(new int[] {}));
+
+            history.Undo();
+            Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
+
+            history.Redo();
+            Assert.True(model.IntCollection.SequenceEqual(new int[] {}));
         }
-        #endif
 
         [Fact]
         public void Replace()
