@@ -37,12 +37,6 @@ namespace EditingSystem
             if (IsInBatch)
                 throw new InvalidOperationException("Can't call Redo() during batch recording.");
 
-            if (_batchHistory != null)
-            {
-                _batchHistory.Redo();
-                return;
-            }
-
             if (CanRedo == false)
                 return;
 
