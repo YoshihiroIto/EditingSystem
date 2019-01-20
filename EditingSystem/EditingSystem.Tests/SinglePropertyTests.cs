@@ -98,22 +98,22 @@ namespace EditingSystem.Tests
             model.IntValue = 123;
             Assert.Equal(1, canUndoCount);
             Assert.Equal(0, canRedoCount);
-            Assert.Equal(0, canClearCount);
+            Assert.Equal(1, canClearCount);
 
             model.IntValue = 456;
             Assert.Equal(1, canUndoCount);
             Assert.Equal(0, canRedoCount);
-            Assert.Equal(0, canClearCount);
+            Assert.Equal(1, canClearCount);
 
             history.Undo();
             Assert.Equal(1, canUndoCount);
             Assert.Equal(1, canRedoCount);
-            Assert.Equal(0, canClearCount);
+            Assert.Equal(1, canClearCount);
 
             history.Undo();
             Assert.Equal(2, canUndoCount);
             Assert.Equal(1, canRedoCount);
-            Assert.Equal(0, canClearCount);
+            Assert.Equal(1, canClearCount);
         }
 
         [Fact]

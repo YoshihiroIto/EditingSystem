@@ -19,6 +19,8 @@ namespace EditingSystem
             if (CanUndo == false)
                 return;
 
+            var currentFlags = MakeCurrentFlags();
+
             var action = _undoStack.Pop();
 
             IsInUndoing = true;
@@ -27,11 +29,7 @@ namespace EditingSystem
 
             _redoStack.Push(action);
 
-            if (_undoStack.Count == 0)
-                PropertyChanged?.Invoke(this, CanUndoArgs);
-
-            if (_redoStack.Count == 1)
-                PropertyChanged?.Invoke(this, CanRedoArgs);
+            InvokeFlagChanged(currentFlags);
         }
 
         public void Redo()
@@ -48,6 +46,8 @@ namespace EditingSystem
             if (CanRedo == false)
                 return;
 
+            var currentFlags = MakeCurrentFlags();
+
             var action = _redoStack.Pop();
 
             IsInUndoing = true;
@@ -56,11 +56,7 @@ namespace EditingSystem
 
             _undoStack.Push(action);
 
-            if (_redoStack.Count == 0)
-                PropertyChanged?.Invoke(this, CanRedoArgs);
-
-            if (_undoStack.Count == 1)
-                PropertyChanged?.Invoke(this, CanUndoArgs);
+            InvokeFlagChanged(currentFlags);
         }
 
         public void Push(Action undo, Action redo)
@@ -71,34 +67,38 @@ namespace EditingSystem
                 return;
             }
 
+            var currentFlags = MakeCurrentFlags();
+
             _undoStack.Push(new HistoryAction(undo, redo));
 
-            if (_undoStack.Count == 1)
-                PropertyChanged?.Invoke(this, CanUndoArgs);
-
             if (_redoStack.Count > 0)
-            {
                 _redoStack.Clear();
-                PropertyChanged?.Invoke(this, CanRedoArgs);
-            }
+
+            InvokeFlagChanged(currentFlags);
         }
 
         public void Clear()
         {
-            var oldCanUndo = CanUndo;
-            var oldCanRedo = CanRedo;
-            var oldCanClear = CanClear;
+            var currentFlags = MakeCurrentFlags();
 
             _undoStack.Clear();
             _redoStack.Clear();
 
-            if (oldCanUndo != CanUndo)
+            InvokeFlagChanged(currentFlags);
+        }
+
+        private ValueTuple<bool, bool, bool> MakeCurrentFlags()
+            => (CanUndo, CanRedo, CanClear);
+
+        private void InvokeFlagChanged(in ValueTuple<bool, bool, bool> flags)
+        {
+            if (flags.Item1 != CanUndo)
                 PropertyChanged?.Invoke(this, CanUndoArgs);
 
-            if (oldCanRedo != CanRedo)
+            if (flags.Item2 != CanRedo)
                 PropertyChanged?.Invoke(this, CanRedoArgs);
 
-            if (oldCanClear != CanClear)
+            if (flags.Item3 != CanClear)
                 PropertyChanged?.Invoke(this, CanClearArgs);
         }
 
