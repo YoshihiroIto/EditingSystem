@@ -81,24 +81,30 @@ namespace EditingSystem
             if (_historyUnit.IsInUndoing)
                 return;
 
-            var list = (IList) sender;
-
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
                 {
-                    var addItems = e.NewItems;
-                    var addCount = addItems.Count;
-                    var addIndex = e.NewStartingIndex;
-
                     void Redo()
                     {
+                        var list = (IList) sender;
+
+                        var addItems = e.NewItems;
+                        var addCount = addItems.Count;
+                        var addIndex = e.NewStartingIndex;
+
                         for (var i = 0; i != addCount; ++i)
                             list.Insert(addIndex + i, addItems[i]);
                     }
 
                     void Undo()
                     {
+                        var list = (IList) sender;
+
+                        var addItems = e.NewItems;
+                        var addCount = addItems.Count;
+                        var addIndex = e.NewStartingIndex;
+
                         for (var i = 0; i != addCount; ++i)
                             list.RemoveAt(addIndex + i);
                     }
@@ -117,6 +123,8 @@ namespace EditingSystem
 
                     void Redo()
                     {
+                        var list = (IList) sender;
+
                         var src = e.OldStartingIndex;
                         var dst = e.NewStartingIndex;
 
@@ -128,6 +136,8 @@ namespace EditingSystem
 
                     void Undo()
                     {
+                        var list = (IList) sender;
+
                         var src = e.NewStartingIndex;
                         var dst = e.OldStartingIndex;
 
@@ -153,12 +163,16 @@ namespace EditingSystem
 
                     void Redo()
                     {
+                        var list = (IList) sender;
+
                         item = list[e.OldStartingIndex];
                         list.RemoveAt(e.OldStartingIndex);
                     }
 
                     void Undo()
                     {
+                        var list = (IList) sender;
+
                         list.Insert(e.OldStartingIndex, item);
                     }
 
@@ -177,15 +191,19 @@ namespace EditingSystem
                     if (e.NewStartingIndex != e.OldStartingIndex)
                         throw new NotImplementedException();
 
-                    var index = e.OldStartingIndex;
-
                     void Redo()
                     {
+                        var list = (IList) sender;
+
+                        var index = e.OldStartingIndex;
                         list[index] = e.NewItems[0];
                     }
 
                     void Undo()
                     {
+                        var list = (IList) sender;
+
+                        var index = e.OldStartingIndex;
                         list[index] = e.OldItems[0];
                     }
 
