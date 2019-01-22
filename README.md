@@ -32,7 +32,8 @@ public void Basic()
     var history = new History();
     var model = new TestModel(history);
 
-    Assert.Equal(0, model.IntValue);
+
+
 
     model.IntValue = 123;
     model.IntValue = 456;
