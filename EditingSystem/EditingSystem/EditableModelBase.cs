@@ -42,6 +42,36 @@ namespace EditingSystem
             return true;
         }
 
+        protected bool SetEditableFlagProperty(Action<uint> setValue, uint currentValue, uint flag, bool value,
+            [CallerMemberName] string propertyName = "")
+        {
+            var oldValue = currentValue;
+            var nextValue = currentValue;
+
+            if (value)
+            {
+                if ((currentValue & flag) != 0)
+                    return false;
+
+                nextValue |= flag;
+            }
+            else
+            {
+                if ((currentValue & flag) == 0)
+                    return false;
+
+                nextValue &= ~flag;
+            }
+
+            setValue(nextValue);
+
+            _historyUnit?.Push(() => setValue(oldValue), () => setValue(nextValue));
+
+            RaisePropertyChanged(propertyName);
+
+            return true;
+        }
+
         #region INotifyPropertyChanged
 
         public event PropertyChangedEventHandler PropertyChanged;
