@@ -10,6 +10,7 @@ namespace EditingSystem
         public bool CanUndo => _undoStack.Count > 0;
         public bool CanRedo => _redoStack.Count > 0;
         public bool CanClear => CanUndo || CanRedo;
+        public ValueTuple<int, int> UndoRedoCount => (_undoStack.Count, _redoStack.Count);
 
         public void Undo()
         {
@@ -20,6 +21,7 @@ namespace EditingSystem
                 return;
 
             var currentFlags = MakeCurrentFlags();
+            var currentUndoRedoCount = UndoRedoCount;
 
             var action = _undoStack.Pop();
 
@@ -29,7 +31,7 @@ namespace EditingSystem
 
             _redoStack.Push(action);
 
-            InvokeFlagChanged(currentFlags);
+            InvokePropertyChanged(currentFlags, currentUndoRedoCount);
         }
 
         public void Redo()
@@ -41,6 +43,7 @@ namespace EditingSystem
                 return;
 
             var currentFlags = MakeCurrentFlags();
+            var currentUndoRedoCount = UndoRedoCount;
 
             var action = _redoStack.Pop();
 
@@ -50,7 +53,7 @@ namespace EditingSystem
 
             _undoStack.Push(action);
 
-            InvokeFlagChanged(currentFlags);
+            InvokePropertyChanged(currentFlags, currentUndoRedoCount);
         }
 
         public void Push(Action undo, Action redo)
@@ -62,29 +65,31 @@ namespace EditingSystem
             }
 
             var currentFlags = MakeCurrentFlags();
+            var currentUndoRedoCount = UndoRedoCount;
 
             _undoStack.Push(new HistoryAction(undo, redo));
 
             if (_redoStack.Count > 0)
                 _redoStack.Clear();
 
-            InvokeFlagChanged(currentFlags);
+            InvokePropertyChanged(currentFlags, currentUndoRedoCount);
         }
 
         public void Clear()
         {
             var currentFlags = MakeCurrentFlags();
+            var currentUndoRedoCount = UndoRedoCount;
 
             _undoStack.Clear();
             _redoStack.Clear();
 
-            InvokeFlagChanged(currentFlags);
+            InvokePropertyChanged(currentFlags, currentUndoRedoCount);
         }
 
         private ValueTuple<bool, bool, bool> MakeCurrentFlags()
             => (CanUndo, CanRedo, CanClear);
 
-        private void InvokeFlagChanged(in ValueTuple<bool, bool, bool> flags)
+        private void InvokePropertyChanged(in ValueTuple<bool, bool, bool> flags, in ValueTuple<int, int> undoRedoCount)
         {
             if (flags.Item1 != CanUndo)
                 PropertyChanged?.Invoke(this, CanUndoArgs);
@@ -94,6 +99,9 @@ namespace EditingSystem
 
             if (flags.Item3 != CanClear)
                 PropertyChanged?.Invoke(this, CanClearArgs);
+
+            if (undoRedoCount != UndoRedoCount)
+                PropertyChanged?.Invoke(this, CanUndoRedoCountArgs);
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -105,6 +113,7 @@ namespace EditingSystem
         private static readonly PropertyChangedEventArgs CanUndoArgs = new PropertyChangedEventArgs(nameof(CanUndo));
         private static readonly PropertyChangedEventArgs CanRedoArgs = new PropertyChangedEventArgs(nameof(CanRedo));
         private static readonly PropertyChangedEventArgs CanClearArgs = new PropertyChangedEventArgs(nameof(CanClear));
+        private static readonly PropertyChangedEventArgs CanUndoRedoCountArgs = new PropertyChangedEventArgs(nameof(UndoRedoCount));
 
         private struct HistoryAction
         {
