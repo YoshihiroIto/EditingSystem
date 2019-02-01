@@ -26,7 +26,15 @@ namespace EditingSystem
 
             setValue(nextValue);
 
-            _history?.Push(() => setValue(oldValue), () => setValue(nextValue));
+            _history?.Push(() =>
+            {
+                setValue(oldValue);
+                RaisePropertyChanged(propertyName);
+            }, () =>
+            {
+                setValue(nextValue);
+                RaisePropertyChanged(propertyName);
+            });
 
             // INotifyCollectionChanged
             {
@@ -65,7 +73,15 @@ namespace EditingSystem
 
             setValue(nextValue);
 
-            _history?.Push(() => setValue(oldValue), () => setValue(nextValue));
+            _history?.Push(() =>
+            {
+                setValue(oldValue);
+                RaisePropertyChanged(propertyName);
+            }, () =>
+            {
+                setValue(nextValue);
+                RaisePropertyChanged(propertyName);
+            });
 
             RaisePropertyChanged(propertyName);
 
