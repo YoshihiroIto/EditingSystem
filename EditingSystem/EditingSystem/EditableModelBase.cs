@@ -9,11 +9,11 @@ namespace EditingSystem
 {
     public class EditableModelBase : INotifyPropertyChanged
     {
-        protected History _historyUnit;
+        protected History _history;
 
         public void SetupEditingSystem(History history)
         {
-            _historyUnit = history;
+            _history = history;
         }
 
         protected bool SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue,
@@ -26,7 +26,7 @@ namespace EditingSystem
 
             setValue(nextValue);
 
-            _historyUnit?.Push(() => setValue(oldValue), () => setValue(nextValue));
+            _history?.Push(() => setValue(oldValue), () => setValue(nextValue));
 
             // INotifyCollectionChanged
             {
@@ -65,7 +65,7 @@ namespace EditingSystem
 
             setValue(nextValue);
 
-            _historyUnit?.Push(() => setValue(oldValue), () => setValue(nextValue));
+            _history?.Push(() => setValue(oldValue), () => setValue(nextValue));
 
             RaisePropertyChanged(propertyName);
 
@@ -108,7 +108,7 @@ namespace EditingSystem
 
         private void CollectionOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            if (_historyUnit.IsInUndoing)
+            if (_history.IsInUndoing)
                 return;
 
             switch (e.Action)
@@ -139,7 +139,7 @@ namespace EditingSystem
                             list.RemoveAt(addIndex + i);
                     }
 
-                    _historyUnit.Push(Undo, Redo);
+                    _history.Push(Undo, Redo);
                     break;
                 }
 
@@ -177,7 +177,7 @@ namespace EditingSystem
                         list.Insert(dst, item);
                     }
 
-                    _historyUnit.Push(Undo, Redo);
+                    _history.Push(Undo, Redo);
                     break;
                 }
 
@@ -206,7 +206,7 @@ namespace EditingSystem
                         list.Insert(e.OldStartingIndex, item);
                     }
 
-                    _historyUnit.Push(Undo, Redo);
+                    _history.Push(Undo, Redo);
                     break;
                 }
 
@@ -237,7 +237,7 @@ namespace EditingSystem
                         list[index] = e.OldItems[0];
                     }
 
-                    _historyUnit.Push(Undo, Redo);
+                    _history.Push(Undo, Redo);
                     break;
                 }
 
