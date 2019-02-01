@@ -76,8 +76,38 @@ namespace EditingSystem.Tests
             Assert.False(history.CanRedo);
         }
 
+
         [Fact]
         public void PropertyChanged()
+        {
+            var history = new History();
+            var model = new TestModel(history);
+
+            var count = 0;
+
+            model.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(model.IntValue))
+                    ++count;
+            };
+
+            Assert.Equal(0, count);
+
+            model.IntValue = 123;
+            Assert.Equal(1, count);
+
+            model.IntValue = 456;
+            Assert.Equal(2, count);
+
+            history.Undo();
+            Assert.Equal(3, count);
+
+            history.Redo();
+            Assert.Equal(4, count);
+        }
+
+        [Fact]
+        public void PropertyChanged_CanUndo_CanRedo_CanClear()
         {
             var history = new History();
             var model = new TestModel(history);
