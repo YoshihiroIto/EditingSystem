@@ -58,6 +58,9 @@ namespace EditingSystem
 
         public void Push(Action undo, Action redo)
         {
+            if (IsPaused)
+                return;
+
             if (IsInBatch)
             {
                 _batchHistory.Push(undo, redo);
@@ -125,6 +128,23 @@ namespace EditingSystem
                 Undo = undo;
                 Redo = redo;
             }
+        }
+
+        public bool IsPaused => _pauseDepth > 0;
+
+        private int _pauseDepth;
+
+        public void BeginPause()
+        {
+            ++_pauseDepth;
+        }
+
+        public void EndPause()
+        {
+            if (_pauseDepth == 0)
+                throw new InvalidOperationException("Pause is not begun.");
+
+            --_pauseDepth;
         }
 
         #region Batch
