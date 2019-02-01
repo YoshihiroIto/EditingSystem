@@ -17,6 +17,9 @@ namespace EditingSystem
             if (IsInBatch)
                 throw new InvalidOperationException("Can't call Undo() during batch recording.");
 
+            if (IsInPaused)
+                throw new InvalidOperationException("Can't call Undo() during in paused.");
+
             if (CanUndo == false)
                 return;
 
@@ -39,6 +42,9 @@ namespace EditingSystem
             if (IsInBatch)
                 throw new InvalidOperationException("Can't call Redo() during batch recording.");
 
+            if (IsInPaused)
+                throw new InvalidOperationException("Can't call Redo() during in paused.");
+
             if (CanRedo == false)
                 return;
 
@@ -58,7 +64,7 @@ namespace EditingSystem
 
         public void Push(Action undo, Action redo)
         {
-            if (IsPaused)
+            if (IsInPaused)
                 return;
 
             if (IsInBatch)
@@ -130,7 +136,7 @@ namespace EditingSystem
             }
         }
 
-        public bool IsPaused => _pauseDepth > 0;
+        public bool IsInPaused => _pauseDepth > 0;
 
         private int _pauseDepth;
 
