@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using Xunit;
 
@@ -203,13 +204,13 @@ namespace EditingSystem.Tests
 
             model.IntCollection.ClearEx(history);
 
-            Assert.True(model.IntCollection.SequenceEqual(new int[] {}));
+            Assert.True(model.IntCollection.SequenceEqual(new int[] { }));
 
             history.Undo();
             Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
 
             history.Redo();
-            Assert.True(model.IntCollection.SequenceEqual(new int[] {}));
+            Assert.True(model.IntCollection.SequenceEqual(new int[] { }));
         }
 
         [Fact]
@@ -235,6 +236,69 @@ namespace EditingSystem.Tests
 
             history.Redo();
             Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 999, 103}));
+        }
+
+        [Fact]
+        public void CollectionChanged_on_Undo_Redo()
+        {
+            var history = new History();
+            var model = new TestModel(history);
+
+            model.IntCollection = new ObservableCollection<int>();
+
+            var count = 0;
+            model.IntCollection.CollectionChanged += (_, __) => ++count;
+
+            model.IntCollection.Add(100);
+            model.IntCollection.Add(101);
+            model.IntCollection.Add(102);
+            model.IntCollection.Add(103);
+
+            count = 0;
+
+            var oldCount = count;
+            history.Undo();
+            Assert.NotEqual(oldCount, count);
+
+            oldCount = count;
+            history.Redo();
+            Assert.NotEqual(oldCount, count);
+
+
+
+            model.IntCollection.Move(0, 3);
+
+            oldCount = count;
+            history.Undo();
+            Assert.NotEqual(oldCount, count);
+
+            oldCount = count;
+            history.Redo();
+            Assert.NotEqual(oldCount, count);
+
+
+
+            model.IntCollection.Remove(100);
+
+            oldCount = count;
+            history.Undo();
+            Assert.NotEqual(oldCount, count);
+
+            oldCount = count;
+            history.Redo();
+            Assert.NotEqual(oldCount, count);
+
+
+
+            model.IntCollection[2] = 999;
+
+            oldCount = count;
+            history.Undo();
+            Assert.NotEqual(oldCount, count);
+
+            oldCount = count;
+            history.Redo();
+            Assert.NotEqual(oldCount, count);
         }
 
         public class TestModel : EditableModelBase
