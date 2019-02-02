@@ -3,6 +3,9 @@
 Easy to use undo/redo system for .NET Standard.
 
 
+[![Build status](https://ci.appveyor.com/api/projects/status/x42th0lpkuldqhg8?svg=true)](https://ci.appveyor.com/project/YoshihiroIto/editingsystem)
+
+
 ## Example
 
 ```cs
