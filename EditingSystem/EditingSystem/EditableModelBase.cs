@@ -124,6 +124,9 @@ namespace EditingSystem
 
         private void CollectionOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
+            if (_history == null)
+                return;
+
             if (_history.IsInUndoing)
                 return;
 

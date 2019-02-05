@@ -301,6 +301,23 @@ namespace EditingSystem.Tests
             Assert.NotEqual(oldCount, count);
         }
 
+        [Fact]
+        public void History_is_null()
+        {
+            var model = new TestModel(null);
+
+            model.IntCollection = new ObservableCollection<int>();
+
+            model.IntCollection.Add(1);
+            Assert.Equal(1, model.IntCollection.Count);
+
+            model.IntCollection.Add(2);
+            Assert.Equal(2, model.IntCollection.Count);
+
+            model.IntCollection.Add(3);
+            Assert.Equal(3, model.IntCollection.Count);
+        }
+
         public class TestModel : EditableModelBase
         {
             public TestModel(History history)
