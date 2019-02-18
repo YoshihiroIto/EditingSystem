@@ -40,6 +40,25 @@ namespace EditingSystem.Tests
         }
 
         [Fact]
+        public void Empty()
+        {
+            var history = new History();
+
+            Assert.False(history.CanUndo);
+            Assert.False(history.CanRedo);
+            Assert.Equal((0, 0), history.UndoRedoCount);
+
+            history.BeginBatch();
+            {
+            }
+            history.EndBatch();
+
+            Assert.False(history.CanUndo);
+            Assert.False(history.CanRedo);
+            Assert.Equal((0, 0), history.UndoRedoCount);
+        }
+
+        [Fact]
         public void NestingBatch()
         {
             var history = new History();

@@ -190,7 +190,8 @@ namespace EditingSystem
         {
             Debug.Assert(_batchHistory != null);
 
-            Push(_batchHistory.UndoAll, _batchHistory.RedoAll);
+            if (_batchHistory.UndoRedoCount != (0, 0))
+                Push(_batchHistory.UndoAll, _batchHistory.RedoAll);
 
             _batchHistory = null;
         }
