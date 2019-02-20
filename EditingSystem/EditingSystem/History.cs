@@ -158,7 +158,7 @@ namespace EditingSystem
         private int _batchDepth;
         private BatchHistory _batchHistory;
 
-        private bool IsInBatch => _batchDepth > 0;
+        public bool IsInBatch => _batchDepth > 0;
 
         public void BeginBatch()
         {
