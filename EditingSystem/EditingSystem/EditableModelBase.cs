@@ -297,6 +297,12 @@ namespace EditingSystem
                 }
 
                 case NotifyCollectionChangedAction.Reset:
+                    if (_history == null)
+                        break;
+
+                    if (_history.IsInPaused)
+                        break;
+
                     throw new NotSupportedException("Clear() is not support. Use ClearEx()");
 
                 default:
