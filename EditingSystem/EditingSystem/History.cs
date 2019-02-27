@@ -11,6 +11,8 @@ namespace EditingSystem
         public bool CanRedo => _redoStack.Count > 0;
         public bool CanClear => CanUndo || CanRedo;
         public ValueTuple<int, int> UndoRedoCount => (_undoStack.Count, _redoStack.Count);
+        public int PauseDepth { get; private set; }
+        public int BatchDepth { get; private set; }
 
         public void Undo()
         {
@@ -25,6 +27,7 @@ namespace EditingSystem
 
             var currentFlags = MakeCurrentFlags();
             var currentUndoRedoCount = UndoRedoCount;
+            var currentDepth = (PauseDepth, BatchDepth);
 
             var action = _undoStack.Pop();
 
@@ -34,7 +37,7 @@ namespace EditingSystem
 
             _redoStack.Push(action);
 
-            InvokePropertyChanged(currentFlags, currentUndoRedoCount);
+            InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
         }
 
         public void Redo()
@@ -50,6 +53,7 @@ namespace EditingSystem
 
             var currentFlags = MakeCurrentFlags();
             var currentUndoRedoCount = UndoRedoCount;
+            var currentDepth = (PauseDepth, BatchDepth);
 
             var action = _redoStack.Pop();
 
@@ -59,7 +63,7 @@ namespace EditingSystem
 
             _undoStack.Push(action);
 
-            InvokePropertyChanged(currentFlags, currentUndoRedoCount);
+            InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
         }
 
         public void Push(Action undo, Action redo)
@@ -75,30 +79,32 @@ namespace EditingSystem
 
             var currentFlags = MakeCurrentFlags();
             var currentUndoRedoCount = UndoRedoCount;
+            var currentDepth = (PauseDepth, BatchDepth);
 
             _undoStack.Push(new HistoryAction(undo, redo));
 
             if (_redoStack.Count > 0)
                 _redoStack.Clear();
 
-            InvokePropertyChanged(currentFlags, currentUndoRedoCount);
+            InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
         }
 
         public void Clear()
         {
             var currentFlags = MakeCurrentFlags();
             var currentUndoRedoCount = UndoRedoCount;
+            var currentDepth = (PauseDepth, BatchDepth);
 
             _undoStack.Clear();
             _redoStack.Clear();
 
-            InvokePropertyChanged(currentFlags, currentUndoRedoCount);
+            InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
         }
 
         private ValueTuple<bool, bool, bool> MakeCurrentFlags()
             => (CanUndo, CanRedo, CanClear);
 
-        private void InvokePropertyChanged(in ValueTuple<bool, bool, bool> flags, in ValueTuple<int, int> undoRedoCount)
+        private void InvokePropertyChanged(in ValueTuple<bool, bool, bool> flags, in ValueTuple<int, int> undoRedoCount, ValueTuple<int, int> depthCount)
         {
             if (flags.Item1 != CanUndo)
                 PropertyChanged?.Invoke(this, CanUndoArgs);
@@ -111,6 +117,12 @@ namespace EditingSystem
 
             if (undoRedoCount != UndoRedoCount)
                 PropertyChanged?.Invoke(this, CanUndoRedoCountArgs);
+
+            if (depthCount != (PauseDepth, BatchDepth))
+            {
+                PropertyChanged?.Invoke(this, PauseDepthArgs);
+                PropertyChanged?.Invoke(this, BatchDepthArgs);
+            }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -123,6 +135,8 @@ namespace EditingSystem
         private static readonly PropertyChangedEventArgs CanRedoArgs = new PropertyChangedEventArgs(nameof(CanRedo));
         private static readonly PropertyChangedEventArgs CanClearArgs = new PropertyChangedEventArgs(nameof(CanClear));
         private static readonly PropertyChangedEventArgs CanUndoRedoCountArgs = new PropertyChangedEventArgs(nameof(UndoRedoCount));
+        private static readonly PropertyChangedEventArgs PauseDepthArgs = new PropertyChangedEventArgs(nameof(PauseDepth));
+        private static readonly PropertyChangedEventArgs BatchDepthArgs = new PropertyChangedEventArgs(nameof(BatchDepth));
 
         private struct HistoryAction
         {
@@ -136,46 +150,43 @@ namespace EditingSystem
             }
         }
 
-        public bool IsInPaused => _pauseDepth > 0;
-
-        private int _pauseDepth;
+        public bool IsInPaused => PauseDepth > 0;
 
         public void BeginPause()
         {
-            ++_pauseDepth;
+            ++PauseDepth;
         }
 
         public void EndPause()
         {
-            if (_pauseDepth == 0)
+            if (PauseDepth == 0)
                 throw new InvalidOperationException("Pause is not begun.");
 
-            --_pauseDepth;
+            --PauseDepth;
         }
 
         #region Batch
 
-        private int _batchDepth;
         private BatchHistory _batchHistory;
 
-        public bool IsInBatch => _batchDepth > 0;
+        public bool IsInBatch => BatchDepth > 0;
 
         public void BeginBatch()
         {
-            ++_batchDepth;
+            ++BatchDepth;
 
-            if (_batchDepth == 1)
+            if (BatchDepth == 1)
                 BeginBatchInternal();
         }
 
         public void EndBatch()
         {
-            if (_batchDepth == 0)
+            if (BatchDepth == 0)
                 throw new InvalidOperationException("Batch recording has not begun.");
 
-            --_batchDepth;
+            --BatchDepth;
 
-            if (_batchDepth == 0)
+            if (BatchDepth == 0)
                 EndBatchInternal();
         }
 
