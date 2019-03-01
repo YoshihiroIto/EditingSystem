@@ -9,11 +9,11 @@ namespace EditingSystem
 {
     public class EditableModelBase : INotifyPropertyChanged
     {
-        protected History _history;
+        protected History History { get; private set; }
 
         public void SetupEditingSystem(History history)
         {
-            _history = history;
+            History = history;
         }
 
         protected bool SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue,
@@ -26,7 +26,7 @@ namespace EditingSystem
 
             setValue(nextValue);
 
-            _history?.Push(() =>
+            History?.Push(() =>
             {
                 setValue(oldValue);
                 RaisePropertyChanged(propertyName);
@@ -73,7 +73,7 @@ namespace EditingSystem
 
             setValue(nextValue);
 
-            _history?.Push(() =>
+            History?.Push(() =>
             {
                 setValue(oldValue);
                 RaisePropertyChanged(propertyName);
@@ -160,10 +160,10 @@ namespace EditingSystem
 
         private void CollectionOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            if (_history == null)
+            if (History == null)
                 return;
 
-            if (_history.IsInUndoing)
+            if (History.IsInUndoing)
                 return;
 
             switch (e.Action)
@@ -194,7 +194,7 @@ namespace EditingSystem
                             list.RemoveAt(addIndex + i);
                     }
 
-                    _history.Push(Undo, Redo);
+                    History.Push(Undo, Redo);
                     break;
                 }
 
@@ -232,7 +232,7 @@ namespace EditingSystem
                         list.Insert(dst, item);
                     }
 
-                    _history.Push(Undo, Redo);
+                    History.Push(Undo, Redo);
                     break;
                 }
 
@@ -261,7 +261,7 @@ namespace EditingSystem
                         list.Insert(e.OldStartingIndex, item);
                     }
 
-                    _history.Push(Undo, Redo);
+                    History.Push(Undo, Redo);
                     break;
                 }
 
@@ -292,15 +292,15 @@ namespace EditingSystem
                         list[index] = e.OldItems[0];
                     }
 
-                    _history.Push(Undo, Redo);
+                    History.Push(Undo, Redo);
                     break;
                 }
 
                 case NotifyCollectionChangedAction.Reset:
-                    if (_history == null)
+                    if (History == null)
                         break;
 
-                    if (_history.IsInPaused)
+                    if (History.IsInPaused)
                         break;
 
                     throw new NotSupportedException("Clear() is not support. Use ClearEx()");
