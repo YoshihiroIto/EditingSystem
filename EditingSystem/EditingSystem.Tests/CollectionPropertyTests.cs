@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Linq;
 using Xunit;
+
+// ReSharper disable UseObjectOrCollectionInitializer
 
 namespace EditingSystem.Tests
 {
@@ -247,6 +248,7 @@ namespace EditingSystem.Tests
             model.IntCollection = new ObservableCollection<int>();
 
             var count = 0;
+            // ReSharper disable once AccessToModifiedClosure
             model.IntCollection.CollectionChanged += (_, __) => ++count;
 
             model.IntCollection.Add(100);
