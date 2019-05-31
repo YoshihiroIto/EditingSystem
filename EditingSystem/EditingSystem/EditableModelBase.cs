@@ -18,6 +18,10 @@ namespace EditingSystem
 
         protected bool SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue, [CallerMemberName] string propertyName = "")
         {
+            if (History != null)
+                if (History.OnSetValue(this, currentValue, nextValue, propertyName) == OnSetValueResult.Cancel)
+                    return false;
+
             if (EqualityComparer<T>.Default.Equals(currentValue, nextValue))
                 return false;
 

@@ -180,6 +180,11 @@ namespace EditingSystem
             InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
         }
 
+        public virtual OnSetValueResult OnSetValue(EditableModelBase target, object currentValue, object nextValue, string propertyName)
+        {
+            return OnSetValueResult.Ok;
+        }
+
         private ValueTuple<bool, bool, bool> MakeCurrentFlags()
             => (CanUndo, CanRedo, CanClear);
 
