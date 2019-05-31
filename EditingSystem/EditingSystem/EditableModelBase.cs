@@ -16,8 +16,7 @@ namespace EditingSystem
             History = history;
         }
 
-        protected bool SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue,
-            [CallerMemberName] string propertyName = "")
+        protected bool SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue, [CallerMemberName] string propertyName = "")
         {
             if (EqualityComparer<T>.Default.Equals(currentValue, nextValue))
                 return false;
@@ -50,8 +49,7 @@ namespace EditingSystem
             return true;
         }
 
-        protected bool SetEditableFlagProperty(Action<uint> setValue, uint currentValue, uint flag, bool value,
-            [CallerMemberName] string propertyName = "")
+        protected bool SetEditableFlagProperty(Action<uint> setValue, uint currentValue, uint flag, bool value, [CallerMemberName] string propertyName = "")
         {
             var oldValue = currentValue;
             var nextValue = currentValue;
@@ -297,6 +295,7 @@ namespace EditingSystem
                 }
 
                 case NotifyCollectionChangedAction.Reset:
+                {
                     if (History == null)
                         break;
 
@@ -304,6 +303,7 @@ namespace EditingSystem
                         break;
 
                     throw new NotSupportedException("Clear() is not support. Use ClearEx()");
+                }
 
                 default:
                     throw new ArgumentOutOfRangeException();

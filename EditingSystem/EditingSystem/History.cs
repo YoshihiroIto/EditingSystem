@@ -14,6 +14,85 @@ namespace EditingSystem
         public int PauseDepth { get; private set; }
         public int BatchDepth { get; private set; }
 
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        #region Pause
+
+        public bool IsInPaused => PauseDepth > 0;
+
+        public void BeginPause()
+        {
+            ++PauseDepth;
+        }
+
+        public void EndPause()
+        {
+            if (PauseDepth == 0)
+                throw new InvalidOperationException("Pause is not begun.");
+
+            --PauseDepth;
+        }
+        #endregion
+
+        #region Batch
+
+        private BatchHistory _batchHistory;
+
+        public bool IsInBatch => BatchDepth > 0;
+
+        public void BeginBatch()
+        {
+            ++BatchDepth;
+
+            if (BatchDepth == 1)
+                BeginBatchInternal();
+        }
+
+        public void EndBatch()
+        {
+            if (BatchDepth == 0)
+                throw new InvalidOperationException("Batch recording has not begun.");
+
+            --BatchDepth;
+
+            if (BatchDepth == 0)
+                EndBatchInternal();
+        }
+
+        private void BeginBatchInternal()
+        {
+            Debug.Assert(_batchHistory == null);
+
+            _batchHistory = new BatchHistory();
+        }
+
+        private void EndBatchInternal()
+        {
+            Debug.Assert(_batchHistory != null);
+
+            if (_batchHistory.UndoRedoCount != (0, 0))
+                Push(_batchHistory.UndoAll, _batchHistory.RedoAll);
+
+            _batchHistory = null;
+        }
+
+        private class BatchHistory : History
+        {
+            internal void UndoAll()
+            {
+                while (CanUndo)
+                    Undo();
+            }
+
+            internal void RedoAll()
+            {
+                while (CanRedo)
+                    Redo();
+            }
+        }
+
+        #endregion
+
         public void Undo()
         {
             if (IsInBatch)
@@ -125,7 +204,6 @@ namespace EditingSystem
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
         internal bool IsInUndoing { get; private set; }
 
         private readonly Stack<HistoryAction> _undoStack = new Stack<HistoryAction>();
@@ -149,79 +227,5 @@ namespace EditingSystem
                 Redo = redo;
             }
         }
-
-        public bool IsInPaused => PauseDepth > 0;
-
-        public void BeginPause()
-        {
-            ++PauseDepth;
-        }
-
-        public void EndPause()
-        {
-            if (PauseDepth == 0)
-                throw new InvalidOperationException("Pause is not begun.");
-
-            --PauseDepth;
-        }
-
-        #region Batch
-
-        private BatchHistory _batchHistory;
-
-        public bool IsInBatch => BatchDepth > 0;
-
-        public void BeginBatch()
-        {
-            ++BatchDepth;
-
-            if (BatchDepth == 1)
-                BeginBatchInternal();
-        }
-
-        public void EndBatch()
-        {
-            if (BatchDepth == 0)
-                throw new InvalidOperationException("Batch recording has not begun.");
-
-            --BatchDepth;
-
-            if (BatchDepth == 0)
-                EndBatchInternal();
-        }
-
-        private void BeginBatchInternal()
-        {
-            Debug.Assert(_batchHistory == null);
-
-            _batchHistory = new BatchHistory();
-        }
-
-        private void EndBatchInternal()
-        {
-            Debug.Assert(_batchHistory != null);
-
-            if (_batchHistory.UndoRedoCount != (0, 0))
-                Push(_batchHistory.UndoAll, _batchHistory.RedoAll);
-
-            _batchHistory = null;
-        }
-
-        private class BatchHistory : History
-        {
-            internal void UndoAll()
-            {
-                while (CanUndo)
-                    Undo();
-            }
-
-            internal void RedoAll()
-            {
-                while (CanRedo)
-                    Redo();
-            }
-        }
-
-        #endregion
     }
 }
