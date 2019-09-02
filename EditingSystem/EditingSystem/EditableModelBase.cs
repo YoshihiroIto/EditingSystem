@@ -16,7 +16,8 @@ namespace EditingSystem
             History = history;
         }
 
-        protected bool SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue, [CallerMemberName] string propertyName = "")
+        protected bool SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue,
+            [CallerMemberName] string propertyName = "")
         {
             if (History != null)
                 if (History.OnSetValue(this, currentValue, nextValue, propertyName) == OnSetValueResult.Cancel)
@@ -53,7 +54,8 @@ namespace EditingSystem
             return true;
         }
 
-        protected bool SetEditableFlagProperty(Action<uint> setValue, uint currentValue, uint flag, bool value, [CallerMemberName] string propertyName = "")
+        protected bool SetEditableFlagProperty(Action<uint> setValue, uint currentValue, uint flag, bool value,
+            [CallerMemberName] string propertyName = "")
         {
             var oldValue = currentValue;
             var nextValue = currentValue;
@@ -91,6 +93,7 @@ namespace EditingSystem
         }
 
         #region Without History
+
         protected bool SetPropertyWithoutHistory<T>(ref T storage, T value, [CallerMemberName] string propertyName = "")
         {
             if (EqualityComparer<T>.Default.Equals(storage, value))
@@ -103,7 +106,8 @@ namespace EditingSystem
             return true;
         }
 
-        protected bool SetFlagPropertyWithoutHistory(ref uint storage, uint flag, bool value, [CallerMemberName] string propertyName = "")
+        protected bool SetFlagPropertyWithoutHistory(ref uint storage, uint flag, bool value,
+            [CallerMemberName] string propertyName = "")
         {
             if (value)
             {
@@ -124,6 +128,7 @@ namespace EditingSystem
 
             return true;
         }
+
         #endregion
 
         #region INotifyPropertyChanged
@@ -168,6 +173,8 @@ namespace EditingSystem
             if (History.IsInUndoing)
                 return;
 
+            CollectionChanged(sender, e);
+
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
@@ -180,8 +187,14 @@ namespace EditingSystem
                         var addCount = addItems.Count;
                         var addIndex = e.NewStartingIndex;
 
+                        // ICollectionItem
                         for (var i = 0; i != addCount; ++i)
+                        {
                             list.Insert(addIndex + i, addItems[i]);
+
+                            if (addItems[i] is ICollectionItem collItem)
+                                collItem.Changed();
+                        }
                     }
 
                     void Undo()
@@ -192,8 +205,26 @@ namespace EditingSystem
                         var addCount = addItems.Count;
                         var addIndex = e.NewStartingIndex;
 
+                        // ICollectionItem
                         for (var i = 0; i != addCount; ++i)
+                        {
                             list.RemoveAt(addIndex + i);
+
+                            if (addItems[i] is ICollectionItem collItem)
+                                collItem.Changed();
+                        }
+                    }
+
+                    // ICollectionItem
+                    {
+                        var addItems = e.NewItems;
+                        var addCount = addItems.Count;
+
+                        for (var i = 0; i != addCount; ++i)
+                        {
+                            if (addItems[i] is ICollectionItem collItem)
+                                collItem.Changed();
+                        }
                     }
 
                     History.Push(Undo, Redo);
@@ -219,6 +250,12 @@ namespace EditingSystem
                         list.RemoveAt(src);
 
                         list.Insert(dst, item);
+
+                        // ICollectionItem
+                        {
+                            if (item is ICollectionItem collItem)
+                                collItem.Changed();
+                        }
                     }
 
                     void Undo()
@@ -232,6 +269,18 @@ namespace EditingSystem
                         list.RemoveAt(src);
 
                         list.Insert(dst, item);
+
+                        // ICollectionItem
+                        {
+                            if (item is ICollectionItem collItem)
+                                collItem.Changed();
+                        }
+                    }
+
+                    // ICollectionItem
+                    {
+                        if (e.OldItems[0] is ICollectionItem collItem)
+                            collItem.Changed();
                     }
 
                     History.Push(Undo, Redo);
@@ -254,6 +303,12 @@ namespace EditingSystem
 
                         item = list[e.OldStartingIndex];
                         list.RemoveAt(e.OldStartingIndex);
+
+                        // ICollectionItem
+                        {
+                            if (item is ICollectionItem collItem)
+                                collItem.Changed();
+                        }
                     }
 
                     void Undo()
@@ -261,6 +316,18 @@ namespace EditingSystem
                         var list = (IList) sender;
 
                         list.Insert(e.OldStartingIndex, item);
+
+                        // ICollectionItem
+                        {
+                            if (item is ICollectionItem collItem)
+                                collItem.Changed();
+                        }
+                    }
+
+                    // ICollectionItem
+                    {
+                        if (e.OldItems[0] is ICollectionItem collItem)
+                            collItem.Changed();
                     }
 
                     History.Push(Undo, Redo);
@@ -283,7 +350,17 @@ namespace EditingSystem
                         var list = (IList) sender;
 
                         var index = e.OldStartingIndex;
+                        var oldItem = list[index];
                         list[index] = e.NewItems[0];
+
+                        // ICollectionItem
+                        {
+                            if (oldItem is ICollectionItem oldCollItem)
+                                oldCollItem.Changed();
+
+                            if (list[index] is ICollectionItem collItem)
+                                collItem.Changed();
+                        }
                     }
 
                     void Undo()
@@ -291,7 +368,26 @@ namespace EditingSystem
                         var list = (IList) sender;
 
                         var index = e.OldStartingIndex;
+                        var oldItem = list[index];
                         list[index] = e.OldItems[0];
+
+                        // ICollectionItem
+                        {
+                            if (oldItem is ICollectionItem oldCollItem)
+                                oldCollItem.Changed();
+
+                            if (list[index] is ICollectionItem collItem)
+                                collItem.Changed();
+                        }
+                    }
+
+                    // ICollectionItem
+                    {
+                        if (e.OldItems[0] is ICollectionItem oldCollItem)
+                            oldCollItem.Changed();
+
+                        if (e.NewItems[0] is ICollectionItem newCollItem)
+                            newCollItem.Changed();
                     }
 
                     History.Push(Undo, Redo);
@@ -315,5 +411,9 @@ namespace EditingSystem
         }
 
         #endregion
+
+        protected virtual void CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+        }
     }
 }
