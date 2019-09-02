@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using Xunit;
 
 // ReSharper disable UseObjectOrCollectionInitializer
@@ -19,47 +20,64 @@ namespace EditingSystem.Tests
             var item1 = new CollectionItem();
             var item2 = new CollectionItem();
 
-            Assert.Equal(0, item0.CollectionChangedCount);
-            Assert.Equal(0, item1.CollectionChangedCount);
-            Assert.Equal(0, item2.CollectionChangedCount);
-
             model.Collection.Add(item0);
             model.Collection.Add(item1);
             model.Collection.Add(item2);
 
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
 
             history.Undo();
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(2, item2.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(1, item2.CollectionChangedRemoveCount);
 
             history.Undo();
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(2, item1.CollectionChangedCount);
-            Assert.Equal(2, item2.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(1, item1.CollectionChangedRemoveCount);
+            Assert.Equal(1, item2.CollectionChangedRemoveCount);
 
             history.Undo();
-            Assert.Equal(2, item0.CollectionChangedCount);
-            Assert.Equal(2, item1.CollectionChangedCount);
-            Assert.Equal(2, item2.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item0.CollectionChangedRemoveCount);
+            Assert.Equal(1, item1.CollectionChangedRemoveCount);
+            Assert.Equal(1, item2.CollectionChangedRemoveCount);
 
             history.Redo();
-            Assert.Equal(3, item0.CollectionChangedCount);
-            Assert.Equal(2, item1.CollectionChangedCount);
-            Assert.Equal(2, item2.CollectionChangedCount);
+            Assert.Equal(2, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item0.CollectionChangedRemoveCount);
+            Assert.Equal(1, item1.CollectionChangedRemoveCount);
+            Assert.Equal(1, item2.CollectionChangedRemoveCount);
 
             history.Redo();
-            Assert.Equal(3, item0.CollectionChangedCount);
-            Assert.Equal(3, item1.CollectionChangedCount);
-            Assert.Equal(2, item2.CollectionChangedCount);
+            Assert.Equal(2, item0.CollectionChangedAddCount);
+            Assert.Equal(2, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item0.CollectionChangedRemoveCount);
+            Assert.Equal(1, item1.CollectionChangedRemoveCount);
+            Assert.Equal(1, item2.CollectionChangedRemoveCount);
 
             history.Redo();
-            Assert.Equal(3, item0.CollectionChangedCount);
-            Assert.Equal(3, item1.CollectionChangedCount);
-            Assert.Equal(3, item2.CollectionChangedCount);
+            Assert.Equal(2, item0.CollectionChangedAddCount);
+            Assert.Equal(2, item1.CollectionChangedAddCount);
+            Assert.Equal(2, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item0.CollectionChangedRemoveCount);
+            Assert.Equal(1, item1.CollectionChangedRemoveCount);
+            Assert.Equal(1, item2.CollectionChangedRemoveCount);
         }
 
         [Fact]
@@ -80,29 +98,61 @@ namespace EditingSystem.Tests
             model.Collection.Add(item2);
             model.Collection.Add(item3);
 
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(1, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(0, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
 
             model.Collection.Move(0, 3);
 
-            Assert.Equal(2, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(1, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(0, item3.CollectionChangedRemoveCount);
+            Assert.Equal(1, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
 
             history.Undo();
-            Assert.Equal(3, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(1, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(0, item3.CollectionChangedRemoveCount);
+            Assert.Equal(2, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
 
             history.Redo();
-            Assert.Equal(4, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(1, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(0, item3.CollectionChangedRemoveCount);
+            Assert.Equal(3, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
         }
 
         [Fact]
@@ -123,29 +173,61 @@ namespace EditingSystem.Tests
             model.Collection.Add(item2);
             model.Collection.Add(item3);
 
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(1, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(0, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
 
             model.Collection.Move(3, 0);
 
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(2, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(0, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(1, item3.CollectionChangedMoveCount);
 
             history.Undo();
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(3, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(0, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(2, item3.CollectionChangedMoveCount);
 
             history.Redo();
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(4, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(0, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(3, item3.CollectionChangedMoveCount);
         }
 
         [Fact]
@@ -168,22 +250,46 @@ namespace EditingSystem.Tests
 
             model.Collection.Remove(item3);
 
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(2, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(1, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
 
             history.Undo();
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(3, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(2, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(1, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
 
             history.Redo();
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(4, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(2, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(2, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
         }
 
         [Fact]
@@ -206,22 +312,46 @@ namespace EditingSystem.Tests
 
             model.Collection.RemoveAt(3);
 
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(2, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(1, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
 
             history.Undo();
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(3, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(2, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(1, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
 
             history.Redo();
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(4, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(2, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(2, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
         }
 
         [Fact]
@@ -242,27 +372,75 @@ namespace EditingSystem.Tests
             model.Collection.Add(item2);
             model.Collection.Add(item3);
 
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(1, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(0, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
 
             var itemX = new CollectionItem();
-            Assert.Equal(0, itemX.CollectionChangedCount);
+            Assert.Equal(0, itemX.CollectionChangedAddCount);
+            Assert.Equal(0, itemX.CollectionChangedRemoveCount);
+            Assert.Equal(0, itemX.CollectionChangedMoveCount);
 
             model.Collection.Insert(2, itemX);
 
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, itemX.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(1, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, itemX.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, itemX.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(0, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, itemX.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
 
             history.Undo();
-            Assert.Equal(2, itemX.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, itemX.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(1, itemX.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(0, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, itemX.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
 
             history.Redo();
-            Assert.Equal(3, itemX.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(2, itemX.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(1, itemX.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(0, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, itemX.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
         }
 
         [Fact]
@@ -283,29 +461,61 @@ namespace EditingSystem.Tests
             model.Collection.Add(item2);
             model.Collection.Add(item3);
 
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(1, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(0, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
 
             model.Collection.ClearEx(history);
 
-            Assert.Equal(2, item0.CollectionChangedCount);
-            Assert.Equal(2, item1.CollectionChangedCount);
-            Assert.Equal(2, item2.CollectionChangedCount);
-            Assert.Equal(2, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(1, item0.CollectionChangedRemoveCount);
+            Assert.Equal(1, item1.CollectionChangedRemoveCount);
+            Assert.Equal(1, item2.CollectionChangedRemoveCount);
+            Assert.Equal(1, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
 
             history.Undo();
-            Assert.Equal(3, item0.CollectionChangedCount);
-            Assert.Equal(3, item1.CollectionChangedCount);
-            Assert.Equal(3, item2.CollectionChangedCount);
-            Assert.Equal(3, item3.CollectionChangedCount);
+            Assert.Equal(2, item0.CollectionChangedAddCount);
+            Assert.Equal(2, item1.CollectionChangedAddCount);
+            Assert.Equal(2, item2.CollectionChangedAddCount);
+            Assert.Equal(2, item3.CollectionChangedAddCount);
+            Assert.Equal(1, item0.CollectionChangedRemoveCount);
+            Assert.Equal(1, item1.CollectionChangedRemoveCount);
+            Assert.Equal(1, item2.CollectionChangedRemoveCount);
+            Assert.Equal(1, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
 
             history.Redo();
-            Assert.Equal(4, item0.CollectionChangedCount);
-            Assert.Equal(4, item1.CollectionChangedCount);
-            Assert.Equal(4, item2.CollectionChangedCount);
-            Assert.Equal(4, item3.CollectionChangedCount);
+            Assert.Equal(2, item0.CollectionChangedAddCount);
+            Assert.Equal(2, item1.CollectionChangedAddCount);
+            Assert.Equal(2, item2.CollectionChangedAddCount);
+            Assert.Equal(2, item3.CollectionChangedAddCount);
+            Assert.Equal(2, item0.CollectionChangedRemoveCount);
+            Assert.Equal(2, item1.CollectionChangedRemoveCount);
+            Assert.Equal(2, item2.CollectionChangedRemoveCount);
+            Assert.Equal(2, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
         }
 
         [Fact]
@@ -326,35 +536,73 @@ namespace EditingSystem.Tests
             model.Collection.Add(item2);
             model.Collection.Add(item3);
 
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(1, item2.CollectionChangedCount);
-            Assert.Equal(1, item3.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(0, item2.CollectionChangedRemoveCount);
+            Assert.Equal(0, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
 
             var itemX = new CollectionItem();
 
             model.Collection[2] = itemX;
 
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(2, item2.CollectionChangedCount);
-            Assert.Equal(1, item3.CollectionChangedCount);
-            Assert.Equal(1, itemX.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(1, itemX.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(1, item2.CollectionChangedRemoveCount);
+            Assert.Equal(0, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, itemX.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
+            Assert.Equal(0, itemX.CollectionChangedMoveCount);
 
             history.Undo();
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(3, item2.CollectionChangedCount);
-            Assert.Equal(1, item3.CollectionChangedCount);
-            Assert.Equal(2, itemX.CollectionChangedCount);
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(2, itemX.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(2, item2.CollectionChangedRemoveCount);
+            Assert.Equal(0, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, itemX.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
+            Assert.Equal(0, itemX.CollectionChangedMoveCount);
 
             history.Redo();
-            Assert.Equal(1, item0.CollectionChangedCount);
-            Assert.Equal(1, item1.CollectionChangedCount);
-            Assert.Equal(4, item2.CollectionChangedCount);
-            Assert.Equal(1, item3.CollectionChangedCount);
-            Assert.Equal(3, itemX.CollectionChangedCount);
-        } 
+            Assert.Equal(1, item0.CollectionChangedAddCount);
+            Assert.Equal(1, item1.CollectionChangedAddCount);
+            Assert.Equal(1, item2.CollectionChangedAddCount);
+            Assert.Equal(1, item3.CollectionChangedAddCount);
+            Assert.Equal(3, itemX.CollectionChangedAddCount);
+            Assert.Equal(0, item0.CollectionChangedRemoveCount);
+            Assert.Equal(0, item1.CollectionChangedRemoveCount);
+            Assert.Equal(3, item2.CollectionChangedRemoveCount);
+            Assert.Equal(0, item3.CollectionChangedRemoveCount);
+            Assert.Equal(0, itemX.CollectionChangedRemoveCount);
+            Assert.Equal(0, item0.CollectionChangedMoveCount);
+            Assert.Equal(0, item1.CollectionChangedMoveCount);
+            Assert.Equal(0, item2.CollectionChangedMoveCount);
+            Assert.Equal(0, item3.CollectionChangedMoveCount);
+            Assert.Equal(0, itemX.CollectionChangedMoveCount);
+        }
 
         public class TestModel : EditableModelBase
         {
@@ -379,11 +627,29 @@ namespace EditingSystem.Tests
 
         public class CollectionItem : ICollectionItem
         {
-            public int CollectionChangedCount { get; private set; }
+            public int CollectionChangedAddCount { get; private set; }
+            public int CollectionChangedRemoveCount { get; private set; }
+            public int CollectionChangedMoveCount { get; private set; }
 
-            public void Changed()
+            public void Changed(in CollectionItemChangedInfo info)
             {
-                ++ CollectionChangedCount;
+                switch (info.Type)
+                {
+                    case CollectionItemChangedType.Add:
+                        ++ CollectionChangedAddCount;
+                        break;
+
+                    case CollectionItemChangedType.Remove:
+                        ++ CollectionChangedRemoveCount;
+                        break;
+
+                    case CollectionItemChangedType.Move:
+                        ++ CollectionChangedMoveCount;
+                        break;
+
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(info.Type), info.Type, null);
+                }
             }
         }
     }
