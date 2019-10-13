@@ -16,8 +16,7 @@ namespace EditingSystem
             History = history;
         }
 
-        protected bool SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue,
-            [CallerMemberName] string propertyName = "")
+        protected bool SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue, [CallerMemberName] string propertyName = "")
         {
             if (History != null)
                 if (History.OnSetValue(this, currentValue, nextValue, propertyName) == OnSetValueResult.Cancel)
@@ -54,8 +53,7 @@ namespace EditingSystem
             return true;
         }
 
-        protected bool SetEditableFlagProperty(Action<uint> setValue, uint currentValue, uint flag, bool value,
-            [CallerMemberName] string propertyName = "")
+        protected bool SetEditableFlagProperty(Action<uint> setValue, uint currentValue, uint flag, bool value, [CallerMemberName] string propertyName = "")
         {
             var oldValue = currentValue;
             var nextValue = currentValue;
@@ -106,8 +104,7 @@ namespace EditingSystem
             return true;
         }
 
-        protected bool SetFlagPropertyWithoutHistory(ref uint storage, uint flag, bool value,
-            [CallerMemberName] string propertyName = "")
+        protected bool SetFlagPropertyWithoutHistory(ref uint storage, uint flag, bool value, [CallerMemberName] string propertyName = "")
         {
             if (value)
             {
@@ -193,7 +190,7 @@ namespace EditingSystem
                             list.Insert(addIndex + i, addItems[i]);
 
                             if (addItems[i] is ICollectionItem collItem)
-                                collItem.Changed(new CollectionItemChangedInfo(CollectionItemChangedType.Add));
+                                collItem.Changed(CollectionItemChangedInfo.Add);
                         }
                     }
 
@@ -211,7 +208,7 @@ namespace EditingSystem
                             list.RemoveAt(addIndex + i);
 
                             if (addItems[i] is ICollectionItem collItem)
-                                collItem.Changed(new CollectionItemChangedInfo(CollectionItemChangedType.Remove));
+                                collItem.Changed(CollectionItemChangedInfo.Remove);
                         }
                     }
 
@@ -223,7 +220,7 @@ namespace EditingSystem
                         for (var i = 0; i != addCount; ++i)
                         {
                             if (addItems[i] is ICollectionItem collItem)
-                                collItem.Changed(new CollectionItemChangedInfo(CollectionItemChangedType.Add));
+                                collItem.Changed(CollectionItemChangedInfo.Add);
                         }
                     }
 
@@ -254,7 +251,7 @@ namespace EditingSystem
                         // ICollectionItem
                         {
                             if (item is ICollectionItem collItem)
-                                collItem.Changed(new CollectionItemChangedInfo(CollectionItemChangedType.Move));
+                                collItem.Changed(CollectionItemChangedInfo.Move);
                         }
                     }
 
@@ -273,14 +270,14 @@ namespace EditingSystem
                         // ICollectionItem
                         {
                             if (item is ICollectionItem collItem)
-                                collItem.Changed(new CollectionItemChangedInfo(CollectionItemChangedType.Move));
+                                collItem.Changed(CollectionItemChangedInfo.Move);
                         }
                     }
 
                     // ICollectionItem
                     {
                         if (e.OldItems[0] is ICollectionItem collItem)
-                            collItem.Changed(new CollectionItemChangedInfo(CollectionItemChangedType.Move));
+                            collItem.Changed(CollectionItemChangedInfo.Move);
                     }
 
                     History.Push(Undo, Redo);
@@ -307,7 +304,7 @@ namespace EditingSystem
                         // ICollectionItem
                         {
                             if (item is ICollectionItem collItem)
-                                collItem.Changed(new CollectionItemChangedInfo(CollectionItemChangedType.Remove));
+                                collItem.Changed(CollectionItemChangedInfo.Remove);
                         }
                     }
 
@@ -320,14 +317,14 @@ namespace EditingSystem
                         // ICollectionItem
                         {
                             if (item is ICollectionItem collItem)
-                                collItem.Changed(new CollectionItemChangedInfo(CollectionItemChangedType.Add));
+                                collItem.Changed(CollectionItemChangedInfo.Add);
                         }
                     }
 
                     // ICollectionItem
                     {
                         if (e.OldItems[0] is ICollectionItem collItem)
-                            collItem.Changed(new CollectionItemChangedInfo(CollectionItemChangedType.Remove));
+                            collItem.Changed(CollectionItemChangedInfo.Remove);
                     }
 
                     History.Push(Undo, Redo);
@@ -356,10 +353,10 @@ namespace EditingSystem
                         // ICollectionItem
                         {
                             if (oldItem is ICollectionItem oldCollItem)
-                                oldCollItem.Changed(new CollectionItemChangedInfo(CollectionItemChangedType.Remove));
+                                oldCollItem.Changed(CollectionItemChangedInfo.Remove);
 
                             if (list[index] is ICollectionItem collItem)
-                                collItem.Changed(new CollectionItemChangedInfo(CollectionItemChangedType.Add));
+                                collItem.Changed(CollectionItemChangedInfo.Add);
                         }
                     }
 
@@ -374,20 +371,20 @@ namespace EditingSystem
                         // ICollectionItem
                         {
                             if (oldItem is ICollectionItem oldCollItem)
-                                oldCollItem.Changed(new CollectionItemChangedInfo(CollectionItemChangedType.Add));
+                                oldCollItem.Changed(CollectionItemChangedInfo.Add);
 
                             if (list[index] is ICollectionItem collItem)
-                                collItem.Changed(new CollectionItemChangedInfo(CollectionItemChangedType.Remove));
+                                collItem.Changed(CollectionItemChangedInfo.Remove);
                         }
                     }
 
                     // ICollectionItem
                     {
                         if (e.OldItems[0] is ICollectionItem oldCollItem)
-                            oldCollItem.Changed(new CollectionItemChangedInfo(CollectionItemChangedType.Remove));
+                            oldCollItem.Changed(CollectionItemChangedInfo.Remove);
 
                         if (e.NewItems[0] is ICollectionItem newCollItem)
-                            newCollItem.Changed(new CollectionItemChangedInfo(CollectionItemChangedType.Add));
+                            newCollItem.Changed(CollectionItemChangedInfo.Add);
                     }
 
                     History.Push(Undo, Redo);

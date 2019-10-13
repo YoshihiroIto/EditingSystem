@@ -9,10 +9,14 @@
     {
         public readonly CollectionItemChangedType Type;
 
-        public CollectionItemChangedInfo(in CollectionItemChangedType type)
+        private CollectionItemChangedInfo(in CollectionItemChangedType type)
         {
             Type = type;
         }
+
+        public static readonly CollectionItemChangedInfo Add = new CollectionItemChangedInfo(CollectionItemChangedType.Add);
+        public static readonly CollectionItemChangedInfo Remove = new CollectionItemChangedInfo(CollectionItemChangedType.Remove);
+        public static readonly CollectionItemChangedInfo Move = new CollectionItemChangedInfo(CollectionItemChangedType.Move);
     }
 
     public enum CollectionItemChangedType
