@@ -19,9 +19,9 @@ namespace EditingSystem
         protected bool SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue, [CallerMemberName] string propertyName = "")
         {
             if (History != null)
-#pragma warning disable CS8604
+#nullable disable
                 if (History.OnSetValue(this, currentValue, nextValue, propertyName) == OnSetValueResult.Cancel)
-#pragma warning restore CS8604
+#nullable enable
                     return false;
 
             if (EqualityComparer<T>.Default.Equals(currentValue, nextValue))
