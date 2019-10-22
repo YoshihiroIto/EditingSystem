@@ -14,7 +14,7 @@ namespace EditingSystem
         public int PauseDepth { get; private set; }
         public int BatchDepth { get; private set; }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         #region Pause
 
@@ -36,7 +36,7 @@ namespace EditingSystem
 
         #region Batch
 
-        private BatchHistory _batchHistory;
+        private BatchHistory? _batchHistory;
 
         public bool IsInBatch => BatchDepth > 0;
 
@@ -152,6 +152,9 @@ namespace EditingSystem
 
             if (IsInBatch)
             {
+                if (_batchHistory == null)
+                    throw new NullReferenceException();
+
                 _batchHistory.Push(undo, redo);
                 return;
             }

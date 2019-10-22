@@ -9,7 +9,7 @@ namespace EditingSystem
 {
     public class EditableModelBase : INotifyPropertyChanged
     {
-        protected History History { get; private set; }
+        protected History? History { get; private set; }
 
         public void SetupEditingSystem(History history)
         {
@@ -19,7 +19,9 @@ namespace EditingSystem
         protected bool SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue, [CallerMemberName] string propertyName = "")
         {
             if (History != null)
+#pragma warning disable CS8604
                 if (History.OnSetValue(this, currentValue, nextValue, propertyName) == OnSetValueResult.Cancel)
+#pragma warning restore CS8604
                     return false;
 
             if (EqualityComparer<T>.Default.Equals(currentValue, nextValue))
@@ -130,7 +132,7 @@ namespace EditingSystem
 
         #region INotifyPropertyChanged
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         protected virtual void RaisePropertyChanged([CallerMemberName] string propertyName = "")
         {
