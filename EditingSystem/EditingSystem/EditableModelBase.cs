@@ -130,7 +130,7 @@ namespace EditingSystem
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        protected virtual void RaisePropertyChanged([CallerMemberName] string propertyName = "")
+        protected void RaisePropertyChanged([CallerMemberName] string propertyName = "")
         {
             // ReSharper disable once InconsistentlySynchronizedField
             var pc = (PropertyChangedEventArgs) _propChanged[propertyName];
