@@ -168,8 +168,6 @@ namespace EditingSystem
             if (History.IsInUndoing)
                 return;
 
-            CollectionChanged(sender, e);
-
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
@@ -406,9 +404,5 @@ namespace EditingSystem
         }
 
         #endregion
-
-        protected virtual void CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-        }
     }
 }
