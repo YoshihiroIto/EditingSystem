@@ -11,7 +11,7 @@ namespace EditingSystem
     {
         protected History? History { get; private set; }
 
-        public void SetupEditingSystem(History? history)
+        protected void SetupEditingSystem(History? history)
         {
             History = history;
         }
