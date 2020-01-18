@@ -16,16 +16,16 @@ namespace EditingSystem
             History = history;
         }
 
-        protected bool SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue, [CallerMemberName] string propertyName = "")
+        protected void SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue, [CallerMemberName] string propertyName = "")
         {
             if (History != null)
 #nullable disable
                 if (History.OnSetValue(this, currentValue, nextValue, propertyName) == OnSetValueResult.Cancel)
 #nullable enable
-                    return false;
+                    return;
 
             if (EqualityComparer<T>.Default.Equals(currentValue, nextValue))
-                return false;
+                return;
 
             var oldValue = currentValue;
 
@@ -51,11 +51,9 @@ namespace EditingSystem
             }
 
             RaisePropertyChanged(propertyName);
-
-            return true;
         }
 
-        protected bool SetEditableFlagProperty(Action<uint> setValue, uint currentValue, uint flag, bool value, [CallerMemberName] string propertyName = "")
+        protected void SetEditableFlagProperty(Action<uint> setValue, uint currentValue, uint flag, bool value, [CallerMemberName] string propertyName = "")
         {
             var oldValue = currentValue;
             var nextValue = currentValue;
@@ -63,14 +61,14 @@ namespace EditingSystem
             if (value)
             {
                 if ((currentValue & flag) != 0)
-                    return false;
+                    return;
 
                 nextValue |= flag;
             }
             else
             {
                 if ((currentValue & flag) == 0)
-                    return false;
+                    return;
 
                 nextValue &= ~flag;
             }
@@ -88,8 +86,6 @@ namespace EditingSystem
             });
 
             RaisePropertyChanged(propertyName);
-
-            return true;
         }
 
         #region Without History
