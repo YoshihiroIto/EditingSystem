@@ -29,17 +29,17 @@ namespace EditingSystem
 
             var oldValue = currentValue;
 
-            setValue(nextValue);
-
-            History?.Push(() =>
-            {
-                setValue(oldValue);
-                RaisePropertyChanged(propertyName);
-            }, () =>
-            {
-                setValue(nextValue);
-                RaisePropertyChanged(propertyName);
-            });
+            History?.Push(
+                () =>
+                {
+                    setValue(oldValue);
+                    RaisePropertyChanged(propertyName);
+                },
+                () =>
+                {
+                    setValue(nextValue);
+                    RaisePropertyChanged(propertyName);
+                });
 
             // INotifyCollectionChanged
             {
@@ -50,6 +50,7 @@ namespace EditingSystem
                     next.CollectionChanged += CollectionOnCollectionChanged;
             }
 
+            setValue(nextValue);
             RaisePropertyChanged(propertyName);
         }
 
@@ -73,8 +74,6 @@ namespace EditingSystem
                 nextValue &= ~flag;
             }
 
-            setValue(nextValue);
-
             History?.Push(() =>
             {
                 setValue(oldValue);
@@ -85,6 +84,7 @@ namespace EditingSystem
                 RaisePropertyChanged(propertyName);
             });
 
+            setValue(nextValue);
             RaisePropertyChanged(propertyName);
         }
 
