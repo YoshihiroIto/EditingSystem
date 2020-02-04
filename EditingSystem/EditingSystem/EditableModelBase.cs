@@ -29,17 +29,8 @@ namespace EditingSystem
 
             var oldValue = currentValue;
 
-            History?.Push(
-                () =>
-                {
-                    setValue(oldValue);
-                    RaisePropertyChanged(propertyName);
-                },
-                () =>
-                {
-                    setValue(nextValue);
-                    RaisePropertyChanged(propertyName);
-                });
+            if (History != null)
+                PushPropertyHistory(History, setValue, propertyName, oldValue, nextValue);
 
             // INotifyCollectionChanged
             {
@@ -52,6 +43,21 @@ namespace EditingSystem
 
             setValue(nextValue);
             RaisePropertyChanged(propertyName);
+        }
+
+        private void PushPropertyHistory<T>(History history, Action<T> setValue, string propertyName, T oldValue, T nextValue)
+        {
+            history.Push(
+                () =>
+                {
+                    setValue(oldValue);
+                    RaisePropertyChanged(propertyName);
+                },
+                () =>
+                {
+                    setValue(nextValue);
+                    RaisePropertyChanged(propertyName);
+                });
         }
 
         protected void SetEditableFlagProperty(Action<uint> setValue, uint currentValue, uint flag, bool value, [CallerMemberName] string propertyName = "")
@@ -74,18 +80,26 @@ namespace EditingSystem
                 nextValue &= ~flag;
             }
 
-            History?.Push(() =>
-            {
-                setValue(oldValue);
-                RaisePropertyChanged(propertyName);
-            }, () =>
-            {
-                setValue(nextValue);
-                RaisePropertyChanged(propertyName);
-            });
+            if (History != null)
+                PushFlagPropertyHistory(History, setValue, propertyName, oldValue, nextValue);
 
             setValue(nextValue);
             RaisePropertyChanged(propertyName);
+        }
+
+        private void PushFlagPropertyHistory(History history, Action<uint> setValue, string propertyName, uint oldValue, uint nextValue)
+        {
+            history.Push(
+                () =>
+                {
+                    setValue(oldValue);
+                    RaisePropertyChanged(propertyName);
+                },
+                () =>
+                {
+                    setValue(nextValue);
+                    RaisePropertyChanged(propertyName);
+                });
         }
 
         #region Without History
