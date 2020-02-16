@@ -3,6 +3,7 @@
   <PropertyGroup>
     <LangVersion>8</LangVersion>
     <TargetFrameworks>net47;net472;net48;netcoreapp3.1</TargetFrameworks>
+    <RootNamespace>Jewelry.EditingSystem.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EditingSystem\EditingSystem.csproj" />
+    <ProjectReference Include="..\Jewelry.EditingSystem\Jewelry.EditingSystem.csproj" />
   </ItemGroup>
 
 </Project>

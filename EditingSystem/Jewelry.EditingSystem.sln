@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.271
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EditingSystem", "EditingSystem\EditingSystem.csproj", "{8C937123-0B42-4A7B-997E-57BE485B92BE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jewelry.EditingSystem", "Jewelry.EditingSystem\Jewelry.EditingSystem.csproj", "{8C937123-0B42-4A7B-997E-57BE485B92BE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EditingSystem.Tests", "EditingSystem.Tests\EditingSystem.Tests.csproj", "{1B174DA4-669F-4047-B131-CFDC4A3EDDE0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jewelry.EditingSystem.Tests", "Jewelry.EditingSystem.Tests\Jewelry.EditingSystem.Tests.csproj", "{1B174DA4-669F-4047-B131-CFDC4A3EDDE0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -4,7 +4,7 @@ using Xunit;
 
 // ReSharper disable UseObjectOrCollectionInitializer
 
-namespace EditingSystem.Tests
+namespace Jewelry.EditingSystem.Tests
 {
     public class CollectionItemTests
     {

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace EditingSystem
+namespace Jewelry.EditingSystem
 {
     public static class ListExtensions
     {

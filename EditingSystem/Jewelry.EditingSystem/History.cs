@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 
-namespace EditingSystem
+namespace Jewelry.EditingSystem
 {
     public class History : INotifyPropertyChanged
     {

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using Xunit;
 
-namespace EditingSystem.Tests
+namespace Jewelry.EditingSystem.Tests
 {
     public class SinglePropertyTests
     {

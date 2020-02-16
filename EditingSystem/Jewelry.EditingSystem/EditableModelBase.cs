@@ -5,7 +5,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace EditingSystem
+namespace Jewelry.EditingSystem
 {
     public class EditableModelBase : INotifyPropertyChanged
     {
