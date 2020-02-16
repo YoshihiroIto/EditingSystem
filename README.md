@@ -1,9 +1,7 @@
 # EditingSystem
+[![Build status](https://ci.appveyor.com/api/projects/status/x42th0lpkuldqhg8?svg=true)](https://ci.appveyor.com/project/YoshihiroIto/editingsystem) ![.NET Standard Version: >= 2.0](https://img.shields.io/badge/.NET%20Standard-%3E%3D%202.0-brightgreen)  [![MIT License](http://img.shields.io/badge/license-MIT-lightgray)](LICENSE)  
 
 Easy to use undo/redo system for .NET Standard.
-
-
-[![Build status](https://ci.appveyor.com/api/projects/status/x42th0lpkuldqhg8?svg=true)](https://ci.appveyor.com/project/YoshihiroIto/editingsystem)
 
 
 ## Example
@@ -108,3 +106,16 @@ public void Collection()
 }
 
 ```
+
+## Author
+
+Yoshihiro Ito  
+Twitter: [https://twitter.com/yoiyoi322](https://twitter.com/yoiyoi322)  
+Email: yo.i.jewelry.bab@gmail.com  
+
+
+## License
+
+MIT
+
+
