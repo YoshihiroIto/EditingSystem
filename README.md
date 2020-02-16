@@ -1,12 +1,19 @@
 # EditingSystem
-[![Build status](https://ci.appveyor.com/api/projects/status/x42th0lpkuldqhg8?svg=true)](https://ci.appveyor.com/project/YoshihiroIto/editingsystem) ![.NET Standard Version: >= 2.0](https://img.shields.io/badge/.NET%20Standard-%3E%3D%202.0-brightgreen)  [![MIT License](http://img.shields.io/badge/license-MIT-lightgray)](LICENSE)  
+[![Biaui NuGet package](https://img.shields.io/nuget/v/Jewelry.EditingSystem)](https://www.nuget.org/packages/Jewelry.EditingSystem) [![Build status](https://ci.appveyor.com/api/projects/status/x42th0lpkuldqhg8?svg=true)](https://ci.appveyor.com/project/YoshihiroIto/editingsystem) ![.NET Standard Version: >= 2.0](https://img.shields.io/badge/.NET%20Standard-%3E%3D%202.0-brightgreen)  [![MIT License](http://img.shields.io/badge/license-MIT-lightgray)](LICENSE)  
 
 Easy to use undo/redo system for .NET Standard.
+
+
+## Install
+```
+PM> Install-Package Jewelry.EditingSystem
+```
 
 
 ## Example
 
 ```cs
+using Jewelry.EditingSystem;
 
 public class TestModel : EditableModelBase
 {

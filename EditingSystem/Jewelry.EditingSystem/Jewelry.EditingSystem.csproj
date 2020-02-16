@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    <LangVersion>8</LangVersion>
+    <Authors>Yoshihiro Ito</Authors>
+    <Description>Easy to use undo/redo system for .NET Standard.</Description>
+    <Copyright>Copyright (c) 2018-2020 copyright Yoshihiro Ito (yo.i.jewelry.bab@gmail.com)</Copyright>
+    <PackageProjectUrl>https://github.com/YoshihiroIto/EditingSystem</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/YoshihiroIto/EditingSystem</RepositoryUrl>
+    <PackageTags>undo editing</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <RootNamespace>Jewelry.EditingSystem</RootNamespace>
+    <PackageVersion>1.0.1</PackageVersion>
+  </PropertyGroup>
+</Project>
