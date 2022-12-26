@@ -185,11 +185,6 @@ public class History : INotifyPropertyChanged
         InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
     }
 
-    public virtual OnSetValueResult OnSetValue(EditableModelBase target, object? currentValue, object? nextValue, string propertyName)
-    {
-        return OnSetValueResult.Ok;
-    }
-
     private (bool CanUndo, bool CanRedo, bool CanClear) MakeCurrentFlags()
         => (CanUndo, CanRedo, CanClear);
 

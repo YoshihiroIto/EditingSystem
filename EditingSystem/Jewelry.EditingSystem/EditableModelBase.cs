@@ -19,10 +19,6 @@ public class EditableModelBase : INotifyPropertyChanged
 
     protected void SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue, [CallerMemberName] string propertyName = "")
     {
-        if (History is not null)
-            if (History.OnSetValue(this, currentValue, nextValue, propertyName) == OnSetValueResult.Cancel)
-                return;
-
         if (EqualityComparer<T>.Default.Equals(currentValue, nextValue))
             return;
 
