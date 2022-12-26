@@ -10,7 +10,8 @@ public class History : INotifyPropertyChanged
     public bool CanUndo => _undoStack.Count > 0;
     public bool CanRedo => _redoStack.Count > 0;
     public bool CanClear => CanUndo || CanRedo;
-    public (int UndoCount, int RedoCount) UndoRedoCount => (_undoStack.Count, _redoStack.Count);
+    public int UndoCount => _undoStack.Count;
+    public int RedoCount => _redoStack.Count;
     public int PauseDepth { get; private set; }
     public int BatchDepth { get; private set; }
 
@@ -106,9 +107,9 @@ public class History : INotifyPropertyChanged
         if (CanUndo == false)
             return;
 
-        var currentFlags = MakeCurrentFlags();
+        var currentFlags = CanUndoRedoClear;
         var currentUndoRedoCount = UndoRedoCount;
-        var currentDepth = (PauseDepth, BatchDepth);
+        var currentDepth = PauseBatchDepth;
 
         var action = _undoStack.Pop();
 
@@ -132,9 +133,9 @@ public class History : INotifyPropertyChanged
         if (CanRedo == false)
             return;
 
-        var currentFlags = MakeCurrentFlags();
+        var currentFlags = CanUndoRedoClear;
         var currentUndoRedoCount = UndoRedoCount;
-        var currentDepth = (PauseDepth, BatchDepth);
+        var currentDepth = PauseBatchDepth;
 
         var action = _redoStack.Pop();
 
@@ -161,9 +162,9 @@ public class History : INotifyPropertyChanged
             return;
         }
 
-        var currentFlags = MakeCurrentFlags();
+        var currentFlags = CanUndoRedoClear;
         var currentUndoRedoCount = UndoRedoCount;
-        var currentDepth = (PauseDepth, BatchDepth);
+        var currentDepth = PauseBatchDepth;
 
         _undoStack.Push(new HistoryAction(undo, redo));
 
@@ -175,9 +176,9 @@ public class History : INotifyPropertyChanged
 
     public void Clear()
     {
-        var currentFlags = MakeCurrentFlags();
+        var currentFlags = CanUndoRedoClear;
         var currentUndoRedoCount = UndoRedoCount;
-        var currentDepth = (PauseDepth, BatchDepth);
+        var currentDepth = PauseBatchDepth;
 
         _undoStack.Clear();
         _redoStack.Clear();
@@ -185,31 +186,38 @@ public class History : INotifyPropertyChanged
         InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
     }
 
-    private (bool CanUndo, bool CanRedo, bool CanClear) MakeCurrentFlags()
-        => (CanUndo, CanRedo, CanClear);
-
     private void InvokePropertyChanged(in (bool CanUndo, bool CanRedo, bool CanClear) flags, in (int UndoCount, int RedoCount) undoRedoCount, (int PauseDepth, int BatchDepth) depthCount)
     {
+        if (PropertyChanged is null)
+            return;
+        
         if (flags.CanUndo != CanUndo)
-            PropertyChanged?.Invoke(this, CanUndoArgs);
+            PropertyChanged.Invoke(this, CanUndoArgs);
 
         if (flags.CanRedo != CanRedo)
-            PropertyChanged?.Invoke(this, CanRedoArgs);
+            PropertyChanged.Invoke(this, CanRedoArgs);
 
         if (flags.CanClear != CanClear)
-            PropertyChanged?.Invoke(this, CanClearArgs);
+            PropertyChanged.Invoke(this, CanClearArgs);
 
-        if (undoRedoCount != UndoRedoCount)
-            PropertyChanged?.Invoke(this, CanUndoRedoCountArgs);
+        if (undoRedoCount.UndoCount != UndoCount)
+            PropertyChanged.Invoke(this, UndoCountArgs);
+        
+        if (undoRedoCount.RedoCount != RedoCount)
+            PropertyChanged.Invoke(this, RedoCountArgs);
 
-        if (depthCount != (PauseDepth, BatchDepth))
-        {
-            PropertyChanged?.Invoke(this, PauseDepthArgs);
-            PropertyChanged?.Invoke(this, BatchDepthArgs);
-        }
+        if (depthCount.PauseDepth != PauseDepth)
+            PropertyChanged.Invoke(this, PauseDepthArgs);
+        
+        if (depthCount.BatchDepth != BatchDepth)
+            PropertyChanged.Invoke(this, BatchDepthArgs);
     }
 
     internal bool IsInUndoing { get; private set; }
+    
+    private (int UndoCount, int RedoCount) UndoRedoCount => (UndoCount, RedoCount);
+    private (bool CanUndo, bool CanRedo, bool CanClear) CanUndoRedoClear => (CanUndo, CanRedo, CanClear);
+    private (int PauseDepth, int BatchDepth) PauseBatchDepth => (PauseDepth, BatchDepth);
 
     private readonly Stack<HistoryAction> _undoStack = new();
     private readonly Stack<HistoryAction> _redoStack = new();
@@ -217,7 +225,8 @@ public class History : INotifyPropertyChanged
     private static readonly PropertyChangedEventArgs CanUndoArgs = new(nameof(CanUndo));
     private static readonly PropertyChangedEventArgs CanRedoArgs = new(nameof(CanRedo));
     private static readonly PropertyChangedEventArgs CanClearArgs = new(nameof(CanClear));
-    private static readonly PropertyChangedEventArgs CanUndoRedoCountArgs = new(nameof(UndoRedoCount));
+    private static readonly PropertyChangedEventArgs UndoCountArgs = new(nameof(UndoCount));
+    private static readonly PropertyChangedEventArgs RedoCountArgs = new(nameof(RedoCount));
     private static readonly PropertyChangedEventArgs PauseDepthArgs = new(nameof(PauseDepth));
     private static readonly PropertyChangedEventArgs BatchDepthArgs = new(nameof(BatchDepth));
 

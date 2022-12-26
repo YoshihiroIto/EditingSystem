@@ -46,7 +46,8 @@ public class BatchEditingTests
 
         Assert.False(history.CanUndo);
         Assert.False(history.CanRedo);
-        Assert.Equal((0, 0), history.UndoRedoCount);
+        Assert.Equal(0, history.UndoCount);
+        Assert.Equal(0, history.RedoCount);
 
         history.BeginBatch();
         {
@@ -55,7 +56,8 @@ public class BatchEditingTests
 
         Assert.False(history.CanUndo);
         Assert.False(history.CanRedo);
-        Assert.Equal((0, 0), history.UndoRedoCount);
+        Assert.Equal(0, history.UndoCount);
+        Assert.Equal(0, history.RedoCount);
     }
 
     [Fact]
