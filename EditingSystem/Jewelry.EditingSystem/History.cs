@@ -70,7 +70,9 @@ public class History : INotifyPropertyChanged
     {
         Debug.Assert(_batchHistory is not null);
 
+#pragma warning disable CS8602
         if (_batchHistory.UndoRedoCount != (0, 0))
+#pragma warning restore CS8602
             Push(_batchHistory.UndoAll, _batchHistory.RedoAll);
 
         _batchHistory = null;
