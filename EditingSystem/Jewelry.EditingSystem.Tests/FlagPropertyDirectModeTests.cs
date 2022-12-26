@@ -195,19 +195,19 @@ public class FlagPropertyDirectModeTests
         public bool IsA
         {
             get => (_flags & FlagIsA) != default;
-            set => this.SetEditableFlagProperty(_history, v => _flags = v, _flags, FlagIsA, value);
+            set => this.SetEditableFlagProperty(_history, v => SetField(ref _flags, v), _flags, FlagIsA, value);
         }
 
         public bool IsB
         {
             get => (_flags & FlagIsB) != default;
-            set => this.SetEditableFlagProperty(_history, v => _flags = v, _flags, FlagIsB, value);
+            set => this.SetEditableFlagProperty(_history, v => SetField(ref _flags, v), _flags, FlagIsB, value);
         }
 
         public bool IsC
         {
             get => (_flags & FlagIsC) != default;
-            set => this.SetEditableFlagProperty(_history, v => _flags = v, _flags, FlagIsC, value);
+            set => this.SetEditableFlagProperty(_history, v => SetField(ref _flags, v), _flags, FlagIsC, value);
         }
 
         private T _flags;
@@ -223,7 +223,7 @@ public class FlagPropertyDirectModeTests
         }
 
         // ReSharper disable once UnusedMethodReturnValue.Local
-        private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+        private bool SetField(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
             if (EqualityComparer<T>.Default.Equals(field, value)) return false;
             field = value;

@@ -51,18 +51,19 @@ public class EditableModelBase : INotifyPropertyChanged
         return true;
     }
 
-    protected bool SetFlagPropertyWithoutHistory(ref uint storage, uint flag, bool value, [CallerMemberName] string propertyName = "")
+    protected bool SetFlagPropertyWithoutHistory<T>(ref T storage, T flag, bool value, [CallerMemberName] string propertyName = "")
+        where T : struct, IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>
     {
         if (value)
         {
-            if ((storage & flag) != 0)
+            if ((storage & flag) != default)
                 return false;
 
             storage |= flag;
         }
         else
         {
-            if ((storage & flag) == 0)
+            if ((storage & flag) == default)
                 return false;
 
             storage &= ~flag;
