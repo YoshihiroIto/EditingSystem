@@ -76,25 +76,10 @@ public class EditableModelBase : INotifyPropertyChanged
         }
 
         if (History is not null)
-            PushFlagPropertyHistory(History, setValue, propertyName, oldValue, nextValue);
+            PushPropertyHistory(History, setValue, propertyName, oldValue, nextValue);
 
         setValue(nextValue);
         RaisePropertyChanged(propertyName);
-    }
-
-    private void PushFlagPropertyHistory(History history, Action<uint> setValue, string propertyName, uint oldValue, uint nextValue)
-    {
-        history.Push(
-            () =>
-            {
-                setValue(oldValue);
-                RaisePropertyChanged(propertyName);
-            },
-            () =>
-            {
-                setValue(nextValue);
-                RaisePropertyChanged(propertyName);
-            });
     }
 
     #region Without History
