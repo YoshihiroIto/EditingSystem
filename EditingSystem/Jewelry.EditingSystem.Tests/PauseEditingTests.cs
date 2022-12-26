@@ -120,9 +120,8 @@ public class PauseEditingTests
 
     public class TestModel : EditableModelBase
     {
-        public TestModel(History history)
+        public TestModel(History history) : base(history)
         {
-            SetupEditingSystem(history);
         }
 
         #region ValueA

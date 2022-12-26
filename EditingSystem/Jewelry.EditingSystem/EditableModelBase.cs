@@ -9,11 +9,9 @@ namespace Jewelry.EditingSystem;
 
 public class EditableModelBase : INotifyPropertyChanged
 {
-    protected History History { get; private set; }
-
-    protected void SetupEditingSystem(History history)
+    protected EditableModelBase(History history)
     {
-        History = history;
+        _history = history;
     }
 
     protected void SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue, [CallerMemberName] string propertyName = "")
@@ -24,7 +22,7 @@ public class EditableModelBase : INotifyPropertyChanged
             RaisePropertyChanged(propertyName);
         }
         
-        EditablePropertyCommon.SetEditableProperty(History, SetValueWithRaisePropertyChanged, currentValue, nextValue, propertyName);
+        EditablePropertyCommon.SetEditableProperty(_history, SetValueWithRaisePropertyChanged, currentValue, nextValue, propertyName);
     }
 
     protected void SetEditableFlagProperty(Action<uint> setValue, uint currentValue, uint flag, bool value, [CallerMemberName] string propertyName = "")
@@ -35,7 +33,7 @@ public class EditableModelBase : INotifyPropertyChanged
             RaisePropertyChanged(propertyName);
         }
         
-       EditablePropertyCommon.SetEditableFlagProperty(History, SetValueWithRaisePropertyChanged, currentValue, flag, value, propertyName);
+        EditablePropertyCommon.SetEditableFlagProperty(_history, SetValueWithRaisePropertyChanged, currentValue, flag, value, propertyName);
         
     }
 
@@ -103,4 +101,6 @@ public class EditableModelBase : INotifyPropertyChanged
     }
 
     #endregion
+    
+    private readonly History _history;
 }

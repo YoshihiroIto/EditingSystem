@@ -32,9 +32,8 @@ public class UndoRedoCountTests
 
     public class TestModel : EditableModelBase
     {
-        public TestModel(History history)
+        public TestModel(History history) : base(history)
         {
-            SetupEditingSystem(history);
         }
 
         #region IntValue
