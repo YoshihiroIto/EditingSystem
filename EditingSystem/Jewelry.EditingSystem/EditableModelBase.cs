@@ -155,7 +155,7 @@ public class EditableModelBase : INotifyPropertyChanged
                 {
                     void Redo()
                     {
-                        var list = (IList) sender;
+                        var list = (IList)sender;
 
                         var addItems = e.NewItems;
                         var addCount = addItems.Count;
@@ -173,7 +173,7 @@ public class EditableModelBase : INotifyPropertyChanged
 
                     void Undo()
                     {
-                        var list = (IList) sender;
+                        var list = (IList)sender;
 
                         var addItems = e.NewItems;
                         var addCount = addItems.Count;
@@ -215,7 +215,7 @@ public class EditableModelBase : INotifyPropertyChanged
 
                     void Redo()
                     {
-                        var list = (IList) sender;
+                        var list = (IList)sender;
 
                         var src = e.OldStartingIndex;
                         var dst = e.NewStartingIndex;
@@ -234,7 +234,7 @@ public class EditableModelBase : INotifyPropertyChanged
 
                     void Undo()
                     {
-                        var list = (IList) sender;
+                        var list = (IList)sender;
 
                         var src = e.NewStartingIndex;
                         var dst = e.OldStartingIndex;
@@ -273,7 +273,7 @@ public class EditableModelBase : INotifyPropertyChanged
 
                     void Redo()
                     {
-                        var list = (IList) sender;
+                        var list = (IList)sender;
 
                         item = list[e.OldStartingIndex];
                         list.RemoveAt(e.OldStartingIndex);
@@ -287,7 +287,7 @@ public class EditableModelBase : INotifyPropertyChanged
 
                     void Undo()
                     {
-                        var list = (IList) sender;
+                        var list = (IList)sender;
 
                         list.Insert(e.OldStartingIndex, item);
 
@@ -321,7 +321,7 @@ public class EditableModelBase : INotifyPropertyChanged
 
                     void Redo()
                     {
-                        var list = (IList) sender;
+                        var list = (IList)sender;
 
                         var index = e.OldStartingIndex;
                         var oldItem = list[index];
@@ -339,7 +339,7 @@ public class EditableModelBase : INotifyPropertyChanged
 
                     void Undo()
                     {
-                        var list = (IList) sender;
+                        var list = (IList)sender;
 
                         var index = e.OldStartingIndex;
                         var oldItem = list[index];

@@ -33,6 +33,7 @@ public class History : INotifyPropertyChanged
 
         --PauseDepth;
     }
+
     #endregion
 
     #region Batch
@@ -190,7 +191,7 @@ public class History : INotifyPropertyChanged
     {
         if (PropertyChanged is null)
             return;
-        
+
         if (flags.CanUndo != CanUndo)
             PropertyChanged.Invoke(this, CanUndoArgs);
 
@@ -202,19 +203,19 @@ public class History : INotifyPropertyChanged
 
         if (undoRedoCount.UndoCount != UndoCount)
             PropertyChanged.Invoke(this, UndoCountArgs);
-        
+
         if (undoRedoCount.RedoCount != RedoCount)
             PropertyChanged.Invoke(this, RedoCountArgs);
 
         if (depthCount.PauseDepth != PauseDepth)
             PropertyChanged.Invoke(this, PauseDepthArgs);
-        
+
         if (depthCount.BatchDepth != BatchDepth)
             PropertyChanged.Invoke(this, BatchDepthArgs);
     }
 
     internal bool IsInUndoing { get; private set; }
-    
+
     private (int UndoCount, int RedoCount) UndoRedoCount => (UndoCount, RedoCount);
     private (bool CanUndo, bool CanRedo, bool CanClear) CanUndoRedoClear => (CanUndo, CanRedo, CanClear);
     private (int PauseDepth, int BatchDepth) PauseBatchDepth => (PauseDepth, BatchDepth);
