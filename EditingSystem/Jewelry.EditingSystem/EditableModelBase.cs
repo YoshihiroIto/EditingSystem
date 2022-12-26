@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -146,29 +147,16 @@ namespace Jewelry.EditingSystem
 
         protected void RaisePropertyChanged([CallerMemberName] string propertyName = "")
         {
-            // ReSharper disable once InconsistentlySynchronizedField
-            var pc = (PropertyChangedEventArgs) _propChanged[propertyName];
+            if (PropertyChanged is null)
+                return;
 
-            if (pc == null)
-            {
-                // double-checked;
-                lock (_propChanged)
-                {
-                    pc = (PropertyChangedEventArgs) _propChanged[propertyName];
+            var pc = PropChanged.GetOrAdd(propertyName, name => new PropertyChangedEventArgs(name));
 
-                    if (pc == null)
-                    {
-                        pc = new PropertyChangedEventArgs(propertyName);
-                        _propChanged[propertyName] = pc;
-                    }
-                }
-            }
-
-            PropertyChanged?.Invoke(this, pc);
+            PropertyChanged.Invoke(this, pc);
         }
 
         // use Hashtable to get free lockless reading
-        private static readonly Hashtable _propChanged = new Hashtable();
+        private static readonly ConcurrentDictionary<string, PropertyChangedEventArgs> PropChanged = new();
 
         #endregion
 
@@ -185,232 +173,232 @@ namespace Jewelry.EditingSystem
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
-                {
-                    void Redo()
                     {
-                        var list = (IList) sender;
+                        void Redo()
+                        {
+                            var list = (IList) sender;
 
-                        var addItems = e.NewItems;
-                        var addCount = addItems.Count;
-                        var addIndex = e.NewStartingIndex;
+                            var addItems = e.NewItems;
+                            var addCount = addItems.Count;
+                            var addIndex = e.NewStartingIndex;
+
+                            // ICollectionItem
+                            for (var i = 0; i != addCount; ++i)
+                            {
+                                list.Insert(addIndex + i, addItems[i]);
+
+                                if (addItems[i] is ICollectionItem collItem)
+                                    collItem.Changed(CollectionItemChangedInfo.Add);
+                            }
+                        }
+
+                        void Undo()
+                        {
+                            var list = (IList) sender;
+
+                            var addItems = e.NewItems;
+                            var addCount = addItems.Count;
+                            var addIndex = e.NewStartingIndex;
+
+                            // ICollectionItem
+                            for (var i = 0; i != addCount; ++i)
+                            {
+                                list.RemoveAt(addIndex + i);
+
+                                if (addItems[i] is ICollectionItem collItem)
+                                    collItem.Changed(CollectionItemChangedInfo.Remove);
+                            }
+                        }
 
                         // ICollectionItem
-                        for (var i = 0; i != addCount; ++i)
                         {
-                            list.Insert(addIndex + i, addItems[i]);
+                            var addItems = e.NewItems;
+                            var addCount = addItems.Count;
 
-                            if (addItems[i] is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Add);
+                            for (var i = 0; i != addCount; ++i)
+                            {
+                                if (addItems[i] is ICollectionItem collItem)
+                                    collItem.Changed(CollectionItemChangedInfo.Add);
+                            }
                         }
+
+                        History.Push(Undo, Redo);
+                        break;
                     }
-
-                    void Undo()
-                    {
-                        var list = (IList) sender;
-
-                        var addItems = e.NewItems;
-                        var addCount = addItems.Count;
-                        var addIndex = e.NewStartingIndex;
-
-                        // ICollectionItem
-                        for (var i = 0; i != addCount; ++i)
-                        {
-                            list.RemoveAt(addIndex + i);
-
-                            if (addItems[i] is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Remove);
-                        }
-                    }
-
-                    // ICollectionItem
-                    {
-                        var addItems = e.NewItems;
-                        var addCount = addItems.Count;
-
-                        for (var i = 0; i != addCount; ++i)
-                        {
-                            if (addItems[i] is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Add);
-                        }
-                    }
-
-                    History.Push(Undo, Redo);
-                    break;
-                }
 
                 case NotifyCollectionChangedAction.Move:
-                {
-                    if (e.OldItems.Count != 1)
-                        throw new NotImplementedException();
-
-                    if (e.NewItems.Count != 1)
-                        throw new NotImplementedException();
-
-                    void Redo()
                     {
-                        var list = (IList) sender;
+                        if (e.OldItems.Count != 1)
+                            throw new NotImplementedException();
 
-                        var src = e.OldStartingIndex;
-                        var dst = e.NewStartingIndex;
+                        if (e.NewItems.Count != 1)
+                            throw new NotImplementedException();
 
-                        var item = list[src];
-                        list.RemoveAt(src);
+                        void Redo()
+                        {
+                            var list = (IList) sender;
 
-                        list.Insert(dst, item);
+                            var src = e.OldStartingIndex;
+                            var dst = e.NewStartingIndex;
+
+                            var item = list[src];
+                            list.RemoveAt(src);
+
+                            list.Insert(dst, item);
+
+                            // ICollectionItem
+                            {
+                                if (item is ICollectionItem collItem)
+                                    collItem.Changed(CollectionItemChangedInfo.Move);
+                            }
+                        }
+
+                        void Undo()
+                        {
+                            var list = (IList) sender;
+
+                            var src = e.NewStartingIndex;
+                            var dst = e.OldStartingIndex;
+
+                            var item = list[src];
+                            list.RemoveAt(src);
+
+                            list.Insert(dst, item);
+
+                            // ICollectionItem
+                            {
+                                if (item is ICollectionItem collItem)
+                                    collItem.Changed(CollectionItemChangedInfo.Move);
+                            }
+                        }
 
                         // ICollectionItem
                         {
-                            if (item is ICollectionItem collItem)
+                            if (e.OldItems[0] is ICollectionItem collItem)
                                 collItem.Changed(CollectionItemChangedInfo.Move);
                         }
+
+                        History.Push(Undo, Redo);
+                        break;
                     }
-
-                    void Undo()
-                    {
-                        var list = (IList) sender;
-
-                        var src = e.NewStartingIndex;
-                        var dst = e.OldStartingIndex;
-
-                        var item = list[src];
-                        list.RemoveAt(src);
-
-                        list.Insert(dst, item);
-
-                        // ICollectionItem
-                        {
-                            if (item is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Move);
-                        }
-                    }
-
-                    // ICollectionItem
-                    {
-                        if (e.OldItems[0] is ICollectionItem collItem)
-                            collItem.Changed(CollectionItemChangedInfo.Move);
-                    }
-
-                    History.Push(Undo, Redo);
-                    break;
-                }
 
                 case NotifyCollectionChangedAction.Remove:
-                {
-                    if (e.OldItems.Count != 1)
-                        throw new NotImplementedException();
-
-                    if (e.NewItems != null)
-                        throw new NotImplementedException();
-
-                    var item = e.OldItems[0];
-
-                    void Redo()
                     {
-                        var list = (IList) sender;
+                        if (e.OldItems.Count != 1)
+                            throw new NotImplementedException();
 
-                        item = list[e.OldStartingIndex];
-                        list.RemoveAt(e.OldStartingIndex);
+                        if (e.NewItems != null)
+                            throw new NotImplementedException();
+
+                        var item = e.OldItems[0];
+
+                        void Redo()
+                        {
+                            var list = (IList) sender;
+
+                            item = list[e.OldStartingIndex];
+                            list.RemoveAt(e.OldStartingIndex);
+
+                            // ICollectionItem
+                            {
+                                if (item is ICollectionItem collItem)
+                                    collItem.Changed(CollectionItemChangedInfo.Remove);
+                            }
+                        }
+
+                        void Undo()
+                        {
+                            var list = (IList) sender;
+
+                            list.Insert(e.OldStartingIndex, item);
+
+                            // ICollectionItem
+                            {
+                                if (item is ICollectionItem collItem)
+                                    collItem.Changed(CollectionItemChangedInfo.Add);
+                            }
+                        }
 
                         // ICollectionItem
                         {
-                            if (item is ICollectionItem collItem)
+                            if (e.OldItems[0] is ICollectionItem collItem)
                                 collItem.Changed(CollectionItemChangedInfo.Remove);
                         }
+
+                        History.Push(Undo, Redo);
+                        break;
                     }
-
-                    void Undo()
-                    {
-                        var list = (IList) sender;
-
-                        list.Insert(e.OldStartingIndex, item);
-
-                        // ICollectionItem
-                        {
-                            if (item is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Add);
-                        }
-                    }
-
-                    // ICollectionItem
-                    {
-                        if (e.OldItems[0] is ICollectionItem collItem)
-                            collItem.Changed(CollectionItemChangedInfo.Remove);
-                    }
-
-                    History.Push(Undo, Redo);
-                    break;
-                }
 
                 case NotifyCollectionChangedAction.Replace:
-                {
-                    if (e.OldItems.Count != 1)
-                        throw new NotImplementedException();
-
-                    if (e.NewItems.Count != 1)
-                        throw new NotImplementedException();
-
-                    if (e.NewStartingIndex != e.OldStartingIndex)
-                        throw new NotImplementedException();
-
-                    void Redo()
                     {
-                        var list = (IList) sender;
+                        if (e.OldItems.Count != 1)
+                            throw new NotImplementedException();
 
-                        var index = e.OldStartingIndex;
-                        var oldItem = list[index];
-                        list[index] = e.NewItems[0];
+                        if (e.NewItems.Count != 1)
+                            throw new NotImplementedException();
+
+                        if (e.NewStartingIndex != e.OldStartingIndex)
+                            throw new NotImplementedException();
+
+                        void Redo()
+                        {
+                            var list = (IList) sender;
+
+                            var index = e.OldStartingIndex;
+                            var oldItem = list[index];
+                            list[index] = e.NewItems[0];
+
+                            // ICollectionItem
+                            {
+                                if (oldItem is ICollectionItem oldCollItem)
+                                    oldCollItem.Changed(CollectionItemChangedInfo.Remove);
+
+                                if (list[index] is ICollectionItem collItem)
+                                    collItem.Changed(CollectionItemChangedInfo.Add);
+                            }
+                        }
+
+                        void Undo()
+                        {
+                            var list = (IList) sender;
+
+                            var index = e.OldStartingIndex;
+                            var oldItem = list[index];
+                            list[index] = e.OldItems[0];
+
+                            // ICollectionItem
+                            {
+                                if (oldItem is ICollectionItem oldCollItem)
+                                    oldCollItem.Changed(CollectionItemChangedInfo.Add);
+
+                                if (list[index] is ICollectionItem collItem)
+                                    collItem.Changed(CollectionItemChangedInfo.Remove);
+                            }
+                        }
 
                         // ICollectionItem
                         {
-                            if (oldItem is ICollectionItem oldCollItem)
+                            if (e.OldItems[0] is ICollectionItem oldCollItem)
                                 oldCollItem.Changed(CollectionItemChangedInfo.Remove);
 
-                            if (list[index] is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Add);
+                            if (e.NewItems[0] is ICollectionItem newCollItem)
+                                newCollItem.Changed(CollectionItemChangedInfo.Add);
                         }
+
+                        History.Push(Undo, Redo);
+                        break;
                     }
-
-                    void Undo()
-                    {
-                        var list = (IList) sender;
-
-                        var index = e.OldStartingIndex;
-                        var oldItem = list[index];
-                        list[index] = e.OldItems[0];
-
-                        // ICollectionItem
-                        {
-                            if (oldItem is ICollectionItem oldCollItem)
-                                oldCollItem.Changed(CollectionItemChangedInfo.Add);
-
-                            if (list[index] is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Remove);
-                        }
-                    }
-
-                    // ICollectionItem
-                    {
-                        if (e.OldItems[0] is ICollectionItem oldCollItem)
-                            oldCollItem.Changed(CollectionItemChangedInfo.Remove);
-
-                        if (e.NewItems[0] is ICollectionItem newCollItem)
-                            newCollItem.Changed(CollectionItemChangedInfo.Add);
-                    }
-
-                    History.Push(Undo, Redo);
-                    break;
-                }
 
                 case NotifyCollectionChangedAction.Reset:
-                {
-                    if (History == null)
-                        break;
+                    {
+                        if (History == null)
+                            break;
 
-                    if (History.IsInPaused)
-                        break;
+                        if (History.IsInPaused)
+                            break;
 
-                    throw new NotSupportedException("Clear() is not support. Use ClearEx()");
-                }
+                        throw new NotSupportedException("Clear() is not support. Use ClearEx()");
+                    }
 
                 default:
                     throw new ArgumentOutOfRangeException();
