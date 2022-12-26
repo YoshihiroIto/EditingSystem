@@ -1,13 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Xunit;
 
 // ReSharper disable UseObjectOrCollectionInitializer
 
 namespace Jewelry.EditingSystem.Tests;
 
-public class CollectionPropertyTests
+public class CollectionPropertyDirectModeTests
 {
     [Fact]
     public void Add()
@@ -303,11 +306,13 @@ public class CollectionPropertyTests
         Assert.NotEqual(oldCount, count);
     }
 
-    public class TestModel : EditableModelBase
+    public class TestModel : INotifyPropertyChanged
     {
+        private readonly History _history;
+        
         public TestModel(History history)
         {
-            SetupEditingSystem(history);
+            _history = history;
         }
 
         #region IntCollection
@@ -317,9 +322,26 @@ public class CollectionPropertyTests
         public ObservableCollection<int> IntCollection
         {
             get => _IntCollection;
-            set => SetEditableProperty(v => _IntCollection = v, _IntCollection, value);
+            set => this.SetEditableProperty(_history, v => SetField(ref _IntCollection, v), _IntCollection, value);
         }
 
         #endregion
+        
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        // ReSharper disable once UnusedMethodReturnValue.Local
+        private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
+        
     }
 }

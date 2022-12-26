@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Xunit;
 
 namespace Jewelry.EditingSystem.Tests;
 
-public class BatchEditingTests
+public class BatchEditingDirectModeTests
 {
     [Fact]
     public void Basic()
@@ -160,11 +163,13 @@ public class BatchEditingTests
         );
     }
 
-    public class TestModel : EditableModelBase
+    public class TestModel : INotifyPropertyChanged
     {
+        private readonly History _history;
+
         public TestModel(History history)
         {
-            SetupEditingSystem(history);
+            _history = history;
         }
 
         #region ValueA
@@ -174,7 +179,7 @@ public class BatchEditingTests
         public int ValueA
         {
             get => _ValueA;
-            set => SetEditableProperty(v => _ValueA = v, _ValueA, value);
+            set => this.SetEditableProperty(_history, v => SetField(ref _ValueA, v), _ValueA, value);
         }
 
         #endregion
@@ -186,9 +191,25 @@ public class BatchEditingTests
         public string ValueB
         {
             get => _ValueB;
-            set => SetEditableProperty(v => _ValueB = v, _ValueB, value);
+            set => this.SetEditableProperty(_history, v => SetField(ref _ValueB, v), _ValueB, value);
         }
 
         #endregion
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        // ReSharper disable once UnusedMethodReturnValue.Local
+        private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
     }
 }

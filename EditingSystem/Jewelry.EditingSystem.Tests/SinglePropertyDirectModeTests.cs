@@ -1,19 +1,20 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Xunit;
 
 namespace Jewelry.EditingSystem.Tests;
 
-public class SinglePropertyTests
+public class SinglePropertyDirectModeTests
 {
     [Fact]
     public void Basic()
     {
         var history = new History();
         var model = new TestModel(history);
-
-        Assert.Equal(0, model.IntValue);
-        Assert.False(history.CanUndo);
-        Assert.False(history.CanRedo);
+        
+        Assert.Equal(0, history.UndoCount);
+        Assert.Equal(0, history.RedoCount);
 
         //------------------------------------------------
         model.IntValue = 123;
@@ -75,7 +76,7 @@ public class SinglePropertyTests
         Assert.True(history.CanUndo);
         Assert.False(history.CanRedo);
     }
-
+    
     [Fact]
     public void PropertyChanged()
     {
@@ -104,7 +105,7 @@ public class SinglePropertyTests
         history.Redo();
         Assert.Equal(4, count);
     }
-
+    
     [Fact]
     public void PropertyChanged_CanUndo_CanRedo_CanClear()
     {
@@ -185,14 +186,16 @@ public class SinglePropertyTests
         Assert.False(history.CanRedo);
         Assert.False(history.CanClear);
     }
-
-    public class TestModel : EditableModelBase
+    
+    public sealed class TestModel : INotifyPropertyChanged
     {
+        private readonly History _history;
+
         public TestModel(History history)
         {
-            SetupEditingSystem(history);
+            _history = history;
         }
-
+        
         #region IntValue
 
         private int _IntValue;
@@ -200,9 +203,25 @@ public class SinglePropertyTests
         public int IntValue
         {
             get => _IntValue;
-            set => SetEditableProperty(v => _IntValue = v, _IntValue, value);
+            set => this.SetEditableProperty(_history, v => SetField(ref _IntValue, v), _IntValue, value);
         }
 
         #endregion
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        // ReSharper disable once UnusedMethodReturnValue.Local
+        private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
     }
 }

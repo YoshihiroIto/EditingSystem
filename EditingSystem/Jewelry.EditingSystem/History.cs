@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 
@@ -185,6 +187,243 @@ public class History : INotifyPropertyChanged
         _redoStack.Clear();
 
         InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
+    }
+    
+    internal void OnCollectionPropertyCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (IsInUndoing)
+            return;
+
+        switch (e.Action)
+        {
+            case NotifyCollectionChangedAction.Add:
+                {
+                    void Redo()
+                    {
+                        var list = (IList)sender;
+
+                        var addItems = e.NewItems;
+                        var addCount = addItems.Count;
+                        var addIndex = e.NewStartingIndex;
+
+                        // ICollectionItem
+                        for (var i = 0; i != addCount; ++i)
+                        {
+                            list.Insert(addIndex + i, addItems[i]);
+
+                            if (addItems[i] is ICollectionItem collItem)
+                                collItem.Changed(CollectionItemChangedInfo.Add);
+                        }
+                    }
+
+                    void Undo()
+                    {
+                        var list = (IList)sender;
+
+                        var addItems = e.NewItems;
+                        var addCount = addItems.Count;
+                        var addIndex = e.NewStartingIndex;
+
+                        // ICollectionItem
+                        for (var i = 0; i != addCount; ++i)
+                        {
+                            list.RemoveAt(addIndex + i);
+
+                            if (addItems[i] is ICollectionItem collItem)
+                                collItem.Changed(CollectionItemChangedInfo.Remove);
+                        }
+                    }
+
+                    // ICollectionItem
+                    {
+                        var addItems = e.NewItems;
+                        var addCount = addItems.Count;
+
+                        for (var i = 0; i != addCount; ++i)
+                        {
+                            if (addItems[i] is ICollectionItem collItem)
+                                collItem.Changed(CollectionItemChangedInfo.Add);
+                        }
+                    }
+
+                    Push(Undo, Redo);
+                    break;
+                }
+
+            case NotifyCollectionChangedAction.Move:
+                {
+                    if (e.OldItems.Count != 1)
+                        throw new NotImplementedException();
+
+                    if (e.NewItems.Count != 1)
+                        throw new NotImplementedException();
+
+                    void Redo()
+                    {
+                        var list = (IList)sender;
+
+                        var src = e.OldStartingIndex;
+                        var dst = e.NewStartingIndex;
+
+                        var item = list[src];
+                        list.RemoveAt(src);
+
+                        list.Insert(dst, item);
+
+                        // ICollectionItem
+                        {
+                            if (item is ICollectionItem collItem)
+                                collItem.Changed(CollectionItemChangedInfo.Move);
+                        }
+                    }
+
+                    void Undo()
+                    {
+                        var list = (IList)sender;
+
+                        var src = e.NewStartingIndex;
+                        var dst = e.OldStartingIndex;
+
+                        var item = list[src];
+                        list.RemoveAt(src);
+
+                        list.Insert(dst, item);
+
+                        // ICollectionItem
+                        {
+                            if (item is ICollectionItem collItem)
+                                collItem.Changed(CollectionItemChangedInfo.Move);
+                        }
+                    }
+
+                    // ICollectionItem
+                    {
+                        if (e.OldItems[0] is ICollectionItem collItem)
+                            collItem.Changed(CollectionItemChangedInfo.Move);
+                    }
+
+                    Push(Undo, Redo);
+                    break;
+                }
+
+            case NotifyCollectionChangedAction.Remove:
+                {
+                    if (e.OldItems.Count != 1)
+                        throw new NotImplementedException();
+
+                    if (e.NewItems is not null)
+                        throw new NotImplementedException();
+
+                    var item = e.OldItems[0];
+
+                    void Redo()
+                    {
+                        var list = (IList)sender;
+
+                        item = list[e.OldStartingIndex];
+                        list.RemoveAt(e.OldStartingIndex);
+
+                        // ICollectionItem
+                        {
+                            if (item is ICollectionItem collItem)
+                                collItem.Changed(CollectionItemChangedInfo.Remove);
+                        }
+                    }
+
+                    void Undo()
+                    {
+                        var list = (IList)sender;
+
+                        list.Insert(e.OldStartingIndex, item);
+
+                        // ICollectionItem
+                        {
+                            if (item is ICollectionItem collItem)
+                                collItem.Changed(CollectionItemChangedInfo.Add);
+                        }
+                    }
+
+                    // ICollectionItem
+                    {
+                        if (e.OldItems[0] is ICollectionItem collItem)
+                            collItem.Changed(CollectionItemChangedInfo.Remove);
+                    }
+
+                    Push(Undo, Redo);
+                    break;
+                }
+
+            case NotifyCollectionChangedAction.Replace:
+                {
+                    if (e.OldItems.Count != 1)
+                        throw new NotImplementedException();
+
+                    if (e.NewItems.Count != 1)
+                        throw new NotImplementedException();
+
+                    if (e.NewStartingIndex != e.OldStartingIndex)
+                        throw new NotImplementedException();
+
+                    void Redo()
+                    {
+                        var list = (IList)sender;
+
+                        var index = e.OldStartingIndex;
+                        var oldItem = list[index];
+                        list[index] = e.NewItems[0];
+
+                        // ICollectionItem
+                        {
+                            if (oldItem is ICollectionItem oldCollItem)
+                                oldCollItem.Changed(CollectionItemChangedInfo.Remove);
+
+                            if (list[index] is ICollectionItem collItem)
+                                collItem.Changed(CollectionItemChangedInfo.Add);
+                        }
+                    }
+
+                    void Undo()
+                    {
+                        var list = (IList)sender;
+
+                        var index = e.OldStartingIndex;
+                        var oldItem = list[index];
+                        list[index] = e.OldItems[0];
+
+                        // ICollectionItem
+                        {
+                            if (oldItem is ICollectionItem oldCollItem)
+                                oldCollItem.Changed(CollectionItemChangedInfo.Add);
+
+                            if (list[index] is ICollectionItem collItem)
+                                collItem.Changed(CollectionItemChangedInfo.Remove);
+                        }
+                    }
+
+                    // ICollectionItem
+                    {
+                        if (e.OldItems[0] is ICollectionItem oldCollItem)
+                            oldCollItem.Changed(CollectionItemChangedInfo.Remove);
+
+                        if (e.NewItems[0] is ICollectionItem newCollItem)
+                            newCollItem.Changed(CollectionItemChangedInfo.Add);
+                    }
+
+                    Push(Undo, Redo);
+                    break;
+                }
+
+            case NotifyCollectionChangedAction.Reset:
+                {
+                    if (IsInPaused)
+                        break;
+
+                    throw new NotSupportedException("Clear() is not support. Use ClearEx()");
+                }
+
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
     }
 
     private void InvokePropertyChanged(in (bool CanUndo, bool CanRedo, bool CanClear) flags, in (int UndoCount, int RedoCount) undoRedoCount, (int PauseDepth, int BatchDepth) depthCount)

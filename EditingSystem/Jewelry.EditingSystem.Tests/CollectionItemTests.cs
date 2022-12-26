@@ -613,7 +613,7 @@ public class CollectionItemTests
 
         #region Collection
 
-        private ObservableCollection<CollectionItem> _Collection;
+        private ObservableCollection<CollectionItem> _Collection = new();
 
         public ObservableCollection<CollectionItem> Collection
         {
