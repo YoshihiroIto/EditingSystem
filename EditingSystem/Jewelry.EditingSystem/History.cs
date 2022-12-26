@@ -61,14 +61,14 @@ public class History : INotifyPropertyChanged
 
     private void BeginBatchInternal()
     {
-        Debug.Assert(_batchHistory == null);
+        Debug.Assert(_batchHistory is null);
 
         _batchHistory = new BatchHistory();
     }
 
     private void EndBatchInternal()
     {
-        Debug.Assert(_batchHistory != null);
+        Debug.Assert(_batchHistory is not null);
 
         if (_batchHistory.UndoRedoCount != (0, 0))
             Push(_batchHistory.UndoAll, _batchHistory.RedoAll);
@@ -152,7 +152,7 @@ public class History : INotifyPropertyChanged
 
         if (IsInBatch)
         {
-            if (_batchHistory == null)
+            if (_batchHistory is null)
                 throw new NullReferenceException();
 
             _batchHistory.Push(undo, redo);

@@ -19,7 +19,7 @@ public class EditableModelBase : INotifyPropertyChanged
 
     protected void SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue, [CallerMemberName] string propertyName = "")
     {
-        if (History != null)
+        if (History is not null)
             if (History.OnSetValue(this, currentValue, nextValue, propertyName) == OnSetValueResult.Cancel)
                 return;
 
@@ -28,7 +28,7 @@ public class EditableModelBase : INotifyPropertyChanged
 
         var oldValue = currentValue;
 
-        if (History != null)
+        if (History is not null)
             PushPropertyHistory(History, setValue, propertyName, oldValue, nextValue);
 
         // INotifyCollectionChanged
@@ -79,7 +79,7 @@ public class EditableModelBase : INotifyPropertyChanged
             nextValue &= ~flag;
         }
 
-        if (History != null)
+        if (History is not null)
             PushFlagPropertyHistory(History, setValue, propertyName, oldValue, nextValue);
 
         setValue(nextValue);
@@ -162,7 +162,7 @@ public class EditableModelBase : INotifyPropertyChanged
 
     private void CollectionOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
     {
-        if (History == null)
+        if (History is null)
             return;
 
         if (History.IsInUndoing)
@@ -285,7 +285,7 @@ public class EditableModelBase : INotifyPropertyChanged
                     if (e.OldItems.Count != 1)
                         throw new NotImplementedException();
 
-                    if (e.NewItems != null)
+                    if (e.NewItems is not null)
                         throw new NotImplementedException();
 
                     var item = e.OldItems[0];
@@ -389,7 +389,7 @@ public class EditableModelBase : INotifyPropertyChanged
 
             case NotifyCollectionChangedAction.Reset:
                 {
-                    if (History == null)
+                    if (History is null)
                         break;
 
                     if (History.IsInPaused)
