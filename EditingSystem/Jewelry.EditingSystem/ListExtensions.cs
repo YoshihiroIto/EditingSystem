@@ -1,17 +1,16 @@
 ﻿using System.Collections.Generic;
 
-namespace Jewelry.EditingSystem
+namespace Jewelry.EditingSystem;
+
+public static class ListExtensions
 {
-    public static class ListExtensions
+    public static void ClearEx<T>(this IList<T> self, History history)
     {
-        public static void ClearEx<T>(this IList<T> self, History history)
-        {
-            history.BeginBatch();
+        history.BeginBatch();
 
-            while (self.Count != 0)
-                self.RemoveAt(self.Count - 1);
+        while (self.Count != 0)
+            self.RemoveAt(self.Count - 1);
 
-            history.EndBatch();
-        }
+        history.EndBatch();
     }
 }

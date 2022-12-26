@@ -1,8 +1,7 @@
-﻿namespace Jewelry.EditingSystem
+﻿namespace Jewelry.EditingSystem;
+
+public enum OnSetValueResult
 {
-    public enum OnSetValueResult
-    {
-        Ok,
-        Cancel
-    }
+    Ok,
+    Cancel
 }

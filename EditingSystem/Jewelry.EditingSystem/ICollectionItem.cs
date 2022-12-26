@@ -1,28 +1,27 @@
-﻿namespace Jewelry.EditingSystem
+﻿namespace Jewelry.EditingSystem;
+
+public interface ICollectionItem
 {
-    public interface ICollectionItem
+    void Changed(in CollectionItemChangedInfo info);
+}
+
+public readonly struct CollectionItemChangedInfo
+{
+    public readonly CollectionItemChangedType Type;
+
+    private CollectionItemChangedInfo(in CollectionItemChangedType type)
     {
-        void Changed(in CollectionItemChangedInfo info);
+        Type = type;
     }
 
-    public readonly struct CollectionItemChangedInfo
-    {
-        public readonly CollectionItemChangedType Type;
+    public static readonly CollectionItemChangedInfo Add = new(CollectionItemChangedType.Add);
+    public static readonly CollectionItemChangedInfo Remove = new(CollectionItemChangedType.Remove);
+    public static readonly CollectionItemChangedInfo Move = new(CollectionItemChangedType.Move);
+}
 
-        private CollectionItemChangedInfo(in CollectionItemChangedType type)
-        {
-            Type = type;
-        }
-
-        public static readonly CollectionItemChangedInfo Add = new CollectionItemChangedInfo(CollectionItemChangedType.Add);
-        public static readonly CollectionItemChangedInfo Remove = new CollectionItemChangedInfo(CollectionItemChangedType.Remove);
-        public static readonly CollectionItemChangedInfo Move = new CollectionItemChangedInfo(CollectionItemChangedType.Move);
-    }
-
-    public enum CollectionItemChangedType
-    {
-        Add,
-        Remove,
-        Move
-    }
+public enum CollectionItemChangedType
+{
+    Add,
+    Remove,
+    Move
 }
