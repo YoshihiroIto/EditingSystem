@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace Jewelry.EditingSystem;
@@ -16,19 +17,11 @@ public static class NotifyPropertyChangedExtensionsForDirectMode
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void SetEditableFlagProperty(
+    public static void SetEditableFlagProperty<T>(
         this INotifyPropertyChanged self, 
         History history,
-        Action<uint> setValue, uint currentValue, uint flag, bool value)
-    {
-        EditablePropertyCommon.SetEditableFlagProperty(history, setValue, currentValue, flag, value);
-    }
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void SetEditableFlagProperty(
-        this INotifyPropertyChanged self, 
-        History history,
-        Action<ulong> setValue, ulong currentValue, ulong flag, bool value)
+        Action<T> setValue, T currentValue, T flag, bool value)
+        where T : IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>
     {
         EditablePropertyCommon.SetEditableFlagProperty(history, setValue, currentValue, flag, value);
     }

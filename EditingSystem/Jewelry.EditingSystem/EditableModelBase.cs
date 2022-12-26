@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace Jewelry.EditingSystem;
@@ -24,9 +25,10 @@ public class EditableModelBase : INotifyPropertyChanged
         EditablePropertyCommon.SetEditableProperty(_history, SetValueWithRaisePropertyChanged, currentValue, nextValue);
     }
 
-    protected void SetEditableFlagProperty(Action<uint> setValue, uint currentValue, uint flag, bool value, [CallerMemberName] string propertyName = "")
+    protected void SetEditableFlagProperty<T>(Action<T> setValue, T currentValue, T flag, bool value, [CallerMemberName] string propertyName = "")
+        where T : IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>
     {
-        void SetValueWithRaisePropertyChanged(uint v)
+        void SetValueWithRaisePropertyChanged(T v)
         {
             setValue(v);
             RaisePropertyChanged(propertyName);
@@ -35,17 +37,6 @@ public class EditableModelBase : INotifyPropertyChanged
         EditablePropertyCommon.SetEditableFlagProperty(_history, SetValueWithRaisePropertyChanged, currentValue, flag, value);
     }
     
-    protected void SetEditableFlagProperty(Action<ulong> setValue, ulong currentValue, ulong flag, bool value, [CallerMemberName] string propertyName = "")
-    {
-        void SetValueWithRaisePropertyChanged(ulong v)
-        {
-            setValue(v);
-            RaisePropertyChanged(propertyName);
-        }
-        
-        EditablePropertyCommon.SetEditableFlagProperty(_history, SetValueWithRaisePropertyChanged, currentValue, flag, value);
-    }
-
     #region Without History
 
     protected bool SetPropertyWithoutHistory<T>(ref T storage, T value, [CallerMemberName] string propertyName = "")

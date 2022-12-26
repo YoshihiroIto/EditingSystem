@@ -1,14 +1,15 @@
-﻿using Xunit;
+﻿using System.Numerics;
+using Xunit;
 
 namespace Jewelry.EditingSystem.Tests;
 
 public class FlagPropertyTests
 {
     [Fact]
-    public void BasicUint()
+    public void BasicByte()
     {
         var history = new History();
-        var model = new UintTestModel(history);
+        var model = new TestModel<byte>(history);
 
         Assert.False(model.IsA);
         Assert.False(model.IsB);
@@ -61,12 +62,70 @@ public class FlagPropertyTests
         Assert.True(model.IsB);
         Assert.True(model.IsC);
     }
-    
+
+    [Fact]
+    public void BasicUint()
+    {
+        var history = new History();
+        var model = new TestModel<uint>(history);
+
+        Assert.False(model.IsA);
+        Assert.False(model.IsB);
+        Assert.False(model.IsC);
+        Assert.False(history.CanUndo);
+        Assert.False(history.CanRedo);
+
+        model.IsA = true;
+        Assert.True(model.IsA);
+        Assert.False(model.IsB);
+        Assert.False(model.IsC);
+
+        model.IsB = true;
+        Assert.True(model.IsA);
+        Assert.True(model.IsB);
+        Assert.False(model.IsC);
+
+        model.IsC = true;
+        Assert.True(model.IsA);
+        Assert.True(model.IsB);
+        Assert.True(model.IsC);
+
+        history.Undo();
+        Assert.True(model.IsA);
+        Assert.True(model.IsB);
+        Assert.False(model.IsC);
+
+        history.Undo();
+        Assert.True(model.IsA);
+        Assert.False(model.IsB);
+        Assert.False(model.IsC);
+
+        history.Undo();
+        Assert.False(model.IsA);
+        Assert.False(model.IsB);
+        Assert.False(model.IsC);
+
+        history.Redo();
+        Assert.True(model.IsA);
+        Assert.False(model.IsB);
+        Assert.False(model.IsC);
+
+        history.Redo();
+        Assert.True(model.IsA);
+        Assert.True(model.IsB);
+        Assert.False(model.IsC);
+
+        history.Redo();
+        Assert.True(model.IsA);
+        Assert.True(model.IsB);
+        Assert.True(model.IsC);
+    }
+
     [Fact]
     public void BasicUlong()
     {
         var history = new History();
-        var model = new UlongTestModel(history);
+        var model = new TestModel<ulong>(history);
 
         Assert.False(model.IsA);
         Assert.False(model.IsB);
@@ -119,65 +178,35 @@ public class FlagPropertyTests
         Assert.True(model.IsB);
         Assert.True(model.IsC);
     }
-    
 
-    public class UintTestModel : EditableModelBase
+    public class TestModel<T> : EditableModelBase
+        where T : struct, IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>
     {
-        public UintTestModel(History history) : base(history)
+        public TestModel(History history) : base(history)
         {
         }
 
         public bool IsA
         {
-            get => (_uintFlags & UintFlag_IsA) != 0;
-            set => SetEditableFlagProperty(v => _uintFlags = v, _uintFlags, UintFlag_IsA, value);
+            get => (_flags & FlagIsA) != default;
+            set => SetEditableFlagProperty(v => _flags = v, _flags, FlagIsA, value);
         }
 
         public bool IsB
         {
-            get => (_uintFlags & UintFlag_IsB) != 0;
-            set => SetEditableFlagProperty(v => _uintFlags = v, _uintFlags, UintFlag_IsB, value);
+            get => (_flags & FlagIsB) != default;
+            set => SetEditableFlagProperty(v => _flags = v, _flags, FlagIsB, value);
         }
 
         public bool IsC
         {
-            get => (_uintFlags & UintFlag_IsC) != 0;
-            set => SetEditableFlagProperty(v => _uintFlags = v, _uintFlags, UintFlag_IsC, value);
+            get => (_flags & FlagIsC) != default;
+            set => SetEditableFlagProperty(v => _flags = v, _flags, FlagIsC, value);
         }
 
-        private uint _uintFlags;
-        private const uint UintFlag_IsA = 1 << 0;
-        private const uint UintFlag_IsB = 1 << 1;
-        private const uint UintFlag_IsC = 1 << 2;
-    }
-
-    public class UlongTestModel : EditableModelBase
-    {
-        public UlongTestModel(History history) : base(history)
-        {
-        }
-
-        public bool IsA
-        {
-            get => (_ulongFlags & UlongFlag_IsA) != 0;
-            set => SetEditableFlagProperty(v => _ulongFlags = v, _ulongFlags, UlongFlag_IsA, value);
-        }
-
-        public bool IsB
-        {
-            get => (_ulongFlags & UlongFlag_IsB) != 0;
-            set => SetEditableFlagProperty(v => _ulongFlags = v, _ulongFlags, UlongFlag_IsB, value);
-        }
-
-        public bool IsC
-        {
-            get => (_ulongFlags & UlongFlag_IsC) != 0;
-            set => SetEditableFlagProperty(v => _ulongFlags = v, _ulongFlags, UlongFlag_IsC, value);
-        }
-
-        private ulong _ulongFlags;
-        private const ulong UlongFlag_IsA = 1 << 0;
-        private const ulong UlongFlag_IsB = 1 << 1;
-        private const ulong UlongFlag_IsC = 1 << 2;
+        private T _flags;
+        private static readonly T FlagIsA = T.CreateChecked(1 << 0);
+        private static readonly T FlagIsB = T.CreateChecked(1 << 1);
+        private static readonly T FlagIsC = T.CreateChecked(1 << 2);
     }
 }

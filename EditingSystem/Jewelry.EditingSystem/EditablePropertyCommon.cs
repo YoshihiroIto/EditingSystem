@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Numerics;
 
 namespace Jewelry.EditingSystem;
 
@@ -27,46 +28,22 @@ internal static class EditablePropertyCommon
         setValue(nextValue);
     }
 
-    internal static void SetEditableFlagProperty(History history, Action<uint> setValue, uint currentValue, uint flag, bool value)
+    internal static void SetEditableFlagProperty<T>(History history, Action<T> setValue, T currentValue, T flag, bool value)
+        where T : IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>
     {
         var oldValue = currentValue;
         var nextValue = currentValue;
 
         if (value)
         {
-            if ((currentValue & flag) != 0)
+            if ((currentValue & flag) != default)
                 return;
 
             nextValue |= flag;
         }
         else
         {
-            if ((currentValue & flag) == 0)
-                return;
-
-            nextValue &= ~flag;
-        }
-
-        history.Push(() => setValue(oldValue), () => setValue(nextValue));
-
-        setValue(nextValue);
-    }
-
-    internal static void SetEditableFlagProperty(History history, Action<ulong> setValue, ulong currentValue, ulong flag, bool value)
-    {
-        var oldValue = currentValue;
-        var nextValue = currentValue;
-
-        if (value)
-        {
-            if ((currentValue & flag) != 0)
-                return;
-
-            nextValue |= flag;
-        }
-        else
-        {
-            if ((currentValue & flag) == 0)
+            if ((currentValue & flag) == default)
                 return;
 
             nextValue &= ~flag;
