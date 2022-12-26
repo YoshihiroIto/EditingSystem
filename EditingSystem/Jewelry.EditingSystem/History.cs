@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
+using NullReferenceException = System.NullReferenceException;
 
 namespace Jewelry.EditingSystem;
 
@@ -205,6 +206,8 @@ public class History : INotifyPropertyChanged
     {
         if (IsInUndoing)
             return;
+        
+        var list = sender as IList ?? throw new NullReferenceException();
 
         switch (e.Action)
         {
@@ -212,9 +215,7 @@ public class History : INotifyPropertyChanged
                 {
                     void DoRedo()
                     {
-                        var list = (IList)sender;
-
-                        var addItems = e.NewItems;
+                        var addItems = e.NewItems ?? throw new NullReferenceException();
                         var addCount = addItems.Count;
                         var addIndex = e.NewStartingIndex;
 
@@ -230,9 +231,7 @@ public class History : INotifyPropertyChanged
 
                     void DoUndo()
                     {
-                        var list = (IList)sender;
-
-                        var addItems = e.NewItems;
+                        var addItems = e.NewItems ?? throw new NullReferenceException();
                         var addCount = addItems.Count;
                         var addIndex = e.NewStartingIndex;
 
@@ -248,7 +247,7 @@ public class History : INotifyPropertyChanged
 
                     // ICollectionItem
                     {
-                        var addItems = e.NewItems;
+                        var addItems = e.NewItems ?? throw new NullReferenceException();
                         var addCount = addItems.Count;
 
                         for (var i = 0; i != addCount; ++i)
@@ -264,6 +263,9 @@ public class History : INotifyPropertyChanged
 
             case NotifyCollectionChangedAction.Move:
                 {
+                    _ = e.OldItems ?? throw new NullReferenceException();
+                    _ = e.NewItems ?? throw new NullReferenceException();
+                    
                     if (e.OldItems.Count != 1)
                         throw new NotImplementedException();
 
@@ -272,8 +274,6 @@ public class History : INotifyPropertyChanged
 
                     void DoRedo()
                     {
-                        var list = (IList)sender;
-
                         var src = e.OldStartingIndex;
                         var dst = e.NewStartingIndex;
 
@@ -291,8 +291,6 @@ public class History : INotifyPropertyChanged
 
                     void DoUndo()
                     {
-                        var list = (IList)sender;
-
                         var src = e.NewStartingIndex;
                         var dst = e.OldStartingIndex;
 
@@ -320,6 +318,8 @@ public class History : INotifyPropertyChanged
 
             case NotifyCollectionChangedAction.Remove:
                 {
+                    _ = e.OldItems ?? throw new NullReferenceException();
+                    
                     if (e.OldItems.Count != 1)
                         throw new NotImplementedException();
 
@@ -330,8 +330,6 @@ public class History : INotifyPropertyChanged
 
                     void DoRedo()
                     {
-                        var list = (IList)sender;
-
                         item = list[e.OldStartingIndex];
                         list.RemoveAt(e.OldStartingIndex);
 
@@ -344,8 +342,6 @@ public class History : INotifyPropertyChanged
 
                     void DoUndo()
                     {
-                        var list = (IList)sender;
-
                         list.Insert(e.OldStartingIndex, item);
 
                         // ICollectionItem
@@ -367,6 +363,9 @@ public class History : INotifyPropertyChanged
 
             case NotifyCollectionChangedAction.Replace:
                 {
+                    _ = e.OldItems ?? throw new NullReferenceException();
+                    _ = e.NewItems ?? throw new NullReferenceException();
+                    
                     if (e.OldItems.Count != 1)
                         throw new NotImplementedException();
 
@@ -378,8 +377,6 @@ public class History : INotifyPropertyChanged
 
                     void DoRedo()
                     {
-                        var list = (IList)sender;
-
                         var index = e.OldStartingIndex;
                         var oldItem = list[index];
                         list[index] = e.NewItems[0];
@@ -396,8 +393,6 @@ public class History : INotifyPropertyChanged
 
                     void DoUndo()
                     {
-                        var list = (IList)sender;
-
                         var index = e.OldStartingIndex;
                         var oldItem = list[index];
                         list[index] = e.OldItems[0];
