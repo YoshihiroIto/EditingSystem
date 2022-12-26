@@ -190,18 +190,18 @@ public class History : INotifyPropertyChanged
         return OnSetValueResult.Ok;
     }
 
-    private ValueTuple<bool, bool, bool> MakeCurrentFlags()
+    private (bool CanUndo, bool CanRedo, bool CanClear) MakeCurrentFlags()
         => (CanUndo, CanRedo, CanClear);
 
-    private void InvokePropertyChanged(in ValueTuple<bool, bool, bool> flags, in ValueTuple<int, int> undoRedoCount, ValueTuple<int, int> depthCount)
+    private void InvokePropertyChanged(in (bool CanUndo, bool CanRedo, bool CanClear) flags, in (int UndoCount, int RedoCount) undoRedoCount, (int PauseDepth, int BatchDepth) depthCount)
     {
-        if (flags.Item1 != CanUndo)
+        if (flags.CanUndo != CanUndo)
             PropertyChanged?.Invoke(this, CanUndoArgs);
 
-        if (flags.Item2 != CanRedo)
+        if (flags.CanRedo != CanRedo)
             PropertyChanged?.Invoke(this, CanRedoArgs);
 
-        if (flags.Item3 != CanClear)
+        if (flags.CanClear != CanClear)
             PropertyChanged?.Invoke(this, CanClearArgs);
 
         if (undoRedoCount != UndoRedoCount)
