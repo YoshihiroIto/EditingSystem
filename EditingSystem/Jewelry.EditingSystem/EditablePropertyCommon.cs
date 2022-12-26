@@ -1,22 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Runtime.CompilerServices;
 
 namespace Jewelry.EditingSystem;
 
 internal static class EditablePropertyCommon
 {
-    internal static void SetEditableProperty<T>(
-        History history,
-        Action<T> setValue, T currentValue, T nextValue, string propertyName)
+    internal static void SetEditableProperty<T>(History history, Action<T> setValue, T currentValue, T nextValue)
     {
         if (EqualityComparer<T>.Default.Equals(currentValue, nextValue))
             return;
 
         var oldValue = currentValue;
 
-        PushPropertyHistory(history, setValue, propertyName, oldValue, nextValue);
+        history.Push(() => setValue(oldValue), () => setValue(nextValue));
 
         // INotifyCollectionChanged
         {
@@ -29,10 +26,8 @@ internal static class EditablePropertyCommon
 
         setValue(nextValue);
     }
-    
-    internal static void SetEditableFlagProperty(
-        History history,
-        Action<uint> setValue, uint currentValue, uint flag, bool value, [CallerMemberName] string propertyName = "")
+
+    internal static void SetEditableFlagProperty(History history, Action<uint> setValue, uint currentValue, uint flag, bool value)
     {
         var oldValue = currentValue;
         var nextValue = currentValue;
@@ -52,15 +47,8 @@ internal static class EditablePropertyCommon
             nextValue &= ~flag;
         }
 
-        PushPropertyHistory(history, setValue, propertyName, oldValue, nextValue);
+        history.Push(() => setValue(oldValue), () => setValue(nextValue));
 
         setValue(nextValue);
-    }
-
-    private static void PushPropertyHistory<T>(History history, Action<T> setValue, string propertyName, T oldValue, T nextValue)
-    {
-        history.Push(
-            () => setValue(oldValue),
-            () => setValue(nextValue));
     }
 }

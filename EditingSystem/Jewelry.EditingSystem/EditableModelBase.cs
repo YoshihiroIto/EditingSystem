@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -22,7 +21,7 @@ public class EditableModelBase : INotifyPropertyChanged
             RaisePropertyChanged(propertyName);
         }
         
-        EditablePropertyCommon.SetEditableProperty(_history, SetValueWithRaisePropertyChanged, currentValue, nextValue, propertyName);
+        EditablePropertyCommon.SetEditableProperty(_history, SetValueWithRaisePropertyChanged, currentValue, nextValue);
     }
 
     protected void SetEditableFlagProperty(Action<uint> setValue, uint currentValue, uint flag, bool value, [CallerMemberName] string propertyName = "")
@@ -33,8 +32,7 @@ public class EditableModelBase : INotifyPropertyChanged
             RaisePropertyChanged(propertyName);
         }
         
-        EditablePropertyCommon.SetEditableFlagProperty(_history, SetValueWithRaisePropertyChanged, currentValue, flag, value, propertyName);
-        
+        EditablePropertyCommon.SetEditableFlagProperty(_history, SetValueWithRaisePropertyChanged, currentValue, flag, value);
     }
 
     #region Without History
@@ -90,15 +88,6 @@ public class EditableModelBase : INotifyPropertyChanged
     }
 
     private static readonly ConcurrentDictionary<string, PropertyChangedEventArgs> PropChanged = new();
-
-    #endregion
-
-    #region INotifyCollectionChanged
-
-    private void OnCollectionPropertyCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-    {
-        History.OnCollectionPropertyCollectionChanged(sender, e);
-    }
 
     #endregion
     

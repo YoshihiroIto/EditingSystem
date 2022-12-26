@@ -75,7 +75,7 @@ public class History : INotifyPropertyChanged
         Debug.Assert(_batchHistory is not null);
 
 #pragma warning disable CS8602
-        if (_batchHistory.UndoRedoCount != (0, 0))
+        if (_batchHistory.UndoRedoCount != (UndoCount:0, RedoCount:0))
 #pragma warning restore CS8602
             Push(_batchHistory.UndoAll, _batchHistory.RedoAll);
 
@@ -116,9 +116,15 @@ public class History : INotifyPropertyChanged
 
         var action = _undoStack.Pop();
 
-        IsInUndoing = true;
-        action.Undo();
-        IsInUndoing = false;
+        try
+        {
+            IsInUndoing = true;
+            action.Undo();
+        }
+        finally
+        {
+            IsInUndoing = false;
+        }
 
         _redoStack.Push(action);
 
@@ -142,9 +148,15 @@ public class History : INotifyPropertyChanged
 
         var action = _redoStack.Pop();
 
-        IsInUndoing = true;
-        action.Redo();
-        IsInUndoing = false;
+        try
+        {
+            IsInUndoing = true;
+            action.Redo();
+        }
+        finally
+        {
+            IsInUndoing = false;
+        }
 
         _undoStack.Push(action);
 
@@ -198,7 +210,7 @@ public class History : INotifyPropertyChanged
         {
             case NotifyCollectionChangedAction.Add:
                 {
-                    void Redo()
+                    void DoRedo()
                     {
                         var list = (IList)sender;
 
@@ -216,7 +228,7 @@ public class History : INotifyPropertyChanged
                         }
                     }
 
-                    void Undo()
+                    void DoUndo()
                     {
                         var list = (IList)sender;
 
@@ -246,7 +258,7 @@ public class History : INotifyPropertyChanged
                         }
                     }
 
-                    Push(Undo, Redo);
+                    Push(DoUndo, DoRedo);
                     break;
                 }
 
@@ -258,7 +270,7 @@ public class History : INotifyPropertyChanged
                     if (e.NewItems.Count != 1)
                         throw new NotImplementedException();
 
-                    void Redo()
+                    void DoRedo()
                     {
                         var list = (IList)sender;
 
@@ -277,7 +289,7 @@ public class History : INotifyPropertyChanged
                         }
                     }
 
-                    void Undo()
+                    void DoUndo()
                     {
                         var list = (IList)sender;
 
@@ -302,7 +314,7 @@ public class History : INotifyPropertyChanged
                             collItem.Changed(CollectionItemChangedInfo.Move);
                     }
 
-                    Push(Undo, Redo);
+                    Push(DoUndo, DoRedo);
                     break;
                 }
 
@@ -316,7 +328,7 @@ public class History : INotifyPropertyChanged
 
                     var item = e.OldItems[0];
 
-                    void Redo()
+                    void DoRedo()
                     {
                         var list = (IList)sender;
 
@@ -330,7 +342,7 @@ public class History : INotifyPropertyChanged
                         }
                     }
 
-                    void Undo()
+                    void DoUndo()
                     {
                         var list = (IList)sender;
 
@@ -349,7 +361,7 @@ public class History : INotifyPropertyChanged
                             collItem.Changed(CollectionItemChangedInfo.Remove);
                     }
 
-                    Push(Undo, Redo);
+                    Push(DoUndo, DoRedo);
                     break;
                 }
 
@@ -364,7 +376,7 @@ public class History : INotifyPropertyChanged
                     if (e.NewStartingIndex != e.OldStartingIndex)
                         throw new NotImplementedException();
 
-                    void Redo()
+                    void DoRedo()
                     {
                         var list = (IList)sender;
 
@@ -382,7 +394,7 @@ public class History : INotifyPropertyChanged
                         }
                     }
 
-                    void Undo()
+                    void DoUndo()
                     {
                         var list = (IList)sender;
 
@@ -409,7 +421,7 @@ public class History : INotifyPropertyChanged
                             newCollItem.Changed(CollectionItemChangedInfo.Add);
                     }
 
-                    Push(Undo, Redo);
+                    Push(DoUndo, DoRedo);
                     break;
                 }
 
@@ -426,7 +438,7 @@ public class History : INotifyPropertyChanged
         }
     }
 
-    private void InvokePropertyChanged(in (bool CanUndo, bool CanRedo, bool CanClear) flags, in (int UndoCount, int RedoCount) undoRedoCount, (int PauseDepth, int BatchDepth) depthCount)
+    private void InvokePropertyChanged((bool CanUndo, bool CanRedo, bool CanClear) flags, (int UndoCount, int RedoCount) undoRedoCount, (int PauseDepth, int BatchDepth) depthCount)
     {
         if (PropertyChanged is null)
             return;
