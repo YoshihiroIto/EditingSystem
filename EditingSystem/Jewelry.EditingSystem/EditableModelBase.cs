@@ -34,6 +34,17 @@ public class EditableModelBase : INotifyPropertyChanged
         
         EditablePropertyCommon.SetEditableFlagProperty(_history, SetValueWithRaisePropertyChanged, currentValue, flag, value);
     }
+    
+    protected void SetEditableFlagProperty(Action<ulong> setValue, ulong currentValue, ulong flag, bool value, [CallerMemberName] string propertyName = "")
+    {
+        void SetValueWithRaisePropertyChanged(ulong v)
+        {
+            setValue(v);
+            RaisePropertyChanged(propertyName);
+        }
+        
+        EditablePropertyCommon.SetEditableFlagProperty(_history, SetValueWithRaisePropertyChanged, currentValue, flag, value);
+    }
 
     #region Without History
 

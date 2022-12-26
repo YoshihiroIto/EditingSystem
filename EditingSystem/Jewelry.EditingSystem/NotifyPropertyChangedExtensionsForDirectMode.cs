@@ -23,4 +23,13 @@ public static class NotifyPropertyChangedExtensionsForDirectMode
     {
         EditablePropertyCommon.SetEditableFlagProperty(history, setValue, currentValue, flag, value);
     }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void SetEditableFlagProperty(
+        this INotifyPropertyChanged self, 
+        History history,
+        Action<ulong> setValue, ulong currentValue, ulong flag, bool value)
+    {
+        EditablePropertyCommon.SetEditableFlagProperty(history, setValue, currentValue, flag, value);
+    }
 }

@@ -51,4 +51,29 @@ internal static class EditablePropertyCommon
 
         setValue(nextValue);
     }
+
+    internal static void SetEditableFlagProperty(History history, Action<ulong> setValue, ulong currentValue, ulong flag, bool value)
+    {
+        var oldValue = currentValue;
+        var nextValue = currentValue;
+
+        if (value)
+        {
+            if ((currentValue & flag) != 0)
+                return;
+
+            nextValue |= flag;
+        }
+        else
+        {
+            if ((currentValue & flag) == 0)
+                return;
+
+            nextValue &= ~flag;
+        }
+
+        history.Push(() => setValue(oldValue), () => setValue(nextValue));
+
+        setValue(nextValue);
+    }
 }
