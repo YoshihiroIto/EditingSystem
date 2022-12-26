@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Nullable>enable</Nullable>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-    <LangVersion>8</LangVersion>
+    <LangVersion>latest</LangVersion>
     <Authors>Yoshihiro Ito</Authors>
     <Description>Easy to use undo/redo system for .NET Standard.</Description>
     <Copyright>Copyright (c) 2018-2020 copyright Yoshihiro Ito (yo.i.jewelry.bab@gmail.com)</Copyright>
