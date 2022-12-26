@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
-    <TargetFrameworks>net472;net481;net6.0;net7.0</TargetFrameworks>
     <RootNamespace>Jewelry.EditingSystem.Tests</RootNamespace>
     <Nullable>enable</Nullable>
+    <TargetFramework>net7.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
