@@ -202,7 +202,7 @@ public class History : INotifyPropertyChanged
         InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
     }
     
-    internal void OnCollectionPropertyCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+    internal void OnCollectionPropertyCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (IsInUndoing)
             return;
