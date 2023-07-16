@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Jewelry.EditingSystem.Tests;
 
-public class BatchEditingTests
+public sealed class BatchEditingTests
 {
     [Fact]
     public void Basic()
@@ -160,7 +160,7 @@ public class BatchEditingTests
         );
     }
 
-    public class TestModel : EditableModelBase
+    public sealed class TestModel : EditableModelBase
     {
         public TestModel(History history) : base(history)
         {

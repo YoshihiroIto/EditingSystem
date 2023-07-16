@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Jewelry.EditingSystem.Tests;
 
-public class PauseEditingDirectModeTests
+public sealed class PauseEditingDirectModeTests
 {
     [Fact]
     public void Basic()

@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Jewelry.EditingSystem.Tests;
 
-public class PauseEditingTests
+public sealed class PauseEditingTests
 {
     [Fact]
     public void Basic()

@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Jewelry.EditingSystem.Tests;
 
-public class BatchEditingDirectModeTests
+public sealed class BatchEditingDirectModeTests
 {
     [Fact]
     public void Basic()
@@ -163,7 +163,7 @@ public class BatchEditingDirectModeTests
         );
     }
 
-    public class TestModel : INotifyPropertyChanged
+    public sealed class TestModel : INotifyPropertyChanged
     {
         private readonly History _history;
 

@@ -2,7 +2,7 @@
 
 namespace Jewelry.EditingSystem.Tests;
 
-public class HistoryTests
+public sealed class HistoryTests
 {
     [Fact]
     public void Undoable_if_CanUndo_is_false()

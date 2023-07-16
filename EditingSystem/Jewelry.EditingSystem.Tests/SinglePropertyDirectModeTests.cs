@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Jewelry.EditingSystem.Tests;
 
-public class SinglePropertyDirectModeTests
+public sealed class SinglePropertyDirectModeTests
 {
     [Fact]
     public void Basic()

@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Jewelry.EditingSystem.Tests;
 
-public class FlagPropertyTests
+public sealed class FlagPropertyTests
 {
     [Fact]
     public void BasicByte()
@@ -179,7 +179,7 @@ public class FlagPropertyTests
         Assert.True(model.IsC);
     }
 
-    public class TestModel<T> : EditableModelBase
+    public sealed class TestModel<T> : EditableModelBase
         where T : struct, IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>
     {
         public TestModel(History history) : base(history)

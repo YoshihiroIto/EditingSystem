@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Jewelry.EditingSystem.Tests;
 
-public class CollectionItemTests
+public sealed class CollectionItemTests
 {
     [Fact]
     public void Add()
@@ -604,7 +604,7 @@ public class CollectionItemTests
         Assert.Equal(0, itemX.CollectionChangedMoveCount);
     }
 
-    public class TestModel : EditableModelBase
+    public sealed class TestModel : EditableModelBase
     {
         public TestModel(History history) : base(history)
         {
@@ -624,7 +624,7 @@ public class CollectionItemTests
     }
 
 
-    public class CollectionItem : ICollectionItem
+    public sealed class CollectionItem : ICollectionItem
     {
         public int CollectionChangedAddCount { get; private set; }
         public int CollectionChangedRemoveCount { get; private set; }

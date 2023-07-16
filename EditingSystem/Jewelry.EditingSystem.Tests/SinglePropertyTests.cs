@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Jewelry.EditingSystem.Tests;
 
-public class SinglePropertyTests
+public sealed class SinglePropertyTests
 {
     [Fact]
     public void Basic()
@@ -186,7 +186,7 @@ public class SinglePropertyTests
         Assert.False(history.CanClear);
     }
 
-    public class TestModel : EditableModelBase
+    public sealed class TestModel : EditableModelBase
     {
         public TestModel(History history) : base(history)
         {

@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Jewelry.EditingSystem.Tests;
 
-public class FlagPropertyDirectModeTests
+public sealed class FlagPropertyDirectModeTests
 {
     [Fact]
     public void BasicByte()
@@ -182,7 +182,7 @@ public class FlagPropertyDirectModeTests
         Assert.True(model.IsC);
     }
 
-    public class TestModel<T> : INotifyPropertyChanged
+    public sealed class TestModel<T> : INotifyPropertyChanged
         where T : struct, IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>
     {
         private readonly History _history;

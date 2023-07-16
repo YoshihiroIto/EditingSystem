@@ -83,7 +83,7 @@ public class History : INotifyPropertyChanged
         _batchHistory = null;
     }
 
-    private class BatchHistory : History
+    private sealed class BatchHistory : History
     {
         internal void UndoAll()
         {

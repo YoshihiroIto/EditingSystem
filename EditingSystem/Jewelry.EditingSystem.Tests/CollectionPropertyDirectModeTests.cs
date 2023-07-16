@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Jewelry.EditingSystem.Tests;
 
-public class CollectionPropertyDirectModeTests
+public sealed class CollectionPropertyDirectModeTests
 {
     [Fact]
     public void Add()
@@ -306,7 +306,7 @@ public class CollectionPropertyDirectModeTests
         Assert.NotEqual(oldCount, count);
     }
 
-    public class TestModel : INotifyPropertyChanged
+    public sealed class TestModel : INotifyPropertyChanged
     {
         private readonly History _history;
         

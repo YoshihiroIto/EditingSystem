@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Jewelry.EditingSystem.Tests;
 
-public class CollectionPropertyTests
+public sealed class CollectionPropertyTests
 {
     [Fact]
     public void Add()
@@ -303,7 +303,7 @@ public class CollectionPropertyTests
         Assert.NotEqual(oldCount, count);
     }
 
-    public class TestModel : EditableModelBase
+    public sealed class TestModel : EditableModelBase
     {
         public TestModel(History history) : base(history)
         {

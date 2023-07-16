@@ -2,7 +2,7 @@
 
 namespace Jewelry.EditingSystem.Tests;
 
-public class UndoRedoCountTests
+public sealed class UndoRedoCountTests
 {
     [Fact]
     public void Basic()
@@ -30,7 +30,7 @@ public class UndoRedoCountTests
         Assert.Equal(0, history.RedoCount);
     }
 
-    public class TestModel : EditableModelBase
+    public sealed class TestModel : EditableModelBase
     {
         public TestModel(History history) : base(history)
         {
