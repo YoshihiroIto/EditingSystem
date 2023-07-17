@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Jewelry.EditingSystem.WeakEvenT;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -8,7 +9,7 @@ using NullReferenceException = System.NullReferenceException;
 
 namespace Jewelry.EditingSystem;
 
-public class History : INotifyPropertyChanged
+public class History : INotifyPropertyChanged, IDisposable
 {
     public bool CanUndo => _undoStack.Count > 0;
     public bool CanRedo => _redoStack.Count > 0;
@@ -19,6 +20,11 @@ public class History : INotifyPropertyChanged
     public int BatchDepth { get; private set; }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+    
+    public void Dispose()
+    {
+        _collectionChangedWeakEventManager.Dispose();
+    }
 
     #region Pause
 
@@ -76,11 +82,13 @@ public class History : INotifyPropertyChanged
         Debug.Assert(_batchHistory is not null);
 
 #pragma warning disable CS8602
-        if (_batchHistory.UndoRedoCount != (UndoCount:0, RedoCount:0))
+        if (_batchHistory.UndoRedoCount != (UndoCount: 0, RedoCount: 0))
 #pragma warning restore CS8602
             Push(_batchHistory.UndoAll, _batchHistory.RedoAll);
 
+        _batchHistory.Dispose();
         _batchHistory = null;
+        
     }
 
     private sealed class BatchHistory : History
@@ -201,12 +209,12 @@ public class History : INotifyPropertyChanged
 
         InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
     }
-    
+
     internal void OnCollectionPropertyCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (IsInUndoing)
             return;
-        
+
         var list = sender as IList ?? throw new NullReferenceException();
 
         switch (e.Action)
@@ -265,7 +273,7 @@ public class History : INotifyPropertyChanged
                 {
                     _ = e.OldItems ?? throw new NullReferenceException();
                     _ = e.NewItems ?? throw new NullReferenceException();
-                    
+
                     if (e.OldItems.Count != 1)
                         throw new NotImplementedException();
 
@@ -319,7 +327,7 @@ public class History : INotifyPropertyChanged
             case NotifyCollectionChangedAction.Remove:
                 {
                     _ = e.OldItems ?? throw new NullReferenceException();
-                    
+
                     if (e.OldItems.Count != 1)
                         throw new NotImplementedException();
 
@@ -365,7 +373,7 @@ public class History : INotifyPropertyChanged
                 {
                     _ = e.OldItems ?? throw new NullReferenceException();
                     _ = e.NewItems ?? throw new NullReferenceException();
-                    
+
                     if (e.OldItems.Count != 1)
                         throw new NotImplementedException();
 
@@ -459,6 +467,8 @@ public class History : INotifyPropertyChanged
         if (depthCount.BatchDepth != BatchDepth)
             PropertyChanged.Invoke(this, BatchDepthArgs);
     }
+
+    internal readonly CollectionChangedWeakEventManager _collectionChangedWeakEventManager = new();
 
     internal bool IsInUndoing { get; private set; }
 

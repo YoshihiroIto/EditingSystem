@@ -11,7 +11,7 @@ public sealed class PauseEditingDirectModeTests
     [Fact]
     public void Basic()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         history.BeginPause();
@@ -33,7 +33,7 @@ public sealed class PauseEditingDirectModeTests
     [Fact]
     public void NestingPause()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         Assert.False(history.CanUndo);
@@ -69,7 +69,7 @@ public sealed class PauseEditingDirectModeTests
     [Fact]
     public void Cannot_call_undo_during_pause()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         Assert.False(history.CanUndo);
@@ -88,7 +88,7 @@ public sealed class PauseEditingDirectModeTests
     [Fact]
     public void Cannot_call_redo_during_pause()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         Assert.False(history.CanUndo);
@@ -107,7 +107,7 @@ public sealed class PauseEditingDirectModeTests
     [Fact]
     public void Pause_has_not_begun()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         Assert.False(history.CanUndo);

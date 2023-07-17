@@ -19,10 +19,10 @@ internal static class EditablePropertyCommon
         // INotifyCollectionChanged
         {
             if (currentValue is INotifyCollectionChanged current)
-                current.CollectionChanged -= history.OnCollectionPropertyCollectionChanged;
+                history._collectionChangedWeakEventManager.RemoveWeakEventListener(current);
 
             if (nextValue is INotifyCollectionChanged next)
-                next.CollectionChanged += history.OnCollectionPropertyCollectionChanged;
+                history._collectionChangedWeakEventManager.AddWeakEventListener(next, history.OnCollectionPropertyCollectionChanged);
         }
 
         setValue(nextValue);

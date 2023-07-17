@@ -8,7 +8,7 @@ public sealed class FlagPropertyTests
     [Fact]
     public void BasicByte()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel<byte>(history);
 
         Assert.False(model.IsA);
@@ -66,7 +66,7 @@ public sealed class FlagPropertyTests
     [Fact]
     public void BasicUint()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel<uint>(history);
 
         Assert.False(model.IsA);
@@ -124,7 +124,7 @@ public sealed class FlagPropertyTests
     [Fact]
     public void BasicUlong()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel<ulong>(history);
 
         Assert.False(model.IsA);

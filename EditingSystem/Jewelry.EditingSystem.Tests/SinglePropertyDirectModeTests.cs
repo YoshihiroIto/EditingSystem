@@ -10,7 +10,7 @@ public sealed class SinglePropertyDirectModeTests
     [Fact]
     public void Basic()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
         
         Assert.Equal(0, history.UndoCount);
@@ -80,7 +80,7 @@ public sealed class SinglePropertyDirectModeTests
     [Fact]
     public void PropertyChanged()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         var count = 0;
@@ -109,7 +109,7 @@ public sealed class SinglePropertyDirectModeTests
     [Fact]
     public void PropertyChanged_CanUndo_CanRedo_CanClear()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         var canUndoCount = 0;
@@ -149,7 +149,7 @@ public sealed class SinglePropertyDirectModeTests
     [Fact]
     public void Clear()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         Assert.Equal(0, model.IntValue);

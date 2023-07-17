@@ -12,7 +12,7 @@ public sealed class CollectionPropertyTests
     [Fact]
     public void Add()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         model.IntCollection = new ObservableCollection<int>();
@@ -46,7 +46,7 @@ public sealed class CollectionPropertyTests
     [Fact]
     public void Move_Ascending()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         model.IntCollection = new ObservableCollection<int>();
@@ -71,7 +71,7 @@ public sealed class CollectionPropertyTests
     [Fact]
     public void Move_Descending()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         model.IntCollection = new ObservableCollection<int>();
@@ -96,7 +96,7 @@ public sealed class CollectionPropertyTests
     [Fact]
     public void Remove()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         model.IntCollection = new ObservableCollection<int>();
@@ -121,7 +121,7 @@ public sealed class CollectionPropertyTests
     [Fact]
     public void RemoveAt()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         model.IntCollection = new ObservableCollection<int>();
@@ -146,7 +146,7 @@ public sealed class CollectionPropertyTests
     [Fact]
     public void Insert()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         model.IntCollection = new ObservableCollection<int>();
@@ -171,7 +171,7 @@ public sealed class CollectionPropertyTests
     [Fact]
     public void Clear()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         model.IntCollection = new ObservableCollection<int>();
@@ -191,7 +191,7 @@ public sealed class CollectionPropertyTests
     [Fact]
     public void ClearEx()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         model.IntCollection = new ObservableCollection<int>();
@@ -217,7 +217,7 @@ public sealed class CollectionPropertyTests
     [Fact]
     public void Replace()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         model.IntCollection = new ObservableCollection<int>();
@@ -242,7 +242,7 @@ public sealed class CollectionPropertyTests
     [Fact]
     public void CollectionChanged_on_Undo_Redo()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         model.IntCollection = new ObservableCollection<int>();

@@ -11,7 +11,7 @@ public sealed class BatchEditingDirectModeTests
     [Fact]
     public void Basic()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         Assert.False(history.CanUndo);
@@ -45,7 +45,7 @@ public sealed class BatchEditingDirectModeTests
     [Fact]
     public void Empty()
     {
-        var history = new History();
+        using var history = new History();
 
         Assert.False(history.CanUndo);
         Assert.False(history.CanRedo);
@@ -66,7 +66,7 @@ public sealed class BatchEditingDirectModeTests
     [Fact]
     public void NestingBatch()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         Assert.False(history.CanUndo);
@@ -111,7 +111,7 @@ public sealed class BatchEditingDirectModeTests
     [Fact]
     public void Cannot_call_undo_during_batch_recording()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         Assert.False(history.CanUndo);
@@ -130,7 +130,7 @@ public sealed class BatchEditingDirectModeTests
     [Fact]
     public void Cannot_call_redo_during_batch_recording()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         Assert.False(history.CanUndo);
@@ -149,7 +149,7 @@ public sealed class BatchEditingDirectModeTests
     [Fact]
     public void Batch_recording_has_not_begun()
     {
-        var history = new History();
+        using var history = new History();
         var model = new TestModel(history);
 
         Assert.False(history.CanUndo);
