@@ -1,11 +1,10 @@
-﻿using Jewelry.EditingSystem.WeakEvenT;
+﻿using Jewelry.EditingSystem.WeakEvent;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
-using NullReferenceException = System.NullReferenceException;
 
 namespace Jewelry.EditingSystem;
 
@@ -18,17 +17,18 @@ public class History : INotifyPropertyChanged, IDisposable
     public int RedoCount => _redoStack.Count;
     public int PauseDepth { get; private set; }
     public int BatchDepth { get; private set; }
+    public bool IsInPaused => PauseDepth > 0;
+    public bool IsInBatch => BatchDepth > 0;
 
     public event PropertyChangedEventHandler? PropertyChanged;
-    
+
+    internal readonly CollectionChangedWeakEventManager _collectionChangedWeakEventManager = new();
+    internal bool IsInUndoing { get; private set; }
+
     public void Dispose()
     {
         _collectionChangedWeakEventManager.Dispose();
     }
-
-    #region Pause
-
-    public bool IsInPaused => PauseDepth > 0;
 
     public void BeginPause()
     {
@@ -42,14 +42,6 @@ public class History : INotifyPropertyChanged, IDisposable
 
         --PauseDepth;
     }
-
-    #endregion
-
-    #region Batch
-
-    private BatchHistory? _batchHistory;
-
-    public bool IsInBatch => BatchDepth > 0;
 
     public void BeginBatch()
     {
@@ -69,44 +61,6 @@ public class History : INotifyPropertyChanged, IDisposable
         if (BatchDepth == 0)
             EndBatchInternal();
     }
-
-    private void BeginBatchInternal()
-    {
-        Debug.Assert(_batchHistory is null);
-
-        _batchHistory = new BatchHistory();
-    }
-
-    private void EndBatchInternal()
-    {
-        Debug.Assert(_batchHistory is not null);
-
-#pragma warning disable CS8602
-        if (_batchHistory.UndoRedoCount != (UndoCount: 0, RedoCount: 0))
-#pragma warning restore CS8602
-            Push(_batchHistory.UndoAll, _batchHistory.RedoAll);
-
-        _batchHistory.Dispose();
-        _batchHistory = null;
-        
-    }
-
-    private sealed class BatchHistory : History
-    {
-        internal void UndoAll()
-        {
-            while (CanUndo)
-                Undo();
-        }
-
-        internal void RedoAll()
-        {
-            while (CanRedo)
-                Redo();
-        }
-    }
-
-    #endregion
 
     public void Undo()
     {
@@ -179,8 +133,7 @@ public class History : INotifyPropertyChanged, IDisposable
 
         if (IsInBatch)
         {
-            if (_batchHistory is null)
-                throw new NullReferenceException();
+            _ = _batchHistory ?? throw new NullReferenceException();
 
             _batchHistory.Push(undo, redo);
             return;
@@ -308,10 +261,8 @@ public class History : INotifyPropertyChanged, IDisposable
                         list.Insert(dst, item);
 
                         // ICollectionItem
-                        {
-                            if (item is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Move);
-                        }
+                        if (item is ICollectionItem collItem)
+                            collItem.Changed(CollectionItemChangedInfo.Move);
                     }
 
                     // ICollectionItem
@@ -468,13 +419,29 @@ public class History : INotifyPropertyChanged, IDisposable
             PropertyChanged.Invoke(this, BatchDepthArgs);
     }
 
-    internal readonly CollectionChangedWeakEventManager _collectionChangedWeakEventManager = new();
+    private void BeginBatchInternal()
+    {
+        Debug.Assert(_batchHistory is null);
 
-    internal bool IsInUndoing { get; private set; }
+        _batchHistory = new BatchHistory();
+    }
+
+    private void EndBatchInternal()
+    {
+        Debug.Assert(_batchHistory is not null);
+
+        if (_batchHistory.UndoRedoCount != (UndoCount: 0, RedoCount: 0))
+            Push(_batchHistory.UndoAll, _batchHistory.RedoAll);
+
+        _batchHistory.Dispose();
+        _batchHistory = null;
+    }
 
     private (int UndoCount, int RedoCount) UndoRedoCount => (UndoCount, RedoCount);
     private (bool CanUndo, bool CanRedo, bool CanClear) CanUndoRedoClear => (CanUndo, CanRedo, CanClear);
     private (int PauseDepth, int BatchDepth) PauseBatchDepth => (PauseDepth, BatchDepth);
+
+    private BatchHistory? _batchHistory;
 
     private readonly Stack<HistoryAction> _undoStack = new();
     private readonly Stack<HistoryAction> _redoStack = new();
@@ -486,6 +453,21 @@ public class History : INotifyPropertyChanged, IDisposable
     private static readonly PropertyChangedEventArgs RedoCountArgs = new(nameof(RedoCount));
     private static readonly PropertyChangedEventArgs PauseDepthArgs = new(nameof(PauseDepth));
     private static readonly PropertyChangedEventArgs BatchDepthArgs = new(nameof(BatchDepth));
+
+    private sealed class BatchHistory : History
+    {
+        public void UndoAll()
+        {
+            while (CanUndo)
+                Undo();
+        }
+
+        public void RedoAll()
+        {
+            while (CanRedo)
+                Redo();
+        }
+    }
 
     private record struct HistoryAction(Action Undo, Action Redo);
 }

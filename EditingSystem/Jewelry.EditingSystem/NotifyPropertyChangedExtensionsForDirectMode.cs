@@ -9,7 +9,7 @@ public static class NotifyPropertyChangedExtensionsForDirectMode
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SetEditableProperty<T>(
-        this INotifyPropertyChanged self, 
+        this INotifyPropertyChanged _, 
         History history,
         Action<T> setValue, T currentValue, T nextValue)
     {
@@ -18,7 +18,7 @@ public static class NotifyPropertyChangedExtensionsForDirectMode
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SetEditableFlagProperty<T>(
-        this INotifyPropertyChanged self, 
+        this INotifyPropertyChanged _, 
         History history,
         Action<T> setValue, T currentValue, T flag, bool value)
         where T : IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>

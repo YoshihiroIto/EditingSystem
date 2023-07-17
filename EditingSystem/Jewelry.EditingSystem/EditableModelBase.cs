@@ -9,6 +9,8 @@ namespace Jewelry.EditingSystem;
 
 public class EditableModelBase : INotifyPropertyChanged
 {
+    public event PropertyChangedEventHandler? PropertyChanged;
+    
     protected EditableModelBase(History history)
     {
         _history = history;
@@ -37,8 +39,6 @@ public class EditableModelBase : INotifyPropertyChanged
         EditablePropertyCommon.SetEditableFlagProperty(_history, SetValueWithRaisePropertyChanged, currentValue, flag, value);
     }
     
-    #region Without History
-
     protected bool SetPropertyWithoutHistory<T>(ref T storage, T value, [CallerMemberName] string propertyName = "")
     {
         if (EqualityComparer<T>.Default.Equals(storage, value))
@@ -74,12 +74,6 @@ public class EditableModelBase : INotifyPropertyChanged
         return true;
     }
 
-    #endregion
-
-    #region INotifyPropertyChanged
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
     protected void RaisePropertyChanged([CallerMemberName] string propertyName = "")
     {
         if (PropertyChanged is null)
@@ -90,9 +84,6 @@ public class EditableModelBase : INotifyPropertyChanged
         PropertyChanged.Invoke(this, pc);
     }
 
-    private static readonly ConcurrentDictionary<string, PropertyChangedEventArgs> PropChanged = new();
-
-    #endregion
-    
     private readonly History _history;
+    private static readonly ConcurrentDictionary<string, PropertyChangedEventArgs> PropChanged = new();
 }
