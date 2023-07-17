@@ -1,14 +1,17 @@
-﻿using Xunit;
+﻿using Jewelry.EditingSystem.Tests.TestModels;
+using Xunit;
+using static Jewelry.EditingSystem.Tests.TestModels.TestModelCreator;
 
 namespace Jewelry.EditingSystem.Tests;
 
 public sealed class UndoRedoCountTests
 {
-    [Fact]
-    public void Basic()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void Basic(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         Assert.Equal(0, history.UndoCount);
         Assert.Equal(0, history.RedoCount);
@@ -28,24 +31,5 @@ public sealed class UndoRedoCountTests
         history.Clear();
         Assert.Equal(0, history.UndoCount);
         Assert.Equal(0, history.RedoCount);
-    }
-
-    public sealed class TestModel : EditableModelBase
-    {
-        public TestModel(History history) : base(history)
-        {
-        }
-
-        #region IntValue
-
-        private int _IntValue;
-
-        public int IntValue
-        {
-            get => _IntValue;
-            set => SetEditableProperty(v => _IntValue = v, _IntValue, value);
-        }
-
-        #endregion
     }
 }

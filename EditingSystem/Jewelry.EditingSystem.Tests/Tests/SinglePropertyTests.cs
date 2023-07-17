@@ -1,20 +1,22 @@
-﻿using System.Collections.Generic;
+﻿using Jewelry.EditingSystem.Tests.TestModels;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using Xunit;
+using static Jewelry.EditingSystem.Tests.TestModels.TestModelCreator;
 
 namespace Jewelry.EditingSystem.Tests;
 
-public sealed class SinglePropertyDirectModeTests
+public sealed class SinglePropertyTests
 {
-    [Fact]
-    public void Basic()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void Basic(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
-        
-        Assert.Equal(0, history.UndoCount);
-        Assert.Equal(0, history.RedoCount);
+        var model = CreateTestModel(testModelKind, history);
+
+        Assert.Equal(0, model.IntValue);
+        Assert.False(history.CanUndo);
+        Assert.False(history.CanRedo);
 
         //------------------------------------------------
         model.IntValue = 123;
@@ -76,12 +78,13 @@ public sealed class SinglePropertyDirectModeTests
         Assert.True(history.CanUndo);
         Assert.False(history.CanRedo);
     }
-    
-    [Fact]
-    public void PropertyChanged()
+
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void PropertyChanged(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         var count = 0;
 
@@ -105,12 +108,13 @@ public sealed class SinglePropertyDirectModeTests
         history.Redo();
         Assert.Equal(4, count);
     }
-    
-    [Fact]
-    public void PropertyChanged_CanUndo_CanRedo_CanClear()
+
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void PropertyChanged_CanUndo_CanRedo_CanClear(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         var canUndoCount = 0;
         var canRedoCount = 0;
@@ -146,11 +150,12 @@ public sealed class SinglePropertyDirectModeTests
         Assert.Equal(1, canClearCount);
     }
 
-    [Fact]
-    public void Clear()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void Clear(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         Assert.Equal(0, model.IntValue);
         Assert.False(history.CanUndo);
@@ -185,43 +190,5 @@ public sealed class SinglePropertyDirectModeTests
         Assert.False(history.CanUndo);
         Assert.False(history.CanRedo);
         Assert.False(history.CanClear);
-    }
-    
-    public sealed class TestModel : INotifyPropertyChanged
-    {
-        private readonly History _history;
-
-        public TestModel(History history)
-        {
-            _history = history;
-        }
-        
-        #region IntValue
-
-        private int _IntValue;
-
-        public int IntValue
-        {
-            get => _IntValue;
-            set => this.SetEditableProperty(_history, v => SetField(ref _IntValue, v), _IntValue, value);
-        }
-
-        #endregion
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        // ReSharper disable once UnusedMethodReturnValue.Local
-        private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
-        {
-            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
-            field = value;
-            OnPropertyChanged(propertyName);
-            return true;
-        }
     }
 }

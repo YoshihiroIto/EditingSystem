@@ -1,6 +1,7 @@
-﻿using System;
+﻿using Jewelry.EditingSystem.Tests.TestModels;
 using System.Collections.ObjectModel;
 using Xunit;
+using static Jewelry.EditingSystem.Tests.TestModels.TestModelCreator;
 
 // ReSharper disable UseObjectOrCollectionInitializer
 
@@ -8,11 +9,12 @@ namespace Jewelry.EditingSystem.Tests;
 
 public sealed class CollectionItemTests
 {
-    [Fact]
-    public void Add()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void Add(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.Collection = new ObservableCollection<CollectionItem>();
 
@@ -80,11 +82,12 @@ public sealed class CollectionItemTests
         Assert.Equal(1, item2.CollectionChangedRemoveCount);
     }
 
-    [Fact]
-    public void Move_Ascending()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void Move_Ascending(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.Collection = new ObservableCollection<CollectionItem>();
 
@@ -155,11 +158,12 @@ public sealed class CollectionItemTests
         Assert.Equal(0, item3.CollectionChangedMoveCount);
     }
 
-    [Fact]
-    public void Move_Descending()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void Move_Descending(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.Collection = new ObservableCollection<CollectionItem>();
 
@@ -230,11 +234,12 @@ public sealed class CollectionItemTests
         Assert.Equal(3, item3.CollectionChangedMoveCount);
     }
 
-    [Fact]
-    public void Remove()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void Remove(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.Collection = new ObservableCollection<CollectionItem>();
 
@@ -292,11 +297,12 @@ public sealed class CollectionItemTests
         Assert.Equal(0, item3.CollectionChangedMoveCount);
     }
 
-    [Fact]
-    public void RemoveAt()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void RemoveAt(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.Collection = new ObservableCollection<CollectionItem>();
 
@@ -354,11 +360,12 @@ public sealed class CollectionItemTests
         Assert.Equal(0, item3.CollectionChangedMoveCount);
     }
 
-    [Fact]
-    public void Insert()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void Insert(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.Collection = new ObservableCollection<CollectionItem>();
 
@@ -443,11 +450,12 @@ public sealed class CollectionItemTests
         Assert.Equal(0, item3.CollectionChangedMoveCount);
     }
 
-    [Fact]
-    public void ClearEx()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void ClearEx(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.Collection = new ObservableCollection<CollectionItem>();
 
@@ -518,11 +526,12 @@ public sealed class CollectionItemTests
         Assert.Equal(0, item3.CollectionChangedMoveCount);
     }
 
-    [Fact]
-    public void Replace()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void Replace(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.Collection = new ObservableCollection<CollectionItem>();
 
@@ -602,53 +611,5 @@ public sealed class CollectionItemTests
         Assert.Equal(0, item2.CollectionChangedMoveCount);
         Assert.Equal(0, item3.CollectionChangedMoveCount);
         Assert.Equal(0, itemX.CollectionChangedMoveCount);
-    }
-
-    public sealed class TestModel : EditableModelBase
-    {
-        public TestModel(History history) : base(history)
-        {
-        }
-
-        #region Collection
-
-        private ObservableCollection<CollectionItem> _Collection = new();
-
-        public ObservableCollection<CollectionItem> Collection
-        {
-            get => _Collection;
-            set => SetEditableProperty(v => _Collection = v, _Collection, value);
-        }
-
-        #endregion
-    }
-
-
-    public sealed class CollectionItem : ICollectionItem
-    {
-        public int CollectionChangedAddCount { get; private set; }
-        public int CollectionChangedRemoveCount { get; private set; }
-        public int CollectionChangedMoveCount { get; private set; }
-
-        public void Changed(in CollectionItemChangedInfo info)
-        {
-            switch (info.Type)
-            {
-                case CollectionItemChangedType.Add:
-                    ++ CollectionChangedAddCount;
-                    break;
-
-                case CollectionItemChangedType.Remove:
-                    ++ CollectionChangedRemoveCount;
-                    break;
-
-                case CollectionItemChangedType.Move:
-                    ++ CollectionChangedMoveCount;
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(info.Type), info.Type, null);
-            }
-        }
     }
 }

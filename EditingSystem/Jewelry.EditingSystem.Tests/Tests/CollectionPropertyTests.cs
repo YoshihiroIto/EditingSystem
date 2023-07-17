@@ -1,19 +1,20 @@
-﻿using System;
+﻿using Jewelry.EditingSystem.Tests.TestModels;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Xunit;
-
-// ReSharper disable UseObjectOrCollectionInitializer
+using static Jewelry.EditingSystem.Tests.TestModels.TestModelCreator;
 
 namespace Jewelry.EditingSystem.Tests;
 
 public sealed class CollectionPropertyTests
 {
-    [Fact]
-    public void Add()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void Add(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.IntCollection = new ObservableCollection<int>();
 
@@ -43,11 +44,12 @@ public sealed class CollectionPropertyTests
         Assert.True(model.IntCollection.SequenceEqual(new[] {1, 2, 3}));
     }
 
-    [Fact]
-    public void Move_Ascending()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void Move_Ascending(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.IntCollection = new ObservableCollection<int>();
 
@@ -68,11 +70,12 @@ public sealed class CollectionPropertyTests
         Assert.True(model.IntCollection.SequenceEqual(new[] {1, 2, 3, 0}));
     }
 
-    [Fact]
-    public void Move_Descending()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void Move_Descending(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.IntCollection = new ObservableCollection<int>();
 
@@ -93,11 +96,12 @@ public sealed class CollectionPropertyTests
         Assert.True(model.IntCollection.SequenceEqual(new[] {3, 0, 1, 2}));
     }
 
-    [Fact]
-    public void Remove()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void Remove(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.IntCollection = new ObservableCollection<int>();
 
@@ -118,11 +122,12 @@ public sealed class CollectionPropertyTests
         Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102}));
     }
 
-    [Fact]
-    public void RemoveAt()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void RemoveAt(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.IntCollection = new ObservableCollection<int>();
 
@@ -143,11 +148,12 @@ public sealed class CollectionPropertyTests
         Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102}));
     }
 
-    [Fact]
-    public void Insert()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void Insert(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.IntCollection = new ObservableCollection<int>();
 
@@ -168,11 +174,12 @@ public sealed class CollectionPropertyTests
         Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 999, 102, 103}));
     }
 
-    [Fact]
-    public void Clear()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void Clear(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.IntCollection = new ObservableCollection<int>();
 
@@ -188,11 +195,12 @@ public sealed class CollectionPropertyTests
         );
     }
 
-    [Fact]
-    public void ClearEx()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void ClearEx(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.IntCollection = new ObservableCollection<int>();
 
@@ -214,11 +222,12 @@ public sealed class CollectionPropertyTests
         Assert.True(model.IntCollection.SequenceEqual(new int[] { }));
     }
 
-    [Fact]
-    public void Replace()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void Replace(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.IntCollection = new ObservableCollection<int>();
 
@@ -239,11 +248,12 @@ public sealed class CollectionPropertyTests
         Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 999, 103}));
     }
 
-    [Fact]
-    public void CollectionChanged_on_Undo_Redo()
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void CollectionChanged_on_Undo_Redo(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = new TestModel(history);
+        var model = CreateTestModel(testModelKind, history);
 
         model.IntCollection = new ObservableCollection<int>();
 
@@ -301,24 +311,5 @@ public sealed class CollectionPropertyTests
         oldCount = count;
         history.Redo();
         Assert.NotEqual(oldCount, count);
-    }
-
-    public sealed class TestModel : EditableModelBase
-    {
-        public TestModel(History history) : base(history)
-        {
-        }
-
-        #region IntCollection
-
-        private ObservableCollection<int> _IntCollection = new();
-
-        public ObservableCollection<int> IntCollection
-        {
-            get => _IntCollection;
-            set => SetEditableProperty(v => _IntCollection = v, _IntCollection, value);
-        }
-
-        #endregion
     }
 }
