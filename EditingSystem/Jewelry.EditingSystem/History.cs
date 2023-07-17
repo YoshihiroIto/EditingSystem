@@ -17,13 +17,13 @@ public class History : INotifyPropertyChanged, IDisposable
     public int RedoCount => _redoStack.Count;
     public int PauseDepth { get; private set; }
     public int BatchDepth { get; private set; }
+    public bool IsInUndoing { get; private set; }
     public bool IsInPaused => PauseDepth > 0;
     public bool IsInBatch => BatchDepth > 0;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
     internal readonly CollectionChangedWeakEventManager _collectionChangedWeakEventManager = new();
-    internal bool IsInUndoing { get; private set; }
 
     public void Dispose()
     {
