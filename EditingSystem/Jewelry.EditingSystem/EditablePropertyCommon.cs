@@ -7,49 +7,47 @@ namespace Jewelry.EditingSystem;
 
 internal static class EditablePropertyCommon
 {
-    internal static bool SetEditableProperty<T>(History history, Action<T> setValue, T currentValue, T nextValue)
+    internal static bool SetEditableProperty<T>(History history, Action<T> setValue, T oldValue, T newValue)
     {
-        if (EqualityComparer<T>.Default.Equals(currentValue, nextValue))
+        if (EqualityComparer<T>.Default.Equals(oldValue, newValue))
             return false;
 
-        var oldValue = currentValue;
 
-        history.Push(() => setValue(oldValue), () => setValue(nextValue));
+        history.Push(() => setValue(oldValue), () => setValue(newValue));
 
-        if (currentValue is INotifyCollectionChanged current)
-            history._collectionChangedWeakEventManager.RemoveWeakEventListener(current);
+        if (oldValue is INotifyCollectionChanged oldNotifyCollectionChanged)
+            history._collectionChangedWeakEventManager.RemoveWeakEventListener(oldNotifyCollectionChanged);
         
-        if (nextValue is INotifyCollectionChanged next)
-            history._collectionChangedWeakEventManager.AddWeakEventListener(next, history.OnCollectionPropertyCollectionChanged);
+        if (newValue is INotifyCollectionChanged newNotifyCollectionChanged)
+            history._collectionChangedWeakEventManager.AddWeakEventListener(newNotifyCollectionChanged, history.OnCollectionPropertyCollectionChanged);
 
-        setValue(nextValue);
+        setValue(newValue);
         return true;
     }
 
-    internal static bool SetEditableFlagProperty<T>(History history, Action<T> setValue, T currentValue, T flag, bool value)
+    internal static bool SetEditableFlagProperty<T>(History history, Action<T> setValue, T oldFlags, T newFlags, bool value)
         where T : IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>
     {
-        var oldValue = currentValue;
-        var nextValue = currentValue;
+        var newValue = oldFlags;
 
         if (value)
         {
-            if ((currentValue & flag) != default)
+            if ((oldFlags & newFlags) != default)
                 return false;
 
-            nextValue |= flag;
+            newValue |= newFlags;
         }
         else
         {
-            if ((currentValue & flag) == default)
+            if ((oldFlags & newFlags) == default)
                 return false;
 
-            nextValue &= ~flag;
+            newValue &= ~newFlags;
         }
 
-        history.Push(() => setValue(oldValue), () => setValue(nextValue));
+        history.Push(() => setValue(oldFlags), () => setValue(newValue));
 
-        setValue(nextValue);
+        setValue(newValue);
         return true;
     }
 }
