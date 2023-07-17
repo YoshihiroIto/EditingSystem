@@ -16,7 +16,7 @@ public class EditableModelBase : INotifyPropertyChanged
         _history = history;
     }
 
-    protected void SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue, [CallerMemberName] string propertyName = "")
+    protected bool SetEditableProperty<T>(Action<T> setValue, T currentValue, T nextValue, [CallerMemberName] string propertyName = "")
     {
         void SetValueWithRaisePropertyChanged(T v)
         {
@@ -24,10 +24,10 @@ public class EditableModelBase : INotifyPropertyChanged
             RaisePropertyChanged(propertyName);
         }
         
-        EditablePropertyCommon.SetEditableProperty(_history, SetValueWithRaisePropertyChanged, currentValue, nextValue);
+        return EditablePropertyCommon.SetEditableProperty(_history, SetValueWithRaisePropertyChanged, currentValue, nextValue);
     }
 
-    protected void SetEditableFlagProperty<T>(Action<T> setValue, T currentValue, T flag, bool value, [CallerMemberName] string propertyName = "")
+    protected bool SetEditableFlagProperty<T>(Action<T> setValue, T currentValue, T flag, bool value, [CallerMemberName] string propertyName = "")
         where T : IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>
     {
         void SetValueWithRaisePropertyChanged(T v)
@@ -36,7 +36,7 @@ public class EditableModelBase : INotifyPropertyChanged
             RaisePropertyChanged(propertyName);
         }
         
-        EditablePropertyCommon.SetEditableFlagProperty(_history, SetValueWithRaisePropertyChanged, currentValue, flag, value);
+        return EditablePropertyCommon.SetEditableFlagProperty(_history, SetValueWithRaisePropertyChanged, currentValue, flag, value);
     }
     
     protected bool SetPropertyWithoutHistory<T>(ref T storage, T value, [CallerMemberName] string propertyName = "")

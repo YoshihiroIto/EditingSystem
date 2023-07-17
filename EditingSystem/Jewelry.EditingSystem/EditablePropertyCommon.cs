@@ -7,10 +7,10 @@ namespace Jewelry.EditingSystem;
 
 internal static class EditablePropertyCommon
 {
-    internal static void SetEditableProperty<T>(History history, Action<T> setValue, T currentValue, T nextValue)
+    internal static bool SetEditableProperty<T>(History history, Action<T> setValue, T currentValue, T nextValue)
     {
         if (EqualityComparer<T>.Default.Equals(currentValue, nextValue))
-            return;
+            return false;
 
         var oldValue = currentValue;
 
@@ -23,9 +23,10 @@ internal static class EditablePropertyCommon
             history._collectionChangedWeakEventManager.AddWeakEventListener(next, history.OnCollectionPropertyCollectionChanged);
 
         setValue(nextValue);
+        return true;
     }
 
-    internal static void SetEditableFlagProperty<T>(History history, Action<T> setValue, T currentValue, T flag, bool value)
+    internal static bool SetEditableFlagProperty<T>(History history, Action<T> setValue, T currentValue, T flag, bool value)
         where T : IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>
     {
         var oldValue = currentValue;
@@ -34,14 +35,14 @@ internal static class EditablePropertyCommon
         if (value)
         {
             if ((currentValue & flag) != default)
-                return;
+                return false;
 
             nextValue |= flag;
         }
         else
         {
             if ((currentValue & flag) == default)
-                return;
+                return false;
 
             nextValue &= ~flag;
         }
@@ -49,5 +50,6 @@ internal static class EditablePropertyCommon
         history.Push(() => setValue(oldValue), () => setValue(nextValue));
 
         setValue(nextValue);
+        return true;
     }
 }
