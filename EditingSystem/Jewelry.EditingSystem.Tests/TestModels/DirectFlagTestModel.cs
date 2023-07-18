@@ -1,26 +1,20 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using Jewelry.EditingSystem.CommunityToolkit.Mvvm;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace Jewelry.EditingSystem.Tests.TestModels;
 
-public sealed partial class CommunityToolkitMvvmTestModel : ObservableObject, ITestModel
+public sealed class DirectFlagTestModel : IFlagTestModel
 {
     private readonly History _history;
 
-    public CommunityToolkitMvvmTestModel(History history)
+    public DirectFlagTestModel(History history)
     {
         _history = history;
     }
 
     public int ChangingCount { get; private set; }
-
-    [History] [ObservableProperty] private int _IntValue;
-              
-    [History] [ObservableProperty] private string _StringValue = "";
-
-    partial void OnIntValueChanged(int value) => ++ChangingCount;
-    partial void OnStringValueChanged(string value) => ++ChangingCount;
 
     public bool IsA
     {
@@ -57,28 +51,19 @@ public sealed partial class CommunityToolkitMvvmTestModel : ObservableObject, IT
     private const byte FlagIsB = 1 << 1;
     private const byte FlagIsC = 1 << 2;
 
+    public event PropertyChangedEventHandler? PropertyChanged;
 
-    #region IntCollection
-
-    private ObservableCollection<int> _IntCollection = new();
-
-    public ObservableCollection<int> IntCollection
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
-        get => _IntCollection;
-        set => this.SetEditableProperty(_history, v => SetProperty(ref _IntCollection, v), _IntCollection, value);
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
-    #endregion
-
-    #region Collection
-
-    private ObservableCollection<CollectionItem> _Collection = new();
-
-    public ObservableCollection<CollectionItem> Collection
+    // ReSharper disable once UnusedMethodReturnValue.Local
+    private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {
-        get => _Collection;
-        set => this.SetEditableProperty(_history, v => SetProperty(ref _Collection, v), _Collection, value);
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
     }
-
-    #endregion
 }

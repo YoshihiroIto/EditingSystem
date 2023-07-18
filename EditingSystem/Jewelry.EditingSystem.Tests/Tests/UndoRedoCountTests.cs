@@ -11,7 +11,7 @@ public sealed class UndoRedoCountTests
     public void Basic(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         Assert.Equal(0, history.UndoCount);
         Assert.Equal(0, history.RedoCount);

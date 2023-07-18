@@ -12,7 +12,7 @@ public sealed class BatchEditingTests
     public void Basic(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         Assert.False(history.CanUndo);
         Assert.False(history.CanRedo);
@@ -68,7 +68,7 @@ public sealed class BatchEditingTests
     public void NestingBatch(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         Assert.False(history.CanUndo);
         Assert.False(history.CanRedo);
@@ -114,7 +114,7 @@ public sealed class BatchEditingTests
     public void Cannot_call_undo_during_batch_recording(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         Assert.False(history.CanUndo);
         Assert.False(history.CanRedo);
@@ -134,7 +134,7 @@ public sealed class BatchEditingTests
     public void Cannot_call_redo_during_batch_recording(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         Assert.False(history.CanUndo);
         Assert.False(history.CanRedo);
@@ -154,7 +154,7 @@ public sealed class BatchEditingTests
     public void Batch_recording_has_not_begun(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         Assert.False(history.CanUndo);
         Assert.False(history.CanRedo);
