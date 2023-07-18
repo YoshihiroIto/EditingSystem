@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jewelry.EditingSystem", "Je
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jewelry.EditingSystem.Tests", "Jewelry.EditingSystem.Tests\Jewelry.EditingSystem.Tests.csproj", "{1B174DA4-669F-4047-B131-CFDC4A3EDDE0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jewelry.EditingSystem.CommunityToolkit.Mvvm", "Jewelry.EditingSystem.CommunityToolkit.Mvvm\Jewelry.EditingSystem.CommunityToolkit.Mvvm.csproj", "{90529F3D-0C57-4929-A642-6E44ACAA980E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{1B174DA4-669F-4047-B131-CFDC4A3EDDE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1B174DA4-669F-4047-B131-CFDC4A3EDDE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1B174DA4-669F-4047-B131-CFDC4A3EDDE0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{90529F3D-0C57-4929-A642-6E44ACAA980E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90529F3D-0C57-4929-A642-6E44ACAA980E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90529F3D-0C57-4929-A642-6E44ACAA980E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90529F3D-0C57-4929-A642-6E44ACAA980E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

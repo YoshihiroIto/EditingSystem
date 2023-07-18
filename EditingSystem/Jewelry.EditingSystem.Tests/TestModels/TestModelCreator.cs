@@ -10,6 +10,7 @@ public static class TestModelCreator
         {
             TestModelKinds.EditableModel => new EditableTestModel(history),
             TestModelKinds.Direct => new DirectTestModel(history),
+            TestModelKinds.CommunityToolkitMvvm => new CommunityToolkitMvvmTestModel(history),
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
         };
     }

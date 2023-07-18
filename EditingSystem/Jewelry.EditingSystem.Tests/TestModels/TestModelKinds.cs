@@ -3,5 +3,6 @@
 public enum TestModelKinds
 {
     EditableModel,
-    Direct
+    Direct,
+    CommunityToolkitMvvm
 }

@@ -8,6 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
+   	<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.4.0" /> 
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.3" />
     <PackageReference Include="xunit" Version="2.5.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.0">
@@ -17,6 +19,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    
+    <ProjectReference Include="..\Jewelry.EditingSystem.CommunityToolkit.Mvvm\Jewelry.EditingSystem.CommunityToolkit.Mvvm.csproj">
+      <OutputItemType>Analyzer</OutputItemType>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </ProjectReference>
+    
     <ProjectReference Include="..\Jewelry.EditingSystem\Jewelry.EditingSystem.csproj" />
   </ItemGroup>
 

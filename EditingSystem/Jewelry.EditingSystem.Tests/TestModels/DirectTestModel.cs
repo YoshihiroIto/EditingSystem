@@ -103,7 +103,7 @@ public sealed class DirectTestModel : ITestModel
     public ObservableCollection<CollectionItem> Collection
     {
         get => _Collection;
-        set => this.SetEditableProperty(_history, v => _Collection = v, _Collection, value);
+        set => this.SetEditableProperty(_history, v => SetField(ref _Collection, v), _Collection, value);
     }
 
     #endregion
