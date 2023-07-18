@@ -11,7 +11,7 @@ public sealed class FlagPropertyTests
     public void BasicByte(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateFlagTestModel(testModelKind, history);
 
         Assert.False(model.IsA);
         Assert.False(model.IsB);
@@ -70,7 +70,7 @@ public sealed class FlagPropertyTests
     public void BasicUint(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateFlagTestModel(testModelKind, history);
 
         Assert.False(model.IsA);
         Assert.False(model.IsB);
@@ -129,7 +129,7 @@ public sealed class FlagPropertyTests
     public void BasicUlong(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateFlagTestModel(testModelKind, history);
 
         Assert.False(model.IsA);
         Assert.False(model.IsB);
@@ -181,5 +181,25 @@ public sealed class FlagPropertyTests
         Assert.True(model.IsA);
         Assert.True(model.IsB);
         Assert.True(model.IsC);
+    }
+    
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void ChangingCount(TestModelKinds testModelKind)
+    {
+        using var history = new History();
+        var model = CreateFlagTestModel(testModelKind, history);
+
+        model.IsA = true;
+        Assert.Equal(1, model.ChangingCount);
+
+        model.IsB = true;
+        Assert.Equal(2, model.ChangingCount);
+
+        model.IsB = true;
+        Assert.Equal(2, model.ChangingCount);
+
+        model.IsC = true;
+        Assert.Equal(3, model.ChangingCount);
     }
 }

@@ -4,12 +4,22 @@ namespace Jewelry.EditingSystem.Tests.TestModels;
 
 public static class TestModelCreator
 {
-    public static ITestModel CreateTestModel(TestModelKinds kind, History history)
+    public static IBasicTestModel CreateBasicTestModel(TestModelKinds kind, History history)
     {
         return kind switch
         {
-            TestModelKinds.EditableModel => new EditableTestModel(history),
-            TestModelKinds.Direct => new DirectTestModel(history),
+            TestModelKinds.EditableModel => new EditableBasicTestModel(history),
+            TestModelKinds.Direct => new DirectBasicTestModel(history),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+        };
+    }
+    
+    public static IFlagTestModel CreateFlagTestModel(TestModelKinds kind, History history)
+    {
+        return kind switch
+        {
+            TestModelKinds.EditableModel => new EditableFlagTestModel(history),
+            TestModelKinds.Direct => new DirectFlagTestModel(history),
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
         };
     }

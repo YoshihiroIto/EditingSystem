@@ -12,7 +12,7 @@ public sealed class PauseEditingTests
     public void Basic(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         history.BeginPause();
         {
@@ -35,7 +35,7 @@ public sealed class PauseEditingTests
     public void NestingPause(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         Assert.False(history.CanUndo);
         Assert.False(history.CanRedo);
@@ -72,7 +72,7 @@ public sealed class PauseEditingTests
     public void Cannot_call_undo_during_pause(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         Assert.False(history.CanUndo);
         Assert.False(history.CanRedo);
@@ -92,7 +92,7 @@ public sealed class PauseEditingTests
     public void Cannot_call_redo_during_pause(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         Assert.False(history.CanUndo);
         Assert.False(history.CanRedo);
@@ -112,7 +112,7 @@ public sealed class PauseEditingTests
     public void Pause_has_not_begun(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         Assert.False(history.CanUndo);
         Assert.False(history.CanRedo);

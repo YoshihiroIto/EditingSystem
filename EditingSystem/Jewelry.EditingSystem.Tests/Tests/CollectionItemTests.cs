@@ -14,7 +14,7 @@ public sealed class CollectionItemTests
     public void Add(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         model.Collection = new ObservableCollection<CollectionItem>();
 
@@ -87,7 +87,7 @@ public sealed class CollectionItemTests
     public void Move_Ascending(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         model.Collection = new ObservableCollection<CollectionItem>();
 
@@ -163,7 +163,7 @@ public sealed class CollectionItemTests
     public void Move_Descending(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         model.Collection = new ObservableCollection<CollectionItem>();
 
@@ -239,7 +239,7 @@ public sealed class CollectionItemTests
     public void Remove(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         model.Collection = new ObservableCollection<CollectionItem>();
 
@@ -302,7 +302,7 @@ public sealed class CollectionItemTests
     public void RemoveAt(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         model.Collection = new ObservableCollection<CollectionItem>();
 
@@ -365,7 +365,7 @@ public sealed class CollectionItemTests
     public void Insert(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         model.Collection = new ObservableCollection<CollectionItem>();
 
@@ -455,7 +455,7 @@ public sealed class CollectionItemTests
     public void ClearEx(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         model.Collection = new ObservableCollection<CollectionItem>();
 
@@ -531,7 +531,7 @@ public sealed class CollectionItemTests
     public void Replace(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         model.Collection = new ObservableCollection<CollectionItem>();
 

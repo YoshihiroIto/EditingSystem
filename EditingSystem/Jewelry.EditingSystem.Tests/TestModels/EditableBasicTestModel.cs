@@ -2,9 +2,9 @@
 
 namespace Jewelry.EditingSystem.Tests.TestModels;
 
-public sealed class EditableTestModel : EditableModelBase, ITestModel
+public sealed class EditableBasicTestModel : EditableModelBase, IBasicTestModel
 {
-    public EditableTestModel(History history) : base(history)
+    public EditableBasicTestModel(History history) : base(history)
     {
     }
 
@@ -41,42 +41,6 @@ public sealed class EditableTestModel : EditableModelBase, ITestModel
     }
 
     #endregion
-
-    public bool IsA
-    {
-        get => (_flags & FlagIsA) != default;
-        set
-        {
-            if (SetEditableFlagProperty(v => _flags = v, _flags, FlagIsA, value))
-                ++ChangingCount;
-        }
-    }
-
-    public bool IsB
-    {
-        get => (_flags & FlagIsB) != default;
-        set
-        {
-            if (SetEditableFlagProperty(v => _flags = v, _flags, FlagIsB, value))
-                ++ChangingCount;
-        }
-    }
-
-    public bool IsC
-    {
-        get => (_flags & FlagIsC) != default;
-        set
-        {
-            if (SetEditableFlagProperty(v => _flags = v, _flags, FlagIsC, value))
-                ++ChangingCount;
-        }
-    }
-
-    private byte _flags;
-    private const byte FlagIsA = 1 << 0;
-    private const byte FlagIsB = 1 << 1;
-    private const byte FlagIsC = 1 << 2;
-
 
     #region IntCollection
 

@@ -12,7 +12,7 @@ public sealed class SinglePropertyTests
     public void Basic(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         Assert.Equal(0, model.IntValue);
         Assert.False(history.CanUndo);
@@ -84,7 +84,7 @@ public sealed class SinglePropertyTests
     public void PropertyChanged(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         var count = 0;
 
@@ -114,7 +114,7 @@ public sealed class SinglePropertyTests
     public void PropertyChanged_CanUndo_CanRedo_CanClear(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         var canUndoCount = 0;
         var canRedoCount = 0;
@@ -155,7 +155,7 @@ public sealed class SinglePropertyTests
     public void Clear(TestModelKinds testModelKind)
     {
         using var history = new History();
-        var model = CreateTestModel(testModelKind, history);
+        var model = CreateBasicTestModel(testModelKind, history);
 
         Assert.Equal(0, model.IntValue);
         Assert.False(history.CanUndo);
