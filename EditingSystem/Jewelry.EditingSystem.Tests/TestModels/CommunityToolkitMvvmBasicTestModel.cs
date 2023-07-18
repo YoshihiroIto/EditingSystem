@@ -15,13 +15,21 @@ public sealed partial class CommunityToolkitMvvmBasicTestModel : ObservableObjec
 
     public int ChangingCount { get; private set; }
 
-    [History] [ObservableProperty] private int _IntValue;
+    [Undoable]
+    [ObservableProperty]
+    private int _IntValue;
 
-    [History] [ObservableProperty] private string _StringValue = "";
+    [Undoable]
+    [ObservableProperty]
+    private string _StringValue = "";
 
-    [History] [ObservableProperty] private ObservableCollection<int> _IntCollection = new();
+    [Undoable]
+    [ObservableProperty]
+    private ObservableCollection<int> _IntCollection = new();
 
-    [History] [ObservableProperty] private ObservableCollection<CollectionItem> _Collection = new();
+    [Undoable]
+    [ObservableProperty]
+    private ObservableCollection<CollectionItem> _Collection = new();
 
     partial void OnIntValueChanged(int value) => ++ChangingCount;
     partial void OnStringValueChanged(string value) => ++ChangingCount;

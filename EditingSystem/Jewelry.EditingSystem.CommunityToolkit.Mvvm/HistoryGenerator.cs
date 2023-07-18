@@ -1,23 +1,22 @@
 ﻿using Microsoft.CodeAnalysis;
-using INamedTypeSymbol = Microsoft.CodeAnalysis.INamedTypeSymbol;
 
 namespace Jewelry.EditingSystem.CommunityToolkit.Mvvm;
 
 [Generator(LanguageNames.CSharp)]
 public class HistoryGenerator : IIncrementalGenerator
 {
-    private const string HistoryAttributeName = "HistoryAttribute";
+    private const string UndoableAttributeName = "UndoableAttribute";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         context.RegisterPostInitializationOutput(static context =>
         {
-            context.AddSource("HistoryAttribute.cs", """
+            context.AddSource("UndoableAttribute.cs", """
 using System;
 namespace Jewelry.EditingSystem.CommunityToolkit.Mvvm;
 
 [AttributeUsage(AttributeTargets.Field)]
-public sealed class HistoryAttribute : Attribute
+public sealed class UndoableAttribute : Attribute
 {
 }
 """);
@@ -37,7 +36,7 @@ public sealed class HistoryAttribute : Attribute
         if (source.TargetSymbol is not IFieldSymbol fieldSymbol)
             return;
 
-        var attribute = source.Attributes.FirstOrDefault(x => x.AttributeClass?.Name == HistoryAttributeName);
+        var attribute = source.Attributes.FirstOrDefault(x => x.AttributeClass?.Name == UndoableAttributeName);
         if (attribute is null)
             return;
 
