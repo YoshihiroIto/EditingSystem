@@ -25,6 +25,7 @@ internal static class EditablePropertyCommon
         return true;
     }
 
+#if NET8_0_OR_GREATER 
     internal static bool SetEditableFlagProperty<T>(History history, Action<T> setValue, T oldFlags, T newFlags, bool value)
         where T : IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>
     {
@@ -50,4 +51,5 @@ internal static class EditablePropertyCommon
         setValue(newValue);
         return true;
     }
+#endif
 }
