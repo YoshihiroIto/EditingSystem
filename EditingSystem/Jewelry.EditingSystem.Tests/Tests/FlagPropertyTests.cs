@@ -2,7 +2,7 @@
 using Xunit;
 using static Jewelry.EditingSystem.Tests.TestModels.TestModelCreator;
 
-namespace Jewelry.EditingSystem.Tests;
+namespace Jewelry.EditingSystem.Tests.Tests;
 
 public sealed class FlagPropertyTests
 {

@@ -3,7 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 
-namespace Jewelry.EditingSystem.WeakEvent;
+namespace Jewelry.EditingSystem;
 
 internal sealed class CollectionChangedWeakEventManager : IDisposable
 {

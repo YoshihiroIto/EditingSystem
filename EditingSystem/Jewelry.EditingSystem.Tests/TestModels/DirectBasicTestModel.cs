@@ -5,15 +5,8 @@ using System.Runtime.CompilerServices;
 
 namespace Jewelry.EditingSystem.Tests.TestModels;
 
-public sealed class DirectBasicTestModel : IBasicTestModel
+public sealed class DirectBasicTestModel(History history) : IBasicTestModel
 {
-    private readonly History _history;
-
-    public DirectBasicTestModel(History history)
-    {
-        _history = history;
-    }
-
     public int ChangingCount { get; private set; }
 
     #region IntValue
@@ -25,7 +18,7 @@ public sealed class DirectBasicTestModel : IBasicTestModel
         get => _IntValue;
         set
         {
-            if (this.SetEditableProperty(_history, v => SetField(ref _IntValue, v), _IntValue, value))
+            if (this.SetEditableProperty(history, v => SetField(ref _IntValue, v), _IntValue, value))
                 ++ChangingCount;
         }
     }
@@ -41,7 +34,7 @@ public sealed class DirectBasicTestModel : IBasicTestModel
         get => _StringValue;
         set
         {
-            if (this.SetEditableProperty(_history, v => SetField(ref _StringValue, v), _StringValue, value))
+            if (this.SetEditableProperty(history, v => SetField(ref _StringValue, v), _StringValue, value))
                 ++ChangingCount;
         }
     }
@@ -55,7 +48,7 @@ public sealed class DirectBasicTestModel : IBasicTestModel
     public ObservableCollection<int> IntCollection
     {
         get => _IntCollection;
-        set => this.SetEditableProperty(_history, v => SetField(ref _IntCollection, v), _IntCollection, value);
+        set => this.SetEditableProperty(history, v => SetField(ref _IntCollection, v), _IntCollection, value);
     }
 
     #endregion
@@ -67,7 +60,7 @@ public sealed class DirectBasicTestModel : IBasicTestModel
     public ObservableCollection<CollectionItem> Collection
     {
         get => _Collection;
-        set => this.SetEditableProperty(_history, v => _Collection = v, _Collection, value);
+        set => this.SetEditableProperty(history, v => _Collection = v, _Collection, value);
     }
 
     #endregion

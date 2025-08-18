@@ -1,11 +1,11 @@
-﻿using Jewelry.EditingSystem.Tests.TestModels;
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Jewelry.EditingSystem.Tests.TestModels;
 using Xunit;
 using static Jewelry.EditingSystem.Tests.TestModels.TestModelCreator;
 
-namespace Jewelry.EditingSystem.Tests;
+namespace Jewelry.EditingSystem.Tests.Tests;
 
 public sealed class CollectionPropertyTests
 {

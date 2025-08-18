@@ -16,10 +16,10 @@ internal static class EditablePropertyCommon
         history.Push(() => setValue(oldValue), () => setValue(newValue));
 
         if (oldValue is INotifyCollectionChanged oldNotifyCollectionChanged)
-            history._collectionChangedWeakEventManager.RemoveWeakEventListener(oldNotifyCollectionChanged);
+            history.CollectionChangedWeakEventManager.RemoveWeakEventListener(oldNotifyCollectionChanged);
         
         if (newValue is INotifyCollectionChanged newNotifyCollectionChanged)
-            history._collectionChangedWeakEventManager.AddWeakEventListener(newNotifyCollectionChanged, history.OnCollectionPropertyCollectionChanged);
+            history.CollectionChangedWeakEventManager.AddWeakEventListener(newNotifyCollectionChanged, history.OnCollectionPropertyCollectionChanged);
 
         setValue(newValue);
         return true;

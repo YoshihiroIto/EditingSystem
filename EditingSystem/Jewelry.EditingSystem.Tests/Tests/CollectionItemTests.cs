@@ -1,11 +1,9 @@
-﻿using Jewelry.EditingSystem.Tests.TestModels;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
+using Jewelry.EditingSystem.Tests.TestModels;
 using Xunit;
 using static Jewelry.EditingSystem.Tests.TestModels.TestModelCreator;
 
-// ReSharper disable UseObjectOrCollectionInitializer
-
-namespace Jewelry.EditingSystem.Tests;
+namespace Jewelry.EditingSystem.Tests.Tests;
 
 public sealed class CollectionItemTests
 {

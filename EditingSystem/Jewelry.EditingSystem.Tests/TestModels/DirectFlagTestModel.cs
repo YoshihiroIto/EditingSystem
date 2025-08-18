@@ -5,15 +5,8 @@ using System.Runtime.CompilerServices;
 
 namespace Jewelry.EditingSystem.Tests.TestModels;
 
-public sealed class DirectFlagTestModel : IFlagTestModel
+public sealed class DirectFlagTestModel(History history) : IFlagTestModel
 {
-    private readonly History _history;
-
-    public DirectFlagTestModel(History history)
-    {
-        _history = history;
-    }
-
     public int ChangingCount { get; private set; }
 
     public bool IsA
@@ -21,7 +14,7 @@ public sealed class DirectFlagTestModel : IFlagTestModel
         get => (_flags & FlagIsA) != default;
         set
         {
-            if (this.SetEditableFlagProperty(_history, v => _flags = v, _flags, FlagIsA, value))
+            if (this.SetEditableFlagProperty(history, v => _flags = v, _flags, FlagIsA, value))
                 ++ChangingCount;
         }
     }
@@ -31,7 +24,7 @@ public sealed class DirectFlagTestModel : IFlagTestModel
         get => (_flags & FlagIsB) != default;
         set
         {
-            if (this.SetEditableFlagProperty(_history, v => _flags = v, _flags, FlagIsB, value))
+            if (this.SetEditableFlagProperty(history, v => _flags = v, _flags, FlagIsB, value))
                 ++ChangingCount;
         }
     }
@@ -41,7 +34,7 @@ public sealed class DirectFlagTestModel : IFlagTestModel
         get => (_flags & FlagIsC) != default;
         set
         {
-            if (this.SetEditableFlagProperty(_history, v => _flags = v, _flags, FlagIsC, value))
+            if (this.SetEditableFlagProperty(history, v => _flags = v, _flags, FlagIsC, value))
                 ++ChangingCount;
         }
     }

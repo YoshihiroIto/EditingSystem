@@ -1,5 +1,4 @@
-﻿using Jewelry.EditingSystem.WeakEvent;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -23,11 +22,11 @@ public class History : INotifyPropertyChanged, IDisposable
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    internal readonly CollectionChangedWeakEventManager _collectionChangedWeakEventManager = new();
+    internal readonly CollectionChangedWeakEventManager CollectionChangedWeakEventManager = new();
 
     public void Dispose()
     {
-        _collectionChangedWeakEventManager.Dispose();
+        CollectionChangedWeakEventManager.Dispose();
     }
 
     public void BeginPause()

@@ -1,13 +1,7 @@
-﻿using System.Collections.ObjectModel;
+﻿namespace Jewelry.EditingSystem.Tests.TestModels;
 
-namespace Jewelry.EditingSystem.Tests.TestModels;
-
-public sealed class EditableFlagTestModel : EditableModelBase, IFlagTestModel
+public sealed class EditableFlagTestModel(History history) : EditableModelBase(history), IFlagTestModel
 {
-    public EditableFlagTestModel(History history) : base(history)
-    {
-    }
-
     public int ChangingCount { get; private set; }
 
     public bool IsA
