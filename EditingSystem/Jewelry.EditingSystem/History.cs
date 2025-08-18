@@ -36,7 +36,7 @@ public class History : INotifyPropertyChanged, IDisposable
 
     public void EndPause()
     {
-        if (PauseDepth == 0)
+        if (PauseDepth is 0)
             throw new InvalidOperationException("Pause is not begun.");
 
         --PauseDepth;
@@ -46,18 +46,18 @@ public class History : INotifyPropertyChanged, IDisposable
     {
         ++BatchDepth;
 
-        if (BatchDepth == 1)
+        if (BatchDepth is 1)
             BeginBatchInternal();
     }
 
     public void EndBatch()
     {
-        if (BatchDepth == 0)
+        if (BatchDepth is 0)
             throw new InvalidOperationException("Batch recording has not begun.");
 
         --BatchDepth;
 
-        if (BatchDepth == 0)
+        if (BatchDepth is 0)
             EndBatchInternal();
     }
 
@@ -69,7 +69,7 @@ public class History : INotifyPropertyChanged, IDisposable
         if (IsInPaused)
             throw new InvalidOperationException("Can't call Undo() during in paused.");
 
-        if (CanUndo == false)
+        if (CanUndo is false)
             return;
 
         var currentFlags = CanUndoRedoClear;
@@ -101,7 +101,7 @@ public class History : INotifyPropertyChanged, IDisposable
         if (IsInPaused)
             throw new InvalidOperationException("Can't call Redo() during in paused.");
 
-        if (CanRedo == false)
+        if (CanRedo is false)
             return;
 
         var currentFlags = CanUndoRedoClear;
@@ -172,219 +172,219 @@ public class History : INotifyPropertyChanged, IDisposable
         switch (e.Action)
         {
             case NotifyCollectionChangedAction.Add:
+            {
+                void DoRedo()
                 {
-                    void DoRedo()
+                    var addItems = e.NewItems ?? throw new NullReferenceException();
+                    var addCount = addItems.Count;
+                    var addIndex = e.NewStartingIndex;
+
+                    // ICollectionItem
+                    for (var i = 0; i != addCount; ++i)
                     {
-                        var addItems = e.NewItems ?? throw new NullReferenceException();
-                        var addCount = addItems.Count;
-                        var addIndex = e.NewStartingIndex;
+                        list.Insert(addIndex + i, addItems[i]);
 
-                        // ICollectionItem
-                        for (var i = 0; i != addCount; ++i)
-                        {
-                            list.Insert(addIndex + i, addItems[i]);
-
-                            if (addItems[i] is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Add);
-                        }
+                        if (addItems[i] is ICollectionItem collItem)
+                            collItem.Changed(CollectionItemChangedInfo.Add);
                     }
+                }
 
-                    void DoUndo()
+                void DoUndo()
+                {
+                    var addItems = e.NewItems ?? throw new NullReferenceException();
+                    var addCount = addItems.Count;
+                    var addIndex = e.NewStartingIndex;
+
+                    // ICollectionItem
+                    for (var i = 0; i != addCount; ++i)
                     {
-                        var addItems = e.NewItems ?? throw new NullReferenceException();
-                        var addCount = addItems.Count;
-                        var addIndex = e.NewStartingIndex;
+                        list.RemoveAt(addIndex + i);
 
-                        // ICollectionItem
-                        for (var i = 0; i != addCount; ++i)
-                        {
-                            list.RemoveAt(addIndex + i);
-
-                            if (addItems[i] is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Remove);
-                        }
+                        if (addItems[i] is ICollectionItem collItem)
+                            collItem.Changed(CollectionItemChangedInfo.Remove);
                     }
+                }
+
+                // ICollectionItem
+                {
+                    var addItems = e.NewItems ?? throw new NullReferenceException();
+                    var addCount = addItems.Count;
+
+                    for (var i = 0; i != addCount; ++i)
+                    {
+                        if (addItems[i] is ICollectionItem collItem)
+                            collItem.Changed(CollectionItemChangedInfo.Add);
+                    }
+                }
+
+                Push(DoUndo, DoRedo);
+                break;
+            }
+
+            case NotifyCollectionChangedAction.Move:
+            {
+                _ = e.OldItems ?? throw new NullReferenceException();
+                _ = e.NewItems ?? throw new NullReferenceException();
+
+                if (e.OldItems.Count is not 1)
+                    throw new NotImplementedException();
+
+                if (e.NewItems.Count is not 1)
+                    throw new NotImplementedException();
+
+                void DoRedo()
+                {
+                    var src = e.OldStartingIndex;
+                    var dst = e.NewStartingIndex;
+
+                    var item = list[src];
+                    list.RemoveAt(src);
+
+                    list.Insert(dst, item);
 
                     // ICollectionItem
                     {
-                        var addItems = e.NewItems ?? throw new NullReferenceException();
-                        var addCount = addItems.Count;
-
-                        for (var i = 0; i != addCount; ++i)
-                        {
-                            if (addItems[i] is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Add);
-                        }
-                    }
-
-                    Push(DoUndo, DoRedo);
-                    break;
-                }
-
-            case NotifyCollectionChangedAction.Move:
-                {
-                    _ = e.OldItems ?? throw new NullReferenceException();
-                    _ = e.NewItems ?? throw new NullReferenceException();
-
-                    if (e.OldItems.Count != 1)
-                        throw new NotImplementedException();
-
-                    if (e.NewItems.Count != 1)
-                        throw new NotImplementedException();
-
-                    void DoRedo()
-                    {
-                        var src = e.OldStartingIndex;
-                        var dst = e.NewStartingIndex;
-
-                        var item = list[src];
-                        list.RemoveAt(src);
-
-                        list.Insert(dst, item);
-
-                        // ICollectionItem
-                        {
-                            if (item is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Move);
-                        }
-                    }
-
-                    void DoUndo()
-                    {
-                        var src = e.NewStartingIndex;
-                        var dst = e.OldStartingIndex;
-
-                        var item = list[src];
-                        list.RemoveAt(src);
-
-                        list.Insert(dst, item);
-
-                        // ICollectionItem
                         if (item is ICollectionItem collItem)
                             collItem.Changed(CollectionItemChangedInfo.Move);
                     }
+                }
+
+                void DoUndo()
+                {
+                    var src = e.NewStartingIndex;
+                    var dst = e.OldStartingIndex;
+
+                    var item = list[src];
+                    list.RemoveAt(src);
+
+                    list.Insert(dst, item);
 
                     // ICollectionItem
-                    {
-                        if (e.OldItems[0] is ICollectionItem collItem)
-                            collItem.Changed(CollectionItemChangedInfo.Move);
-                    }
-
-                    Push(DoUndo, DoRedo);
-                    break;
+                    if (item is ICollectionItem collItem)
+                        collItem.Changed(CollectionItemChangedInfo.Move);
                 }
+
+                // ICollectionItem
+                {
+                    if (e.OldItems[0] is ICollectionItem collItem)
+                        collItem.Changed(CollectionItemChangedInfo.Move);
+                }
+
+                Push(DoUndo, DoRedo);
+                break;
+            }
 
             case NotifyCollectionChangedAction.Remove:
+            {
+                _ = e.OldItems ?? throw new NullReferenceException();
+
+                if (e.OldItems.Count is not 1)
+                    throw new NotImplementedException();
+
+                if (e.NewItems is not null)
+                    throw new NotImplementedException();
+
+                var item = e.OldItems[0];
+
+                void DoRedo()
                 {
-                    _ = e.OldItems ?? throw new NullReferenceException();
-
-                    if (e.OldItems.Count != 1)
-                        throw new NotImplementedException();
-
-                    if (e.NewItems is not null)
-                        throw new NotImplementedException();
-
-                    var item = e.OldItems[0];
-
-                    void DoRedo()
-                    {
-                        item = list[e.OldStartingIndex];
-                        list.RemoveAt(e.OldStartingIndex);
-
-                        // ICollectionItem
-                        {
-                            if (item is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Remove);
-                        }
-                    }
-
-                    void DoUndo()
-                    {
-                        list.Insert(e.OldStartingIndex, item);
-
-                        // ICollectionItem
-                        {
-                            if (item is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Add);
-                        }
-                    }
+                    item = list[e.OldStartingIndex];
+                    list.RemoveAt(e.OldStartingIndex);
 
                     // ICollectionItem
                     {
-                        if (e.OldItems[0] is ICollectionItem collItem)
+                        if (item is ICollectionItem collItem)
                             collItem.Changed(CollectionItemChangedInfo.Remove);
                     }
-
-                    Push(DoUndo, DoRedo);
-                    break;
                 }
 
-            case NotifyCollectionChangedAction.Replace:
+                void DoUndo()
                 {
-                    _ = e.OldItems ?? throw new NullReferenceException();
-                    _ = e.NewItems ?? throw new NullReferenceException();
-
-                    if (e.OldItems.Count != 1)
-                        throw new NotImplementedException();
-
-                    if (e.NewItems.Count != 1)
-                        throw new NotImplementedException();
-
-                    if (e.NewStartingIndex != e.OldStartingIndex)
-                        throw new NotImplementedException();
-
-                    void DoRedo()
-                    {
-                        var index = e.OldStartingIndex;
-                        var oldItem = list[index];
-                        list[index] = e.NewItems[0];
-
-                        // ICollectionItem
-                        {
-                            if (oldItem is ICollectionItem oldCollItem)
-                                oldCollItem.Changed(CollectionItemChangedInfo.Remove);
-
-                            if (list[index] is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Add);
-                        }
-                    }
-
-                    void DoUndo()
-                    {
-                        var index = e.OldStartingIndex;
-                        var oldItem = list[index];
-                        list[index] = e.OldItems[0];
-
-                        // ICollectionItem
-                        {
-                            if (oldItem is ICollectionItem oldCollItem)
-                                oldCollItem.Changed(CollectionItemChangedInfo.Add);
-
-                            if (list[index] is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Remove);
-                        }
-                    }
+                    list.Insert(e.OldStartingIndex, item);
 
                     // ICollectionItem
                     {
-                        if (e.OldItems[0] is ICollectionItem oldCollItem)
+                        if (item is ICollectionItem collItem)
+                            collItem.Changed(CollectionItemChangedInfo.Add);
+                    }
+                }
+
+                // ICollectionItem
+                {
+                    if (e.OldItems[0] is ICollectionItem collItem)
+                        collItem.Changed(CollectionItemChangedInfo.Remove);
+                }
+
+                Push(DoUndo, DoRedo);
+                break;
+            }
+
+            case NotifyCollectionChangedAction.Replace:
+            {
+                _ = e.OldItems ?? throw new NullReferenceException();
+                _ = e.NewItems ?? throw new NullReferenceException();
+
+                if (e.OldItems.Count is not 1)
+                    throw new NotImplementedException();
+
+                if (e.NewItems.Count is not 1)
+                    throw new NotImplementedException();
+
+                if (e.NewStartingIndex != e.OldStartingIndex)
+                    throw new NotImplementedException();
+
+                void DoRedo()
+                {
+                    var index = e.OldStartingIndex;
+                    var oldItem = list[index];
+                    list[index] = e.NewItems[0];
+
+                    // ICollectionItem
+                    {
+                        if (oldItem is ICollectionItem oldCollItem)
                             oldCollItem.Changed(CollectionItemChangedInfo.Remove);
 
-                        if (e.NewItems[0] is ICollectionItem newCollItem)
-                            newCollItem.Changed(CollectionItemChangedInfo.Add);
+                        if (list[index] is ICollectionItem collItem)
+                            collItem.Changed(CollectionItemChangedInfo.Add);
                     }
-
-                    Push(DoUndo, DoRedo);
-                    break;
                 }
+
+                void DoUndo()
+                {
+                    var index = e.OldStartingIndex;
+                    var oldItem = list[index];
+                    list[index] = e.OldItems[0];
+
+                    // ICollectionItem
+                    {
+                        if (oldItem is ICollectionItem oldCollItem)
+                            oldCollItem.Changed(CollectionItemChangedInfo.Add);
+
+                        if (list[index] is ICollectionItem collItem)
+                            collItem.Changed(CollectionItemChangedInfo.Remove);
+                    }
+                }
+
+                // ICollectionItem
+                {
+                    if (e.OldItems[0] is ICollectionItem oldCollItem)
+                        oldCollItem.Changed(CollectionItemChangedInfo.Remove);
+
+                    if (e.NewItems[0] is ICollectionItem newCollItem)
+                        newCollItem.Changed(CollectionItemChangedInfo.Add);
+                }
+
+                Push(DoUndo, DoRedo);
+                break;
+            }
 
             case NotifyCollectionChangedAction.Reset:
-                {
-                    if (IsInPaused)
-                        break;
+            {
+                if (IsInPaused)
+                    break;
 
-                    throw new NotSupportedException("Clear() is not support. Use ClearEx()");
-                }
+                throw new NotSupportedException("Clear() is not support. Use ClearEx()");
+            }
 
             default:
                 throw new ArgumentOutOfRangeException();

@@ -10,7 +10,7 @@ public static class ListExtensions
         {
             history.BeginBatch();
             
-            while (self.Count != 0)
+            while (self.Count is not 0)
                 self.RemoveAt(self.Count - 1);
         }
         finally
