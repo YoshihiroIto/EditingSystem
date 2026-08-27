@@ -4,5 +4,6 @@ public enum TestModelKinds
 {
     EditableModel,
     Direct,
-    CommunityToolkitMvvm
+    CommunityToolkitMvvm,
+    CommunityToolkitMvvmPartialProperty
 }

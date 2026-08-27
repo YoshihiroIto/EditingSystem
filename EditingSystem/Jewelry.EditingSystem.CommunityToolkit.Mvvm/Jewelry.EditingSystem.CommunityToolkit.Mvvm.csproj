@@ -1,18 +1,33 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>Jewelry.EditingSystem.CommunityToolkit.Mvvm</PackageId>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Authors>Yoshihiro Ito</Authors>
+    <Description>CommunityToolkit.Mvvm integration for Jewelry.EditingSystem.</Description>
+    <PackageTags>undo editing mvvm source-generator</PackageTags>
+    <PackageProjectUrl>https://github.com/YoshihiroIto/EditingSystem</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/YoshihiroIto/EditingSystem</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
 
-    <PropertyGroup>
-    	<TargetFramework>netstandard2.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        
-        <LangVersion>11</LangVersion>
-        
-        <IsRoslynComponent>true</IsRoslynComponent>
-        <AnalyzerLanguage>cs</AnalyzerLanguage>
-    </PropertyGroup>
-    
-    <ItemGroup>
-		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.1" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="[8.4.2,9.0.0)" />
+    <ProjectReference Include="..\Jewelry.EditingSystem\Jewelry.EditingSystem.csproj" />
+    <ProjectReference Include="..\Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators\Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
 
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="$(MSBuildProjectDirectory)\..\Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators\bin\$(Configuration)\netstandard2.0\Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators.dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
+  </ItemGroup>
 </Project>

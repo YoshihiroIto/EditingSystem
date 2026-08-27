@@ -11,6 +11,7 @@ public static class TestModelCreator
             TestModelKinds.EditableModel => new EditableBasicTestModel(history),
             TestModelKinds.Direct => new DirectBasicTestModel(history),
             TestModelKinds.CommunityToolkitMvvm => new CommunityToolkitMvvmBasicTestModel(history),
+            TestModelKinds.CommunityToolkitMvvmPartialProperty => new CommunityToolkitMvvmPartialPropertyBasicTestModel(history),
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
         };
     }

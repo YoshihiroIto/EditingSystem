@@ -9,20 +9,41 @@ internal static class EditablePropertyCommon
 {
     internal static bool SetEditableProperty<T>(History history, Action<T> setValue, T oldValue, T newValue)
     {
-        if (EqualityComparer<T>.Default.Equals(oldValue, newValue))
+        if (RecordPropertyChange(history, setValue, oldValue, newValue) is false)
             return false;
-
-
-        history.Push(() => setValue(oldValue), () => setValue(newValue));
-
-        if (oldValue is INotifyCollectionChanged oldNotifyCollectionChanged)
-            history.CollectionChangedWeakEventManager.RemoveWeakEventListener(oldNotifyCollectionChanged);
-        
-        if (newValue is INotifyCollectionChanged newNotifyCollectionChanged)
-            history.CollectionChangedWeakEventManager.AddWeakEventListener(newNotifyCollectionChanged, history.OnCollectionPropertyCollectionChanged);
 
         setValue(newValue);
         return true;
+    }
+
+    internal static bool RecordPropertyChange<T>(History history, Action<T> setValue, T oldValue, T newValue)
+    {
+        if (EqualityComparer<T>.Default.Equals(oldValue, newValue))
+            return false;
+
+        void ApplyValue(T currentValue, T value)
+        {
+            UpdateCollectionListener(history, currentValue, value);
+            setValue(value);
+        }
+
+        history.Push(
+            () => ApplyValue(newValue, oldValue),
+            () => ApplyValue(oldValue, newValue));
+
+        UpdateCollectionListener(history, oldValue, newValue);
+        return true;
+    }
+
+    private static void UpdateCollectionListener<T>(History history, T oldValue, T newValue)
+    {
+        if (oldValue is INotifyCollectionChanged oldNotifyCollectionChanged)
+            history.CollectionChangedWeakEventManager.RemoveWeakEventListener(oldNotifyCollectionChanged);
+
+        if (newValue is INotifyCollectionChanged newNotifyCollectionChanged)
+            history.CollectionChangedWeakEventManager.AddWeakEventListener(
+                newNotifyCollectionChanged,
+                history.OnCollectionPropertyCollectionChanged);
     }
 
 #if NET8_0_OR_GREATER 

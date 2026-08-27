@@ -150,6 +150,21 @@ public class History : INotifyPropertyChanged, IDisposable
         InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
     }
 
+    /// <summary>
+    /// Records a property change without applying <paramref name="newValue"/> immediately.
+    /// </summary>
+    /// <remarks>
+    /// This is intended for property setters that apply the value themselves after recording the
+    /// change. Undo and redo use <paramref name="setValue"/> so the original setter pipeline is
+    /// executed again.
+    /// </remarks>
+    public bool RecordPropertyChange<T>(Action<T> setValue, T oldValue, T newValue)
+    {
+        if (setValue is null)
+            throw new ArgumentNullException(nameof(setValue));
+        return EditablePropertyCommon.RecordPropertyChange(this, setValue, oldValue, newValue);
+    }
+
     public void Clear()
     {
         var currentFlags = CanUndoRedoClear;
@@ -427,12 +442,12 @@ public class History : INotifyPropertyChanged, IDisposable
 
     private void EndBatchInternal()
     {
-        Debug.Assert(_batchHistory is not null);
+        var batchHistory = _batchHistory ?? throw new InvalidOperationException();
 
-        if (_batchHistory.UndoRedoCount != (UndoCount: 0, RedoCount: 0))
-            Push(_batchHistory.UndoAll, _batchHistory.RedoAll);
+        if (batchHistory.UndoRedoCount != (UndoCount: 0, RedoCount: 0))
+            Push(batchHistory.UndoAll, batchHistory.RedoAll);
 
-        _batchHistory.Dispose();
+        batchHistory.Dispose();
         _batchHistory = null;
     }
 
