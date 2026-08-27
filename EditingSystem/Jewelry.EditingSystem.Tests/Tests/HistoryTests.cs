@@ -1,6 +1,6 @@
 ﻿using Xunit;
 
-namespace Jewelry.EditingSystem.Tests;
+namespace Jewelry.EditingSystem.Tests.Tests;
 
 public sealed class HistoryTests
 {

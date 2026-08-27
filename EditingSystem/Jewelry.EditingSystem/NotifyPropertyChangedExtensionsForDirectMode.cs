@@ -16,6 +16,7 @@ public static class NotifyPropertyChangedExtensionsForDirectMode
         return EditablePropertyCommon.SetEditableProperty(history, setValue, oldValue, newValue);
     }
     
+#if NET8_0_OR_GREATER 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool SetEditableFlagProperty<T>(
         this INotifyPropertyChanged _, 
@@ -25,4 +26,5 @@ public static class NotifyPropertyChangedExtensionsForDirectMode
     {
         return EditablePropertyCommon.SetEditableFlagProperty(history, setValue, oldFlags, newFlags, value);
     }
+#endif
 }

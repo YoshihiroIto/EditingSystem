@@ -3,7 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 
-namespace Jewelry.EditingSystem.WeakEvent;
+namespace Jewelry.EditingSystem;
 
 internal sealed class CollectionChangedWeakEventManager : IDisposable
 {
@@ -24,7 +24,7 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
 
             foreach (var listener in _listeners.Keys)
             {
-                if (listener.IsAlive == false)
+                if (listener is { IsAlive: false })
                     toRemoveListeners[count++] = listener;
 
                 else if (listener.Source == source)
@@ -47,7 +47,7 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
     {
         foreach (var listener in _listeners.Keys)
         {
-            if (listener.IsAlive == false)
+            if (listener is { IsAlive: false })
                 continue;
 
             listener.Dispose();

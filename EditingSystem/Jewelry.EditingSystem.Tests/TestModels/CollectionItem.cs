@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Jewelry.EditingSystem.Tests
+namespace Jewelry.EditingSystem.Tests.TestModels
 {
     public sealed class CollectionItem : ICollectionItem
     {

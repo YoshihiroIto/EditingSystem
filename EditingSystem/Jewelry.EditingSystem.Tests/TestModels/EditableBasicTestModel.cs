@@ -2,12 +2,8 @@
 
 namespace Jewelry.EditingSystem.Tests.TestModels;
 
-public sealed class EditableBasicTestModel : EditableModelBase, IBasicTestModel
+public sealed class EditableBasicTestModel(History history) : EditableModelBase(history), IBasicTestModel
 {
-    public EditableBasicTestModel(History history) : base(history)
-    {
-    }
-
     public int ChangingCount { get; private set; }
 
     #region IntValue

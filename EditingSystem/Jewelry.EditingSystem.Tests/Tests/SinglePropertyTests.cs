@@ -1,9 +1,9 @@
-﻿using Jewelry.EditingSystem.Tests.TestModels;
-using System.ComponentModel;
+﻿using System.ComponentModel;
+using Jewelry.EditingSystem.Tests.TestModels;
 using Xunit;
 using static Jewelry.EditingSystem.Tests.TestModels.TestModelCreator;
 
-namespace Jewelry.EditingSystem.Tests;
+namespace Jewelry.EditingSystem.Tests.Tests;
 
 public sealed class SinglePropertyTests
 {

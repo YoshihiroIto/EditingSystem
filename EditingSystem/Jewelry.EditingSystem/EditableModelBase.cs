@@ -26,7 +26,8 @@ public class EditableModelBase : INotifyPropertyChanged
         
         return EditablePropertyCommon.SetEditableProperty(_history, SetValueWithRaisePropertyChanged, oldValue, newValue);
     }
-
+    
+#if NET8_0_OR_GREATER 
     protected bool SetEditableFlagProperty<T>(Action<T> setValue, T oldFlags, T newFlags, bool value, [CallerMemberName] string propertyName = "")
         where T : IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>
     {
@@ -38,6 +39,7 @@ public class EditableModelBase : INotifyPropertyChanged
         
         return EditablePropertyCommon.SetEditableFlagProperty(_history, SetValueWithRaisePropertyChanged, oldFlags, newFlags, value);
     }
+#endif
     
     protected bool SetPropertyWithoutHistory<T>(ref T storage, T value, [CallerMemberName] string propertyName = "")
     {
@@ -51,6 +53,7 @@ public class EditableModelBase : INotifyPropertyChanged
         return true;
     }
 
+#if NET8_0_OR_GREATER 
     protected bool SetFlagPropertyWithoutHistory<T>(ref T storage, T flag, bool value, [CallerMemberName] string propertyName = "")
         where T : struct, IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>
     {
@@ -73,6 +76,7 @@ public class EditableModelBase : INotifyPropertyChanged
 
         return true;
     }
+#endif
 
     protected void RaisePropertyChanged([CallerMemberName] string propertyName = "")
     {
