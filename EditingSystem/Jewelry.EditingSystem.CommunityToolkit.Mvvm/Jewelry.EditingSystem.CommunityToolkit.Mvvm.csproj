@@ -6,7 +6,7 @@
     <LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>Jewelry.EditingSystem.CommunityToolkit.Mvvm</PackageId>
-    <PackageVersion>1.0.0</PackageVersion>
+    <PackageVersion>1.0.1</PackageVersion>
     <Authors>Yoshihiro Ito</Authors>
     <Description>CommunityToolkit.Mvvm integration for Jewelry.EditingSystem.</Description>
     <PackageTags>undo editing mvvm source-generator</PackageTags>

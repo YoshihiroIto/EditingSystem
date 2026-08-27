@@ -10,7 +10,7 @@
     <PackageTags>undo editing</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RootNamespace>Jewelry.EditingSystem</RootNamespace>
-    <PackageVersion>2.2.2</PackageVersion>
+    <PackageVersion>2.2.3</PackageVersion>
     <Title>EditingSystem</Title>
     <PackageLicenseUrl></PackageLicenseUrl>
     <TargetFrameworks>net10.0;net9.0;net8.0;netstandard2.0</TargetFrameworks>
