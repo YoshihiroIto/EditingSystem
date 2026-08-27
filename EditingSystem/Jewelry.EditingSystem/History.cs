@@ -31,7 +31,12 @@ public class History : INotifyPropertyChanged, IDisposable
 
     public void BeginPause()
     {
+        var wasInPaused = IsInPaused;
         ++PauseDepth;
+        PropertyChanged?.Invoke(this, PauseDepthArgs);
+
+        if (wasInPaused != IsInPaused)
+            PropertyChanged?.Invoke(this, IsInPausedArgs);
     }
 
     public void EndPause()
@@ -39,15 +44,26 @@ public class History : INotifyPropertyChanged, IDisposable
         if (PauseDepth is 0)
             throw new InvalidOperationException("Pause is not begun.");
 
+        var wasInPaused = IsInPaused;
         --PauseDepth;
+        PropertyChanged?.Invoke(this, PauseDepthArgs);
+
+        if (wasInPaused != IsInPaused)
+            PropertyChanged?.Invoke(this, IsInPausedArgs);
     }
 
     public void BeginBatch()
     {
+        var wasInBatch = IsInBatch;
         ++BatchDepth;
 
         if (BatchDepth is 1)
             BeginBatchInternal();
+
+        PropertyChanged?.Invoke(this, BatchDepthArgs);
+
+        if (wasInBatch != IsInBatch)
+            PropertyChanged?.Invoke(this, IsInBatchArgs);
     }
 
     public void EndBatch()
@@ -55,10 +71,16 @@ public class History : INotifyPropertyChanged, IDisposable
         if (BatchDepth is 0)
             throw new InvalidOperationException("Batch recording has not begun.");
 
+        var wasInBatch = IsInBatch;
         --BatchDepth;
 
         if (BatchDepth is 0)
             EndBatchInternal();
+
+        PropertyChanged?.Invoke(this, BatchDepthArgs);
+
+        if (wasInBatch != IsInBatch)
+            PropertyChanged?.Invoke(this, IsInBatchArgs);
     }
 
     public void Undo()
@@ -82,6 +104,11 @@ public class History : INotifyPropertyChanged, IDisposable
         {
             IsInUndoing = true;
             action.Undo();
+        }
+        catch
+        {
+            _undoStack.Push(action);
+            throw;
         }
         finally
         {
@@ -114,6 +141,11 @@ public class History : INotifyPropertyChanged, IDisposable
         {
             IsInUndoing = true;
             action.Redo();
+        }
+        catch
+        {
+            _redoStack.Push(action);
+            throw;
         }
         finally
         {
@@ -213,7 +245,7 @@ public class History : INotifyPropertyChanged, IDisposable
                     // ICollectionItem
                     for (var i = 0; i != addCount; ++i)
                     {
-                        list.RemoveAt(addIndex + i);
+                        list.RemoveAt(addIndex);
 
                         if (addItems[i] is ICollectionItem collItem)
                             collItem.Changed(CollectionItemChangedInfo.Remove);
@@ -373,10 +405,10 @@ public class History : INotifyPropertyChanged, IDisposable
                     // ICollectionItem
                     {
                         if (oldItem is ICollectionItem oldCollItem)
-                            oldCollItem.Changed(CollectionItemChangedInfo.Add);
+                            oldCollItem.Changed(CollectionItemChangedInfo.Remove);
 
                         if (list[index] is ICollectionItem collItem)
-                            collItem.Changed(CollectionItemChangedInfo.Remove);
+                            collItem.Changed(CollectionItemChangedInfo.Add);
                     }
                 }
 
@@ -467,6 +499,8 @@ public class History : INotifyPropertyChanged, IDisposable
     private static readonly PropertyChangedEventArgs RedoCountArgs = new(nameof(RedoCount));
     private static readonly PropertyChangedEventArgs PauseDepthArgs = new(nameof(PauseDepth));
     private static readonly PropertyChangedEventArgs BatchDepthArgs = new(nameof(BatchDepth));
+    private static readonly PropertyChangedEventArgs IsInPausedArgs = new(nameof(IsInPaused));
+    private static readonly PropertyChangedEventArgs IsInBatchArgs = new(nameof(IsInBatch));
 
     private sealed class BatchHistory : History
     {

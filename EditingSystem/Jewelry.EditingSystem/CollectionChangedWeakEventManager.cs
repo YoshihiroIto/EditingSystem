@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 
@@ -7,53 +6,77 @@ namespace Jewelry.EditingSystem;
 
 internal sealed class CollectionChangedWeakEventManager : IDisposable
 {
-    private readonly Dictionary<CollectionChangedWeakEventListener, NotifyCollectionChangedEventHandler> _listeners = new();
+    private readonly List<Registration> _listeners = new();
 
     public void AddWeakEventListener(INotifyCollectionChanged source, NotifyCollectionChangedEventHandler handler)
     {
-        _listeners.Add(new CollectionChangedWeakEventListener(source, handler), handler);
+        for (var i = _listeners.Count - 1; i >= 0; --i)
+        {
+            var registration = _listeners[i];
+            if (registration.Listener.IsAlive is false)
+            {
+                registration.Listener.Dispose();
+                _listeners.RemoveAt(i);
+                continue;
+            }
+
+            if (ReferenceEquals(registration.Listener.Source, source))
+            {
+                ++registration.ReferenceCount;
+                return;
+            }
+        }
+
+        _listeners.Add(new Registration(source, handler));
     }
 
     public void RemoveWeakEventListener(INotifyCollectionChanged source)
     {
-        var toRemoveListeners = ArrayPool<CollectionChangedWeakEventListener>.Shared.Rent(_listeners.Count);
-
-        try
+        for (var i = _listeners.Count - 1; i >= 0; --i)
         {
-            var count = 0;
-
-            foreach (var listener in _listeners.Keys)
+            var registration = _listeners[i];
+            if (registration.Listener.IsAlive is false)
             {
-                if (listener is { IsAlive: false })
-                    toRemoveListeners[count++] = listener;
-
-                else if (listener.Source == source)
-                {
-                    listener.Dispose();
-                    toRemoveListeners[count++] = listener;
-                }
+                registration.Listener.Dispose();
+                _listeners.RemoveAt(i);
+                continue;
             }
 
-            for (var i = 0; i != count; ++i)
-                _listeners.Remove(toRemoveListeners[i]);
-        }
-        finally
-        {
-            ArrayPool<CollectionChangedWeakEventListener>.Shared.Return(toRemoveListeners);
+            if (ReferenceEquals(registration.Listener.Source, source) is false)
+                continue;
+
+            if (registration.ReferenceCount > 1)
+                --registration.ReferenceCount;
+            else
+            {
+                registration.Listener.Dispose();
+                _listeners.RemoveAt(i);
+            }
+
+            return;
         }
     }
 
     public void Dispose()
     {
-        foreach (var listener in _listeners.Keys)
-        {
-            if (listener is { IsAlive: false })
-                continue;
-
-            listener.Dispose();
-        }
+        foreach (var registration in _listeners)
+            registration.Listener.Dispose();
 
         _listeners.Clear();
+    }
+
+    private sealed class Registration
+    {
+        public Registration(INotifyCollectionChanged source, NotifyCollectionChangedEventHandler handler)
+        {
+            Listener = new CollectionChangedWeakEventListener(source, handler);
+            Handler = handler;
+        }
+
+        public CollectionChangedWeakEventListener Listener { get; }
+        // Keep the weak listener's delegate alive for as long as this registration is active.
+        public NotifyCollectionChangedEventHandler Handler { get; }
+        public int ReferenceCount { get; set; } = 1;
     }
 
     private sealed class CollectionChangedWeakEventListener : IDisposable

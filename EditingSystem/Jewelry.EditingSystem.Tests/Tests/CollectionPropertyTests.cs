@@ -312,4 +312,62 @@ public sealed class CollectionPropertyTests
         history.Redo();
         Assert.NotEqual(oldCount, count);
     }
+
+    [Fact]
+    public void Shared_collection_is_recorded_once_and_remains_observed_until_last_owner_is_removed()
+    {
+        using var history = new History();
+        var shared = new ObservableCollection<int>();
+        var replacement = new ObservableCollection<int>();
+
+        history.RecordPropertyChange<ObservableCollection<int>>(_ => { }, null!, shared);
+        history.RecordPropertyChange<ObservableCollection<int>>(_ => { }, null!, shared);
+
+        history.Clear();
+        shared.Add(1);
+        Assert.Equal(1, history.UndoCount);
+        history.Undo();
+        Assert.Empty(shared);
+
+        history.RecordPropertyChange(_ => { }, shared, replacement);
+        history.Clear();
+
+        shared.Add(42);
+
+        Assert.Equal(1, history.UndoCount);
+        history.Undo();
+        Assert.Empty(shared);
+        Assert.False(history.CanUndo);
+    }
+
+    [Fact]
+    public void Range_add_can_be_undone()
+    {
+        using var history = new History();
+        var model = new DirectBasicTestModel(history);
+        var collection = new RangeObservableCollection<int>();
+        model.IntCollection = collection;
+        collection.Add(10);
+        history.Clear();
+
+        collection.AddRange([20, 30]);
+        history.Undo();
+
+        Assert.Equal([10], collection);
+    }
+
+    private sealed class RangeObservableCollection<T> : ObservableCollection<T>
+    {
+        public void AddRange(System.Collections.Generic.IReadOnlyList<T> items)
+        {
+            var startingIndex = Count;
+            foreach (var item in items)
+                Items.Add(item);
+
+            OnCollectionChanged(new System.Collections.Specialized.NotifyCollectionChangedEventArgs(
+                System.Collections.Specialized.NotifyCollectionChangedAction.Add,
+                (System.Collections.IList)items,
+                startingIndex));
+        }
+    }
 }
