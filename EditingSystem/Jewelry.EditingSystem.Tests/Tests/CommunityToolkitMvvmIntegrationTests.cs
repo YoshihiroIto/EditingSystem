@@ -125,16 +125,9 @@ public sealed partial class CommunityToolkitMvvmIntegrationTests
         Assert.Equal(0, model.ChangedHookCount);
     }
 
-    [EditingHistory(nameof(_history))]
-    private sealed partial class CommunityToolkitFeaturesModel : ObservableObject
+    [EditingHistory(nameof(history))]
+    private sealed partial class CommunityToolkitFeaturesModel(History history) : ObservableObject
     {
-        private readonly History _history;
-
-        public CommunityToolkitFeaturesModel(History history)
-        {
-            _history = history;
-        }
-
         public int DoubledValue => Value * 2;
         public int ChangingHookCount { get; private set; }
         public int ChangedHookCount { get; private set; }
@@ -145,7 +138,7 @@ public sealed partial class CommunityToolkitMvvmIntegrationTests
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(DoubledValue))]
         [NotifyCanExecuteChangedFor(nameof(ApplyCommand))]
-        private int _value;
+        public partial int Value { get; set; }
 
         private bool CanApply() => Value > 0;
 
@@ -167,21 +160,14 @@ public sealed partial class CommunityToolkitMvvmIntegrationTests
         }
     }
 
-    [EditingHistory(nameof(_history))]
-    public sealed partial class CommunityToolkitValidationModel : ObservableValidator
+    [EditingHistory(nameof(history))]
+    public sealed partial class CommunityToolkitValidationModel(History history) : ObservableValidator
     {
-        private readonly History _history;
-
-        public CommunityToolkitValidationModel(History history)
-        {
-            _history = history;
-        }
-
         [Undoable]
         [ObservableProperty]
         [NotifyDataErrorInfo]
         [Required]
-        private string? _name;
+        public partial string? Name { get; set; }
     }
 
     [EditingHistory(nameof(_history))]
@@ -199,6 +185,6 @@ public sealed partial class CommunityToolkitMvvmIntegrationTests
         [Undoable]
         [ObservableProperty]
         [NotifyPropertyChangedRecipients]
-        private int _value;
+        public partial int Value { get; set; }
     }
 }

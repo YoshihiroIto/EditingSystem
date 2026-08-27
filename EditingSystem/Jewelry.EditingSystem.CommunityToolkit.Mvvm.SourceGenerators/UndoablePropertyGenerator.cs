@@ -182,7 +182,22 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
                 groupedProperties.Add(containingType, properties);
             }
 
-            properties.Add(new PropertyModel(propertyName, propertyType, historyMember!.Name));
+            var historyParameterName = historyMember is IParameterSymbol parameter
+                ? parameter.Name
+                : null;
+            var historyAccessorName = historyParameterName is not null
+                ? GetUniqueHistoryAccessorName(containingType)
+                : null;
+            var historyAccessExpression = historyAccessorName is not null
+                ? $"this.{EscapeIdentifier(historyAccessorName)}"
+                : $"this.{EscapeIdentifier(historyMember!.Name)}";
+
+            properties.Add(new PropertyModel(
+                propertyName,
+                propertyType,
+                historyAccessExpression,
+                historyParameterName,
+                historyAccessorName));
         }
 
         foreach (var pair in groupedProperties)
@@ -280,18 +295,39 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
             return false;
         }
 
-        var members = containingType.GetMembers(configuredName!);
-        if (members.Length != 1 || members[0] is not IFieldSymbol and not IPropertySymbol)
+        var members = containingType.GetMembers(configuredName!)
+            .Where(static member => member is IFieldSymbol or IPropertySymbol)
+            .ToArray();
+
+        if (members.Length == 1)
         {
-            reason = "the member does not uniquely identify a field or property";
+            historyMember = members[0];
+        }
+        else if (members.Length == 0)
+        {
+            var parameters = containingType.InstanceConstructors
+                .Where(static constructor => constructor.DeclaringSyntaxReferences.Any(static reference =>
+                    reference.GetSyntax() is TypeDeclarationSyntax declaration &&
+                    declaration.ChildNodes().OfType<ParameterListSyntax>().Any()))
+                .SelectMany(static constructor => constructor.Parameters)
+                .Where(parameter => parameter.Name == configuredName)
+                .ToArray();
+
+            if (parameters.Length == 1)
+                historyMember = parameters[0];
+        }
+
+        if (historyMember is null)
+        {
+            reason = "the name does not uniquely identify a field, property, or primary constructor parameter";
             return false;
         }
 
-        historyMember = members[0];
         var memberType = historyMember switch
         {
             IFieldSymbol field => field.Type,
             IPropertySymbol property => property.Type,
+            IParameterSymbol parameter => parameter.Type,
             _ => throw new InvalidOperationException()
         };
 
@@ -413,11 +449,25 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
             indent++;
         }
 
+        var primaryConstructorHistory = properties.FirstOrDefault(
+            static property => property.HistoryParameterName is not null);
+        if (primaryConstructorHistory.HistoryParameterName is not null)
+        {
+            AppendIndent(builder, indent);
+            builder.Append("private global::");
+            builder.Append(HistoryTypeName);
+            builder.Append(' ');
+            builder.Append(EscapeIdentifier(primaryConstructorHistory.HistoryAccessorName!));
+            builder.Append(" => ");
+            builder.Append(EscapeIdentifier(primaryConstructorHistory.HistoryParameterName));
+            builder.AppendLine(";");
+            builder.AppendLine();
+        }
+
         foreach (var property in properties.OrderBy(static property => property.PropertyName, StringComparer.Ordinal))
         {
             var propertyName = EscapeIdentifier(property.PropertyName);
             var hookName = EscapeIdentifier($"On{property.PropertyName}Changing");
-            var historyMember = EscapeIdentifier(property.HistoryMemberName);
             var propertyType = property.PropertyType.ToDisplayString(TypeDisplayFormat);
 
             AppendIndent(builder, indent);
@@ -429,8 +479,8 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
             AppendIndent(builder, indent);
             builder.AppendLine("{");
             AppendIndent(builder, indent + 1);
-            builder.Append("var editingHistory = this.");
-            builder.Append(historyMember);
+            builder.Append("var editingHistory = ");
+            builder.Append(property.HistoryAccessExpression);
             builder.AppendLine(";");
             AppendIndent(builder, indent + 1);
             builder.AppendLine("if (editingHistory.IsInUndoing)");
@@ -491,6 +541,15 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
         return builder.ToString();
     }
 
+    private static string GetUniqueHistoryAccessorName(INamedTypeSymbol containingType)
+    {
+        var name = "__jewelryEditingHistory";
+        while (containingType.GetMembers(name).Length > 0)
+            name += "_";
+
+        return name;
+    }
+
     private static void AppendIndent(StringBuilder builder, int indent)
     {
         builder.Append(' ', indent * 4);
@@ -519,15 +578,24 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
 
     private readonly struct PropertyModel
     {
-        public PropertyModel(string propertyName, ITypeSymbol propertyType, string historyMemberName)
+        public PropertyModel(
+            string propertyName,
+            ITypeSymbol propertyType,
+            string historyAccessExpression,
+            string? historyParameterName,
+            string? historyAccessorName)
         {
             PropertyName = propertyName;
             PropertyType = propertyType;
-            HistoryMemberName = historyMemberName;
+            HistoryAccessExpression = historyAccessExpression;
+            HistoryParameterName = historyParameterName;
+            HistoryAccessorName = historyAccessorName;
         }
 
         public string PropertyName { get; }
         public ITypeSymbol PropertyType { get; }
-        public string HistoryMemberName { get; }
+        public string HistoryAccessExpression { get; }
+        public string? HistoryParameterName { get; }
+        public string? HistoryAccessorName { get; }
     }
 }

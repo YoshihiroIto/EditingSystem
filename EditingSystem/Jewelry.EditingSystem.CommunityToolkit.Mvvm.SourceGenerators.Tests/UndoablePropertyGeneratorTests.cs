@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.SourceGenerators;
 using Jewelry.EditingSystem;
 using Jewelry.EditingSystem.CommunityToolkit.Mvvm;
 using Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators;
@@ -69,6 +70,61 @@ public partial class Model
     [Undoable] private int value;
 }
 """, "JESCT001");
+    }
+
+    [Fact]
+    public void GeneratesHookUsingPrimaryConstructorHistoryParameter()
+    {
+        const string source = """
+using CommunityToolkit.Mvvm.ComponentModel;
+using Jewelry.EditingSystem;
+using Jewelry.EditingSystem.CommunityToolkit.Mvvm;
+
+[EditingHistory(nameof(history))]
+public partial class Model(History history) : ObservableObject
+{
+    [Undoable, ObservableProperty]
+    public partial int Value { get; set; }
+}
+""";
+
+        var result = Run(source);
+        var generated = Assert.Single(result.Results).GeneratedSources;
+        var text = Assert.Single(generated).SourceText.ToString();
+
+        Assert.Empty(result.Diagnostics);
+        Assert.Contains("private global::Jewelry.EditingSystem.History __jewelryEditingHistory => history;", text);
+        Assert.Contains("var editingHistory = this.__jewelryEditingHistory;", text);
+    }
+
+    [Fact]
+    public void CompilesWithBothGeneratorsWhenHistoryParameterWouldShadowNewValue()
+    {
+        const string source = """
+using CommunityToolkit.Mvvm.ComponentModel;
+using Jewelry.EditingSystem;
+using Jewelry.EditingSystem.CommunityToolkit.Mvvm;
+
+[EditingHistory(nameof(newValue))]
+public partial class Model(History newValue) : ObservableObject
+{
+    [Undoable, ObservableProperty]
+    public partial int Value { get; set; }
+}
+""";
+
+        var (result, outputCompilation) = RunAndCompileWithBothGenerators(source);
+        var generated = Assert.Single(
+            result.Results.SelectMany(static generator => generator.GeneratedSources),
+            static source => source.HintName.EndsWith(".Undoable.g.cs", StringComparison.Ordinal));
+        var text = generated.SourceText.ToString();
+
+        Assert.Contains("partial void OnValueChanging(int value)", text);
+        Assert.Contains("private global::Jewelry.EditingSystem.History __jewelryEditingHistory => newValue;", text);
+        Assert.Contains("var editingHistory = this.__jewelryEditingHistory;", text);
+        Assert.DoesNotContain(
+            outputCompilation.GetDiagnostics(),
+            static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
     }
 
     [Fact]
@@ -265,6 +321,42 @@ namespace Test
 
         driver = driver.RunGenerators(compilation);
         return driver.GetRunResult();
+    }
+
+    private static (GeneratorDriverRunResult Result, Compilation OutputCompilation) RunAndCompileWithBothGenerators(
+        string source)
+    {
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
+        var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
+        var references = GetFrameworkReferences()
+            .Append(MetadataReference.CreateFromFile(typeof(ObservablePropertyAttribute).Assembly.Location))
+            .Append(MetadataReference.CreateFromFile(typeof(UndoableAttribute).Assembly.Location))
+            .Append(MetadataReference.CreateFromFile(typeof(History).Assembly.Location))
+            .DistinctBy(reference => reference.Display);
+        var compilation = CSharpCompilation.Create(
+            "GeneratorCompilationTests",
+            [syntaxTree],
+            references,
+            new CSharpCompilationOptions(
+                OutputKind.DynamicallyLinkedLibrary,
+                nullableContextOptions: NullableContextOptions.Enable));
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            [
+                new ObservablePropertyGenerator().AsSourceGenerator(),
+                new UndoablePropertyGenerator().AsSourceGenerator()
+            ],
+            parseOptions: parseOptions);
+
+        driver = driver.RunGeneratorsAndUpdateCompilation(
+            compilation,
+            out var outputCompilation,
+            out var generatorDiagnostics);
+
+        Assert.DoesNotContain(
+            generatorDiagnostics,
+            static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        return (driver.GetRunResult(), outputCompilation);
     }
 
     private static IEnumerable<MetadataReference> GetFrameworkReferences()

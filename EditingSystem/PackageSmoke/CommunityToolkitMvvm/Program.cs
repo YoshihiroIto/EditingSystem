@@ -21,19 +21,12 @@ history.Redo();
 if (model.Name != "field" || model.Count != 42)
     throw new InvalidOperationException("Redo failed.");
 
-[EditingHistory(nameof(_history))]
-internal sealed partial class PackageModel : ObservableObject
+[EditingHistory(nameof(history))]
+internal sealed partial class PackageModel(History history) : ObservableObject
 {
-    private readonly History _history;
-
-    public PackageModel(History history)
-    {
-        _history = history;
-    }
-
     [ObservableProperty]
     [Undoable]
-    private string? _name;
+    public partial string? Name { get; set; }
 
     [ObservableProperty]
     [Undoable]
