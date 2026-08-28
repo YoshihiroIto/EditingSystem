@@ -9,9 +9,26 @@ public static class ListExtensions
         try
         {
             history.BeginBatch();
-            
+
             while (self.Count is not 0)
                 self.RemoveAt(self.Count - 1);
+        }
+        finally
+        {
+            history.EndBatch();
+        }
+    }
+
+    public static void ClearEx<T>(this ICollection<T> self, History history)
+    {
+        var items = new List<T>(self);
+
+        try
+        {
+            history.BeginBatch();
+
+            foreach (var item in items)
+                self.Remove(item);
         }
         finally
         {

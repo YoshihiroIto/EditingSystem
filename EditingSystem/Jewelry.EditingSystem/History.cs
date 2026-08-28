@@ -214,7 +214,10 @@ public class History : INotifyPropertyChanged, IDisposable
         if (IsInUndoing)
             return;
 
-        var list = sender as IList ?? throw new NullReferenceException();
+        var list = sender as IList;
+        var collection = list is null && e.Action is not NotifyCollectionChangedAction.Reset
+            ? CollectionAdapter.Create(sender ?? throw new NullReferenceException())
+            : null;
 
         switch (e.Action)
         {
@@ -224,12 +227,14 @@ public class History : INotifyPropertyChanged, IDisposable
                 {
                     var addItems = e.NewItems ?? throw new NullReferenceException();
                     var addCount = addItems.Count;
-                    var addIndex = e.NewStartingIndex;
 
                     // ICollectionItem
                     for (var i = 0; i != addCount; ++i)
                     {
-                        list.Insert(addIndex + i, addItems[i]);
+                        if (list is not null)
+                            list.Insert(e.NewStartingIndex + i, addItems[i]);
+                        else
+                            collection!.Add(addItems[i]);
 
                         if (addItems[i] is ICollectionItem collItem)
                             collItem.Changed(CollectionItemChangedInfo.Add);
@@ -240,12 +245,14 @@ public class History : INotifyPropertyChanged, IDisposable
                 {
                     var addItems = e.NewItems ?? throw new NullReferenceException();
                     var addCount = addItems.Count;
-                    var addIndex = e.NewStartingIndex;
 
                     // ICollectionItem
                     for (var i = 0; i != addCount; ++i)
                     {
-                        list.RemoveAt(addIndex);
+                        if (list is not null)
+                            list.RemoveAt(e.NewStartingIndex);
+                        else
+                            collection!.Remove(addItems[i]);
 
                         if (addItems[i] is ICollectionItem collItem)
                             collItem.Changed(CollectionItemChangedInfo.Remove);
@@ -270,6 +277,9 @@ public class History : INotifyPropertyChanged, IDisposable
 
             case NotifyCollectionChangedAction.Move:
             {
+                if (list is null)
+                    throw new NotSupportedException("Move is only supported for IList collections.");
+
                 _ = e.OldItems ?? throw new NullReferenceException();
                 _ = e.NewItems ?? throw new NullReferenceException();
 
@@ -335,8 +345,13 @@ public class History : INotifyPropertyChanged, IDisposable
 
                 void DoRedo()
                 {
-                    item = list[e.OldStartingIndex];
-                    list.RemoveAt(e.OldStartingIndex);
+                    if (list is not null)
+                    {
+                        item = list[e.OldStartingIndex];
+                        list.RemoveAt(e.OldStartingIndex);
+                    }
+                    else
+                        collection!.Remove(item);
 
                     // ICollectionItem
                     {
@@ -347,7 +362,10 @@ public class History : INotifyPropertyChanged, IDisposable
 
                 void DoUndo()
                 {
-                    list.Insert(e.OldStartingIndex, item);
+                    if (list is not null)
+                        list.Insert(e.OldStartingIndex, item);
+                    else
+                        collection!.Add(item);
 
                     // ICollectionItem
                     {
@@ -382,32 +400,60 @@ public class History : INotifyPropertyChanged, IDisposable
 
                 void DoRedo()
                 {
-                    var index = e.OldStartingIndex;
-                    var oldItem = list[index];
-                    list[index] = e.NewItems[0];
+                    object? oldItem;
+                    object? newItem;
+
+                    if (list is not null)
+                    {
+                        var index = e.OldStartingIndex;
+                        oldItem = list[index];
+                        list[index] = e.NewItems[0];
+                        newItem = list[index];
+                    }
+                    else
+                    {
+                        oldItem = e.OldItems[0];
+                        newItem = e.NewItems[0];
+                        collection!.Remove(oldItem);
+                        collection.Add(newItem);
+                    }
 
                     // ICollectionItem
                     {
                         if (oldItem is ICollectionItem oldCollItem)
                             oldCollItem.Changed(CollectionItemChangedInfo.Remove);
 
-                        if (list[index] is ICollectionItem collItem)
+                        if (newItem is ICollectionItem collItem)
                             collItem.Changed(CollectionItemChangedInfo.Add);
                     }
                 }
 
                 void DoUndo()
                 {
-                    var index = e.OldStartingIndex;
-                    var oldItem = list[index];
-                    list[index] = e.OldItems[0];
+                    object? oldItem;
+                    object? newItem;
+
+                    if (list is not null)
+                    {
+                        var index = e.OldStartingIndex;
+                        oldItem = list[index];
+                        list[index] = e.OldItems[0];
+                        newItem = list[index];
+                    }
+                    else
+                    {
+                        oldItem = e.NewItems[0];
+                        newItem = e.OldItems[0];
+                        collection!.Remove(oldItem);
+                        collection.Add(newItem);
+                    }
 
                     // ICollectionItem
                     {
                         if (oldItem is ICollectionItem oldCollItem)
                             oldCollItem.Changed(CollectionItemChangedInfo.Remove);
 
-                        if (list[index] is ICollectionItem collItem)
+                        if (newItem is ICollectionItem collItem)
                             collItem.Changed(CollectionItemChangedInfo.Add);
                     }
                 }
