@@ -1,5 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 
+using Jewelry.Collections;
+
 namespace Jewelry.EditingSystem.Tests.TestModels;
 
 public sealed class EditableBasicTestModel(History history) : EditableModelBase(history), IBasicTestModel
@@ -58,6 +60,30 @@ public sealed class EditableBasicTestModel(History history) : EditableModelBase(
     {
         get => _Collection;
         set => SetEditableProperty(v => _Collection = v, _Collection, value);
+    }
+
+    #endregion
+
+    #region IntSet
+
+    private ObservableHashSet<int> _IntSet = new();
+
+    public ObservableHashSet<int> IntSet
+    {
+        get => _IntSet;
+        set => SetEditableProperty(v => _IntSet = v, _IntSet, value);
+    }
+
+    #endregion
+
+    #region IntDictionary
+
+    private ObservableDictionary<string, int> _IntDictionary = new();
+
+    public ObservableDictionary<string, int> IntDictionary
+    {
+        get => _IntDictionary;
+        set => SetEditableProperty(v => _IntDictionary = v, _IntDictionary, value);
     }
 
     #endregion

@@ -3,6 +3,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
+using Jewelry.Collections;
+
 namespace Jewelry.EditingSystem.Tests.TestModels;
 
 public sealed class DirectBasicTestModel(History history) : IBasicTestModel
@@ -61,6 +63,30 @@ public sealed class DirectBasicTestModel(History history) : IBasicTestModel
     {
         get => _Collection;
         set => this.SetEditableProperty(history, v => SetField(ref _Collection, v), _Collection, value);
+    }
+
+    #endregion
+
+    #region IntSet
+
+    private ObservableHashSet<int> _IntSet = new();
+
+    public ObservableHashSet<int> IntSet
+    {
+        get => _IntSet;
+        set => this.SetEditableProperty(history, v => SetField(ref _IntSet, v), _IntSet, value);
+    }
+
+    #endregion
+
+    #region IntDictionary
+
+    private ObservableDictionary<string, int> _IntDictionary = new();
+
+    public ObservableDictionary<string, int> IntDictionary
+    {
+        get => _IntDictionary;
+        set => this.SetEditableProperty(history, v => SetField(ref _IntDictionary, v), _IntDictionary, value);
     }
 
     #endregion

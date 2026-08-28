@@ -2,6 +2,8 @@
 using Jewelry.EditingSystem.CommunityToolkit.Mvvm;
 using System.Collections.ObjectModel;
 
+using Jewelry.Collections;
+
 namespace Jewelry.EditingSystem.Tests.TestModels;
 
 [EditingHistory(nameof(_history))]
@@ -31,6 +33,14 @@ public sealed partial class CommunityToolkitMvvmBasicTestModel : ObservableObjec
     [Undoable]
     [ObservableProperty]
     private ObservableCollection<CollectionItem> _collection = new();
+
+    [Undoable]
+    [ObservableProperty]
+    private ObservableHashSet<int> _intSet = new();
+
+    [Undoable]
+    [ObservableProperty]
+    private ObservableDictionary<string, int> _intDictionary = new();
 
     partial void OnIntValueChanged(int value) => ++ChangingCount;
     partial void OnStringValueChanged(string value) => ++ChangingCount;
