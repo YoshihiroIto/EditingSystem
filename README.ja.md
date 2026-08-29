@@ -45,6 +45,19 @@ public sealed partial class SampleViewModel : ObservableObject
 }
 ```
 
+`ObservableObject` の継承は必須ではありません。ViewModel がすでに別の基底クラスを継承している場合は、CommunityToolkit.Mvvm の `[INotifyPropertyChanged]` 属性を使用できます。EditingSystem は変更を履歴へ記録し、Undo / Redo 時にも `PropertyChanged` 通知を維持します。
+
+```cs
+[INotifyPropertyChanged]
+[EditingHistory(nameof(history))]
+public sealed partial class DerivedViewModel(History history) : ExistingViewModelBase
+{
+    [ObservableProperty]
+    [Undoable]
+    public partial int Count { get; set; }
+}
+```
+
 1 引数版の `OnXChanging(T value)` と `OnXChanged(T value)` フックは、この連携機能によって予約されています。2 引数版の changing / changed フックはアプリケーションコードから引き続き利用できます。
 
 ### 安全な記録スコープ

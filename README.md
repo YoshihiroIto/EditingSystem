@@ -48,6 +48,21 @@ public sealed partial class SampleViewModel : ObservableObject
 }
 ```
 
+Inheriting from `ObservableObject` is not required. If the view model already inherits from
+another base class, use CommunityToolkit.Mvvm's `[INotifyPropertyChanged]` attribute instead.
+EditingSystem records changes and preserves `PropertyChanged` notifications during undo and redo.
+
+```cs
+[INotifyPropertyChanged]
+[EditingHistory(nameof(history))]
+public sealed partial class DerivedViewModel(History history) : ExistingViewModelBase
+{
+    [ObservableProperty]
+    [Undoable]
+    public partial int Count { get; set; }
+}
+```
+
 The one-parameter `OnXChanging(T value)` and `OnXChanged(T value)` hooks are reserved by the
 integration. The two-parameter changing and changed hooks remain available to application code.
 

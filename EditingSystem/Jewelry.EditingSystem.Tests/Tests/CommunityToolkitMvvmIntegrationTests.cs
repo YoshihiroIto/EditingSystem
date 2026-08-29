@@ -14,6 +14,27 @@ namespace Jewelry.EditingSystem.Tests;
 public sealed partial class CommunityToolkitMvvmIntegrationTests
 {
     [Fact]
+    public void INotifyPropertyChangedAttributeSupportsNormalUndoAndRedo()
+    {
+        using var history = new History();
+        var model = new CommunityToolkitINotifyPropertyChangedModel(history);
+        var propertyChangedCount = 0;
+
+        model.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(model.Value))
+                propertyChangedCount++;
+        };
+
+        model.Value = 10;
+        history.Undo();
+        history.Redo();
+
+        Assert.Equal(10, model.Value);
+        Assert.Equal(3, propertyChangedCount);
+    }
+
+    [Fact]
     public void GeneratedSetterPipelineRunsForNormalUndoAndRedo()
     {
         using var history = new History();
@@ -208,6 +229,17 @@ public sealed partial class CommunityToolkitMvvmIntegrationTests
             LastChangedValues = (oldValue, newValue);
         }
     }
+
+    [INotifyPropertyChanged]
+    [EditingHistory(nameof(history))]
+    private sealed partial class CommunityToolkitINotifyPropertyChangedModel(History history) : ExistingModelBase
+    {
+        [Undoable]
+        [ObservableProperty]
+        public partial int Value { get; set; }
+    }
+
+    private abstract class ExistingModelBase;
 
     [EditingHistory(nameof(history))]
     private sealed partial class CommunityToolkitReferenceModel(History history) : ObservableObject

@@ -21,6 +21,20 @@ public sealed partial class SampleViewModel : ObservableObject
 }
 ```
 
+`ObservableObject` inheritance is optional. A partial view model that already inherits from
+another base class can use CommunityToolkit.Mvvm's `[INotifyPropertyChanged]` attribute instead:
+
+```cs
+[INotifyPropertyChanged]
+[EditingHistory(nameof(history))]
+public sealed partial class DerivedViewModel(History history) : ExistingViewModelBase
+{
+    [ObservableProperty]
+    [Undoable]
+    public partial int Count { get; set; }
+}
+```
+
 Undo and redo call the generated property setter, preserving CommunityToolkit.Mvvm change
 notifications, validation, command notifications, and recipient broadcasts.
 
