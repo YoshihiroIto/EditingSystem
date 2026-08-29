@@ -184,4 +184,35 @@ public sealed class BatchEditingTests
         Assert.False(history.IsInBatch);
         Assert.Equal(0, history.BatchDepth);
     }
+
+    [Theory]
+    [ClassData(typeof(TestModelKindsTestData))]
+    public void Regular_batch_still_replays_every_intermediate_change(TestModelKinds testModelKind)
+    {
+        using var history = new History();
+        var model = CreateBasicTestModel(testModelKind, history);
+
+        using (history.Batch())
+        {
+            model.IntValue = 1;
+            model.IntValue = 2;
+            model.IntValue = 3;
+        }
+
+        var notificationCount = 0;
+        model.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(model.IntValue))
+                ++notificationCount;
+        };
+
+        history.Undo();
+        Assert.Equal(0, model.IntValue);
+        Assert.Equal(3, notificationCount);
+
+        notificationCount = 0;
+        history.Redo();
+        Assert.Equal(3, model.IntValue);
+        Assert.Equal(3, notificationCount);
+    }
 }

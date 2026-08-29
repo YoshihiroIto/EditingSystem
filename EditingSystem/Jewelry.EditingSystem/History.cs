@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Jewelry.EditingSystem;
 
@@ -67,7 +68,7 @@ public class History : INotifyPropertyChanged, IDisposable
     public IDisposable Pause()
     {
         BeginPause();
-        return new RecordingScope(this, isBatch: false);
+        return new RecordingScope(this, RecordingScopeKind.Pause);
     }
 
     public void EndPause()
@@ -85,11 +86,30 @@ public class History : INotifyPropertyChanged, IDisposable
 
     public void BeginBatch()
     {
+        BeginBatchCore(isCoalescing: false);
+    }
+
+    /// <summary>
+    /// Begins a batch that coalesces repeated changes to the same target property.
+    /// </summary>
+    public void BeginCoalescingBatch()
+    {
+        BeginBatchCore(isCoalescing: true);
+    }
+
+    private void BeginBatchCore(bool isCoalescing)
+    {
+        if (BatchDepth > 0 && _isCoalescingBatch != isCoalescing)
+            throw new InvalidOperationException("Regular and coalescing batches cannot be nested together.");
+
         var wasInBatch = IsInBatch;
         ++BatchDepth;
 
         if (BatchDepth is 1)
-            BeginBatchInternal();
+        {
+            _isCoalescingBatch = isCoalescing;
+            BeginBatchInternal(isCoalescing);
+        }
 
         PropertyChanged?.Invoke(this, BatchDepthArgs);
 
@@ -103,19 +123,49 @@ public class History : INotifyPropertyChanged, IDisposable
     public IDisposable Batch()
     {
         BeginBatch();
-        return new RecordingScope(this, isBatch: true);
+        return new RecordingScope(this, RecordingScopeKind.Batch);
+    }
+
+    /// <summary>
+    /// Groups recorded changes into one undo action and coalesces repeated changes to the same
+    /// target property until the returned scope is disposed.
+    /// </summary>
+    public IDisposable CoalescingBatch()
+    {
+        BeginCoalescingBatch();
+        return new RecordingScope(this, RecordingScopeKind.CoalescingBatch);
     }
 
     public void EndBatch()
     {
+        EndBatchCore(isCoalescing: false);
+    }
+
+    /// <summary>
+    /// Ends a batch begun by <see cref="BeginCoalescingBatch"/>.
+    /// </summary>
+    public void EndCoalescingBatch()
+    {
+        EndBatchCore(isCoalescing: true);
+    }
+
+    private void EndBatchCore(bool isCoalescing)
+    {
         if (BatchDepth is 0)
             throw new InvalidOperationException("Batch recording has not begun.");
+        if (_isCoalescingBatch != isCoalescing)
+            throw new InvalidOperationException(isCoalescing
+                ? "A regular batch is active. Call EndBatch()."
+                : "A coalescing batch is active. Call EndCoalescingBatch().");
 
         var wasInBatch = IsInBatch;
         --BatchDepth;
 
         if (BatchDepth is 0)
+        {
             EndBatchInternal();
+            _isCoalescingBatch = false;
+        }
 
         PropertyChanged?.Invoke(this, BatchDepthArgs);
 
@@ -221,23 +271,52 @@ public class History : INotifyPropertyChanged, IDisposable
             throw new ArgumentNullException(nameof(undo));
         if (redo is null)
             throw new ArgumentNullException(nameof(redo));
+        if (IsInPaused || IsInUndoing)
+            return;
 
+        PushAction(new DelegateHistoryAction(undo, redo));
+    }
+
+    internal void PushPropertyChange<T>(
+        object target,
+        object propertyKey,
+        Action<T, T> applyValue,
+        T oldValue,
+        T newValue)
+    {
+        if (IsInPaused || IsInUndoing)
+            return;
+
+        PushAction(new PropertyHistoryAction<T>(
+            new PropertyChangeKey(target, propertyKey),
+            applyValue,
+            oldValue,
+            newValue));
+    }
+
+    private void PushAction(HistoryAction action)
+    {
         if (IsInPaused || IsInUndoing)
             return;
 
         if (IsInBatch)
         {
-            _ = _batchHistory ?? throw new NullReferenceException();
-
-            _batchHistory.Push(undo, redo);
+            var batchRecorder = _batchRecorder ?? throw new InvalidOperationException();
+            batchRecorder.Add(action);
             return;
         }
+
+        PushRecordedAction(action);
+    }
+
+    private void PushRecordedAction(HistoryAction action)
+    {
 
         var currentFlags = CanUndoRedoClear;
         var currentUndoRedoCount = UndoRedoCount;
         var currentDepth = PauseBatchDepth;
 
-        _undoStack.Push(new HistoryAction(undo, redo), MaxUndoCount);
+        _undoStack.Push(action, MaxUndoCount);
 
         if (_redoStack.Count > 0)
             _redoStack.Clear();
@@ -257,7 +336,39 @@ public class History : INotifyPropertyChanged, IDisposable
     {
         if (setValue is null)
             throw new ArgumentNullException(nameof(setValue));
-        return EditablePropertyCommon.RecordPropertyChange(this, setValue, oldValue, newValue);
+
+        return setValue.Target is { } target
+            ? EditablePropertyCommon.RecordPropertyChange(
+                this,
+                target,
+                setValue.Method,
+                setValue,
+                oldValue,
+                newValue)
+            : EditablePropertyCommon.RecordPropertyChange(this, setValue, oldValue, newValue);
+    }
+
+    public bool RecordPropertyChange<T>(
+        object target,
+        string propertyName,
+        Action<T> setValue,
+        T oldValue,
+        T newValue)
+    {
+        if (target is null)
+            throw new ArgumentNullException(nameof(target));
+        if (string.IsNullOrEmpty(propertyName))
+            throw new ArgumentException("A property name is required.", nameof(propertyName));
+        if (setValue is null)
+            throw new ArgumentNullException(nameof(setValue));
+
+        return EditablePropertyCommon.RecordPropertyChange(
+            this,
+            target,
+            propertyName,
+            setValue,
+            oldValue,
+            newValue);
     }
 
     /// <summary>
@@ -275,7 +386,43 @@ public class History : INotifyPropertyChanged, IDisposable
         if (EqualityComparer<T>.Default.Equals(oldValue, newValue))
             return;
 
-        EditablePropertyCommon.RecordAppliedPropertyChange(this, setValue, oldValue, newValue);
+        if (setValue.Target is { } target)
+        {
+            EditablePropertyCommon.RecordAppliedPropertyChange(
+                this,
+                target,
+                setValue.Method,
+                setValue,
+                oldValue,
+                newValue);
+        }
+        else
+            EditablePropertyCommon.RecordAppliedPropertyChange(this, setValue, oldValue, newValue);
+    }
+
+    public void RecordAppliedPropertyChange<T>(
+        object target,
+        string propertyName,
+        Action<T> setValue,
+        T oldValue,
+        T newValue)
+    {
+        if (target is null)
+            throw new ArgumentNullException(nameof(target));
+        if (string.IsNullOrEmpty(propertyName))
+            throw new ArgumentException("A property name is required.", nameof(propertyName));
+        if (setValue is null)
+            throw new ArgumentNullException(nameof(setValue));
+        if (EqualityComparer<T>.Default.Equals(oldValue, newValue))
+            return;
+
+        EditablePropertyCommon.RecordAppliedPropertyChange(
+            this,
+            target,
+            propertyName,
+            setValue,
+            oldValue,
+            newValue);
     }
 
     public void Clear()
@@ -679,29 +826,32 @@ public class History : INotifyPropertyChanged, IDisposable
             PropertyChanged.Invoke(this, BatchDepthArgs);
     }
 
-    private void BeginBatchInternal()
+    private void BeginBatchInternal(bool isCoalescing)
     {
-        Debug.Assert(_batchHistory is null);
+        Debug.Assert(_batchRecorder is null);
 
-        _batchHistory = new BatchHistory();
+        _batchRecorder = new BatchRecorder(isCoalescing);
     }
 
     private void EndBatchInternal()
     {
-        var batchHistory = _batchHistory ?? throw new InvalidOperationException();
+        var batchRecorder = _batchRecorder ?? throw new InvalidOperationException();
+        var batchHistory = batchRecorder.CreateHistory();
 
-        if (batchHistory.UndoRedoCount != (UndoCount: 0, RedoCount: 0))
+        if (batchHistory.CanUndo)
             Push(batchHistory.UndoAll, batchHistory.RedoAll);
 
         batchHistory.Dispose();
-        _batchHistory = null;
+
+        _batchRecorder = null;
     }
 
     private (int UndoCount, int RedoCount) UndoRedoCount => (UndoCount, RedoCount);
     private (bool CanUndo, bool CanRedo, bool CanClear) CanUndoRedoClear => (CanUndo, CanRedo, CanClear);
     private (int PauseDepth, int BatchDepth) PauseBatchDepth => (PauseDepth, BatchDepth);
 
-    private BatchHistory? _batchHistory;
+    private BatchRecorder? _batchRecorder;
+    private bool _isCoalescingBatch;
 
     private readonly HistoryStack<HistoryAction> _undoStack = new();
     private readonly HistoryStack<HistoryAction> _redoStack = new();
@@ -720,6 +870,11 @@ public class History : INotifyPropertyChanged, IDisposable
 
     private sealed class BatchHistory : History
     {
+        public void Add(HistoryAction action)
+        {
+            _undoStack.Push(action, int.MaxValue);
+        }
+
         public void UndoAll()
         {
             while (CanUndo)
@@ -735,10 +890,10 @@ public class History : INotifyPropertyChanged, IDisposable
 
     private sealed class RecordingScope : IDisposable
     {
-        public RecordingScope(History history, bool isBatch)
+        public RecordingScope(History history, RecordingScopeKind kind)
         {
             _history = history;
-            _isBatch = isBatch;
+            _kind = kind;
         }
 
         public void Dispose()
@@ -748,14 +903,153 @@ public class History : INotifyPropertyChanged, IDisposable
                 return;
 
             _history = null;
-            if (_isBatch)
-                history.EndBatch();
-            else
-                history.EndPause();
+            switch (_kind)
+            {
+                case RecordingScopeKind.Pause:
+                    history.EndPause();
+                    break;
+                case RecordingScopeKind.Batch:
+                    history.EndBatch();
+                    break;
+                case RecordingScopeKind.CoalescingBatch:
+                    history.EndCoalescingBatch();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
         private History? _history;
-        private readonly bool _isBatch;
+        private readonly RecordingScopeKind _kind;
+    }
+
+    private enum RecordingScopeKind
+    {
+        Pause,
+        Batch,
+        CoalescingBatch,
+    }
+
+    private sealed class BatchRecorder
+    {
+        public BatchRecorder(bool isCoalescing)
+        {
+            _coalescingIndices = isCoalescing
+                ? new Dictionary<PropertyChangeKey, int>()
+                : null;
+        }
+
+        public void Add(HistoryAction action)
+        {
+            if (_coalescingIndices is null)
+            {
+                _actions.Add(action);
+                return;
+            }
+
+            if (action.CoalescingKey is not { } key)
+            {
+                _coalescingIndices.Clear();
+                _actions.Add(action);
+                return;
+            }
+
+            if (_coalescingIndices.TryGetValue(key, out var index) &&
+                _actions[index].TryMerge(action))
+                return;
+
+            _coalescingIndices[key] = _actions.Count;
+            _actions.Add(action);
+        }
+
+        public BatchHistory CreateHistory()
+        {
+            var history = new BatchHistory();
+            foreach (var action in _actions)
+            {
+                if (action.IsNoOp is false)
+                    history.Add(action);
+            }
+
+            return history;
+        }
+
+        private readonly List<HistoryAction> _actions = new();
+        private readonly Dictionary<PropertyChangeKey, int>? _coalescingIndices;
+    }
+
+    private readonly struct PropertyChangeKey : IEquatable<PropertyChangeKey>
+    {
+        public PropertyChangeKey(object target, object propertyKey)
+        {
+            Target = target;
+            PropertyKey = propertyKey;
+        }
+
+        public object Target { get; }
+        public object PropertyKey { get; }
+
+        public bool Equals(PropertyChangeKey other)
+        {
+            return ReferenceEquals(Target, other.Target) &&
+                object.Equals(PropertyKey, other.PropertyKey);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is PropertyChangeKey other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (RuntimeHelpers.GetHashCode(Target) * 397) ^
+                    PropertyKey.GetHashCode();
+            }
+        }
+    }
+
+    private abstract class HistoryAction
+    {
+        public abstract void Undo();
+        public abstract void Redo();
+        public virtual PropertyChangeKey? CoalescingKey => null;
+        public virtual bool IsNoOp => false;
+        public virtual bool TryMerge(HistoryAction newerAction) => false;
+    }
+
+    private sealed class DelegateHistoryAction(Action undo, Action redo) : HistoryAction
+    {
+        public override void Undo() => undo();
+        public override void Redo() => redo();
+    }
+
+    private sealed class PropertyHistoryAction<T>(
+        PropertyChangeKey key,
+        Action<T, T> applyValue,
+        T oldValue,
+        T newValue) : HistoryAction
+    {
+        public override PropertyChangeKey? CoalescingKey => _key;
+        public override bool IsNoOp => EqualityComparer<T>.Default.Equals(oldValue, _newValue);
+
+        public override void Undo() => _applyValue(_newValue, oldValue);
+        public override void Redo() => _applyValue(oldValue, _newValue);
+
+        public override bool TryMerge(HistoryAction newerAction)
+        {
+            if (newerAction is not PropertyHistoryAction<T> newer || _key.Equals(newer._key) is false)
+                return false;
+
+            _applyValue = newer._applyValue;
+            _newValue = newer._newValue;
+            return true;
+        }
+
+        private Action<T, T> _applyValue = applyValue;
+        private readonly PropertyChangeKey _key = key;
+        private T _newValue = newValue;
     }
 
     private sealed class HistoryStack<T>
@@ -846,5 +1140,4 @@ public class History : INotifyPropertyChanged, IDisposable
         private int _count;
     }
 
-    private record struct HistoryAction(Action Undo, Action Redo);
 }

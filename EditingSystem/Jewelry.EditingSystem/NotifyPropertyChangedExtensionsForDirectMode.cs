@@ -9,19 +9,30 @@ public static class NotifyPropertyChangedExtensionsForDirectMode
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool SetEditableProperty<T>(
-        this INotifyPropertyChanged _, 
+        this INotifyPropertyChanged _,
         History history,
-        Action<T> setValue, T oldValue, T newValue)
+        Action<T> setValue,
+        T oldValue,
+        T newValue)
     {
-        return EditablePropertyCommon.SetEditableProperty(history, setValue, oldValue, newValue);
+        return EditablePropertyCommon.SetEditableProperty(
+            history,
+            _,
+            setValue.Method,
+            setValue,
+            oldValue,
+            newValue);
     }
     
 #if NET8_0_OR_GREATER 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool SetEditableFlagProperty<T>(
-        this INotifyPropertyChanged _, 
+        this INotifyPropertyChanged _,
         History history,
-        Action<T> setValue, T oldFlags, T newFlags, bool value)
+        Action<T> setValue,
+        T oldFlags,
+        T newFlags,
+        bool value)
         where T : IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>
     {
         return EditablePropertyCommon.SetEditableFlagProperty(history, setValue, oldFlags, newFlags, value);

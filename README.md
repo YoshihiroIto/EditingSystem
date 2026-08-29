@@ -71,6 +71,61 @@ if (history.TryUndo())
 }
 ```
 
+Use a coalescing batch for continuous UI gestures such as sliders, color pickers, and 3D gizmos.
+Repeated changes to the same property on the same object retain only the first old value and the
+last new value. Different properties and different objects are coalesced independently.
+
+```cs
+void OnDragStarted()
+{
+    history.BeginCoalescingBatch();
+}
+
+void OnDragChanged(Color colorValue, Vector3 position1, Vector3 position2)
+{
+    // Called repeatedly during one drag.
+    color.R = colorValue.R;
+    color.G = colorValue.G;
+    color.B = colorValue.B;
+
+    selectedObject1.Position = position1;
+    selectedObject2.Position = position2;
+}
+
+void OnDragCompleted()
+{
+    history.EndCoalescingBatch();
+}
+
+// Equivalent scope form:
+using (history.CoalescingBatch())
+{
+    ApplyContinuousChanges();
+}
+```
+
+Intermediate values are still applied immediately, but undo and redo apply each resulting
+property value only once. A property that finishes at its initial value creates no history entry.
+Non-property actions, including collection changes and explicit `Push` calls, are ordering
+barriers: changes to the same property on opposite sides of a barrier are kept separately.
+
+`EditableModelBase`, direct-mode `SetEditableProperty`, and the CommunityToolkit.Mvvm integration
+provide property keys automatically. Code that records changes directly through `History` should
+use the overload that supplies the target and property name:
+
+```cs
+history.RecordAppliedPropertyChange(
+    this,
+    nameof(Value),
+    value => Value = value,
+    oldValue,
+    newValue);
+```
+
+Regular and coalescing batches cannot be nested together. Nested regular batches and nested
+coalescing batches are supported. Use a regular `Batch` when every intermediate operation and its
+ordering must be replayed; use a `CoalescingBatch` for continuous property editing.
+
 Long-running editors can bound retained history without changing the default unlimited behavior.
 
 ```cs

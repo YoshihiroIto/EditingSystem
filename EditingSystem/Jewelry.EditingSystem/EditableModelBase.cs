@@ -24,7 +24,13 @@ public class EditableModelBase : INotifyPropertyChanged
             RaisePropertyChanged(propertyName);
         }
         
-        return EditablePropertyCommon.SetEditableProperty(_history, SetValueWithRaisePropertyChanged, oldValue, newValue);
+        return EditablePropertyCommon.SetEditableProperty(
+            _history,
+            this,
+            propertyName,
+            SetValueWithRaisePropertyChanged,
+            oldValue,
+            newValue);
     }
     
 #if NET8_0_OR_GREATER 
