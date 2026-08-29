@@ -122,7 +122,7 @@ public sealed class CustomComparerCollectionHistoryTests
 
         public bool Equals(SetItem? x, SetItem? y)
         {
-            return ReferenceEquals(x, y) || x is not null && y is not null && x.Key == y.Key;
+            return ReferenceEquals(x, y) || x is { } && y is { } && x.Key == y.Key;
         }
 
         public int GetHashCode(SetItem obj)
@@ -144,7 +144,7 @@ public sealed class CustomComparerCollectionHistoryTests
 
         public bool Equals(EquatableSetItem? other)
         {
-            return other is not null && Key == other.Key;
+            return other is { } && Key == other.Key;
         }
 
         public override bool Equals(object? obj)

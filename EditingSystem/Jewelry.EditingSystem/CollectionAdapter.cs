@@ -134,7 +134,7 @@ internal static class CollectionAdapter
         Justification = "Base types are inspected only to locate ObservableCollection<T>; Move is preserved explicitly.")]
     private static MethodInfo? FindObservableCollectionMoveMethod(Type collectionType)
     {
-        for (var type = collectionType; type is not null; type = type.BaseType)
+        for (var type = collectionType; type is { }; type = type.BaseType)
         {
             if (type.IsGenericType is false ||
                 type.GetGenericTypeDefinition() != typeof(ObservableCollection<>))

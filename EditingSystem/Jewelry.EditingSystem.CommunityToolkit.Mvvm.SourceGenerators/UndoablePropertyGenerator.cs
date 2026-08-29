@@ -176,7 +176,7 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
                 : HasReservedHookConflict(containingType, changedHookName, propertyType)
                     ? changedHookName
                     : null;
-            if (conflictingHookName is not null)
+            if (conflictingHookName is { })
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     ReservedHookConflict,
@@ -194,10 +194,10 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
             var historyParameterName = historyMember is IParameterSymbol parameter
                 ? parameter.Name
                 : null;
-            var historyAccessorName = historyParameterName is not null
+            var historyAccessorName = historyParameterName is { }
                 ? GetUniqueHistoryAccessorName(containingType)
                 : null;
-            var historyAccessExpression = historyAccessorName is not null
+            var historyAccessExpression = historyAccessorName is { }
                 ? $"this.{EscapeIdentifier(historyAccessorName)}"
                 : $"this.{EscapeIdentifier(historyMember!.Name)}";
             var oldValueFieldName = GetUniqueMemberName(
@@ -362,7 +362,7 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
             return false;
         }
 
-        for (var type = memberType as INamedTypeSymbol; type is not null; type = type.BaseType)
+        for (var type = memberType as INamedTypeSymbol; type is { }; type = type.BaseType)
         {
             if (SymbolEqualityComparer.Default.Equals(type, historyType))
             {
@@ -390,7 +390,7 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
 
     private static bool AreAllContainingTypesPartial(INamedTypeSymbol type)
     {
-        for (var current = type; current is not null; current = current.ContainingType)
+        for (var current = type; current is { }; current = current.ContainingType)
         {
             if (current.DeclaringSyntaxReferences.Length == 0 ||
                 current.DeclaringSyntaxReferences.Any(static reference =>
@@ -437,7 +437,7 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
         }
 
         var hierarchy = new Stack<INamedTypeSymbol>();
-        for (var type = containingType; type is not null; type = type.ContainingType)
+        for (var type = containingType; type is { }; type = type.ContainingType)
             hierarchy.Push(type);
 
         var indent = 0;
@@ -463,8 +463,8 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
         }
 
         var primaryConstructorHistory = properties.FirstOrDefault(
-            static property => property.HistoryParameterName is not null);
-        if (primaryConstructorHistory.HistoryParameterName is not null)
+            static property => property.HistoryParameterName is { });
+        if (primaryConstructorHistory.HistoryParameterName is { })
         {
             AppendIndent(builder, indent);
             builder.Append("private global::");

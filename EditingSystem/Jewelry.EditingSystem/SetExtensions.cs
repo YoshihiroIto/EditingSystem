@@ -235,7 +235,7 @@ public static class SetExtensions
         if (self.SetEquals(oldItems))
             return;
 
-        if (changeRecorder is not null &&
+        if (changeRecorder is { } &&
             TryCreateRecordedDelta(self, oldItems, changeRecorder, out var recordedRemoved, out var recordedAdded))
         {
             var state = new DeltaHistoryState<T>(self, recordedRemoved, recordedAdded);
@@ -363,7 +363,7 @@ public static class SetExtensions
         foreach (var item in items)
             self.Add(item);
 
-        if (removedItems is not null)
+        if (removedItems is { })
         {
             NotifyItems(removedItems, CollectionItemChangedInfo.Remove);
             NotifyItems(items, CollectionItemChangedInfo.Add);

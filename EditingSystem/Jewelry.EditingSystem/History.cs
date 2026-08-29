@@ -284,7 +284,7 @@ public class History : INotifyPropertyChanged, IDisposable
         if (!IsInBatch && MaxUndoCount is 0)
             return;
 
-        PropertyChangeKey? key = target is not null && propertyKey is not null
+        PropertyChangeKey? key = target is { } && propertyKey is { }
             ? new PropertyChangeKey(target, propertyKey)
             : null;
         PushAction(new PropertyHistoryAction<T>(
@@ -464,7 +464,7 @@ public class History : INotifyPropertyChanged, IDisposable
 
                     for (var i = 0; i != addCount; ++i)
                     {
-                        if (list is not null)
+                        if (list is { })
                             list.Insert(e.NewStartingIndex + i, addItems[i]);
                         else
                             collection!.Add(addItems[i]);
@@ -481,7 +481,7 @@ public class History : INotifyPropertyChanged, IDisposable
 
                     for (var i = 0; i != addCount; ++i)
                     {
-                        if (list is not null)
+                        if (list is { })
                             list.RemoveAt(e.NewStartingIndex);
                         else
                             collection!.Remove(addItems[i]);
@@ -549,14 +549,14 @@ public class History : INotifyPropertyChanged, IDisposable
 
             case NotifyCollectionChangedAction.Remove:
             {
-                if (e.NewItems is not null)
+                if (e.NewItems is { })
                     throw new InvalidOperationException("Remove notifications cannot contain new items.");
 
                 var removedItems = SnapshotItems(e.OldItems ?? throw new NullReferenceException());
 
                 void DoRedo()
                 {
-                    if (list is not null)
+                    if (list is { })
                     {
                         for (var i = 0; i < removedItems.Count; ++i)
                             list.RemoveAt(e.OldStartingIndex);
@@ -572,7 +572,7 @@ public class History : INotifyPropertyChanged, IDisposable
 
                 void DoUndo()
                 {
-                    if (list is not null)
+                    if (list is { })
                     {
                         for (var i = 0; i < removedItems.Count; ++i)
                             list.Insert(e.OldStartingIndex + i, removedItems[i]);
@@ -602,7 +602,7 @@ public class History : INotifyPropertyChanged, IDisposable
 
                 void DoRedo()
                 {
-                    if (list is not null)
+                    if (list is { })
                         ReplaceItems(list, e.OldStartingIndex, oldItems.Count, newItems);
                     else
                     {
@@ -618,7 +618,7 @@ public class History : INotifyPropertyChanged, IDisposable
 
                 void DoUndo()
                 {
-                    if (list is not null)
+                    if (list is { })
                         ReplaceItems(list, e.OldStartingIndex, newItems.Count, oldItems);
                     else
                     {
@@ -740,7 +740,7 @@ public class History : INotifyPropertyChanged, IDisposable
         IReadOnlyList<object?> currentItems,
         IReadOnlyList<object?> replacementItems)
     {
-        if (list is not null)
+        if (list is { })
         {
             while (list.Count > 0)
                 list.RemoveAt(list.Count - 1);
