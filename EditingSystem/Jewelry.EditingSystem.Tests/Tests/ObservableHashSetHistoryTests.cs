@@ -114,6 +114,23 @@ public sealed class ObservableHashSetHistoryTests
     }
 
     [Fact]
+    public void Set_extension_is_undoable_without_property_observation()
+    {
+        using var history = new History();
+        var set = new ObservableHashSet<int>([10]);
+
+        set.UnionWithEx([20, 30], history);
+        Assert.True(set.SetEquals([10, 20, 30]));
+        AssertHistory(history, undoCount: 1, redoCount: 0);
+
+        history.Undo();
+        Assert.True(set.SetEquals([10]));
+
+        history.Redo();
+        Assert.True(set.SetEquals([10, 20, 30]));
+    }
+
+    [Fact]
     public void IntersectWithEx_can_be_undone_and_redone_as_one_action()
     {
         using var history = new History();

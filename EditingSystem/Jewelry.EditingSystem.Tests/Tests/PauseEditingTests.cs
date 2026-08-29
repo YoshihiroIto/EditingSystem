@@ -124,4 +124,22 @@ public sealed class PauseEditingTests
             history.EndPause()
         );
     }
+
+    [Fact]
+    public void Pause_scope_is_balanced_when_an_exception_is_thrown()
+    {
+        using var history = new History();
+
+        Assert.Throws<InvalidOperationException>((Action)(() =>
+        {
+            using (history.Pause())
+            {
+                Assert.True(history.IsInPaused);
+                throw new InvalidOperationException();
+            }
+        }));
+
+        Assert.False(history.IsInPaused);
+        Assert.Equal(0, history.PauseDepth);
+    }
 }

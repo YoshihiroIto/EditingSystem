@@ -95,10 +95,13 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
     {
         public bool IsAlive => _handler.TryGetTarget(out _) && _source.TryGetTarget(out _);
         public object? Source => _source.TryGetTarget(out var source) ? source : default;
-        public IReadOnlyList<object?> Snapshot => _snapshot;
+        public IReadOnlyList<object?> Snapshot => _resetSnapshots.Count > 0
+            ? _resetSnapshots.Peek()
+            : _snapshot;
 
         private readonly WeakReference<INotifyCollectionChanged> _source;
         private readonly WeakReference<NotifyCollectionChangedEventHandler> _handler;
+        private readonly Stack<List<object?>> _resetSnapshots = new();
         private List<object?> _snapshot;
 
         public CollectionChangedWeakEventListener(INotifyCollectionChanged source, NotifyCollectionChangedEventHandler handler)
@@ -112,6 +115,26 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
 
         private void HandleEvent(object? sender, NotifyCollectionChangedEventArgs e)
         {
+            if (_source.TryGetTarget(out var source) is false)
+                return;
+
+            if (e.Action is NotifyCollectionChangedAction.Reset)
+            {
+                _resetSnapshots.Push(_snapshot);
+                _snapshot = CreateSnapshot(source);
+            }
+            else
+            {
+                try
+                {
+                    ApplyChange(_snapshot, e);
+                }
+                catch
+                {
+                    _snapshot = CreateSnapshot(source);
+                }
+            }
+
             try
             {
                 if (_handler.TryGetTarget(out var handler))
@@ -121,8 +144,8 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
             }
             finally
             {
-                if (_source.TryGetTarget(out var source))
-                    _snapshot = CreateSnapshot(source);
+                if (e.Action is NotifyCollectionChangedAction.Reset)
+                    _resetSnapshots.Pop();
             }
         }
 
@@ -143,6 +166,77 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
                 snapshot.Add(item);
 
             return snapshot;
+        }
+
+        private static void ApplyChange(List<object?> snapshot, NotifyCollectionChangedEventArgs e)
+        {
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    InsertItems(snapshot, e.NewItems ?? throw new InvalidOperationException(), e.NewStartingIndex);
+                    break;
+
+                case NotifyCollectionChangedAction.Remove:
+                    RemoveItems(snapshot, e.OldItems ?? throw new InvalidOperationException(), e.OldStartingIndex);
+                    break;
+
+                case NotifyCollectionChangedAction.Move:
+                {
+                    var items = new List<object?>();
+                    var count = (e.OldItems ?? throw new InvalidOperationException()).Count;
+                    for (var i = 0; i < count; ++i)
+                    {
+                        items.Add(snapshot[e.OldStartingIndex]);
+                        snapshot.RemoveAt(e.OldStartingIndex);
+                    }
+
+                    for (var i = 0; i < items.Count; ++i)
+                        snapshot.Insert(e.NewStartingIndex + i, items[i]);
+                    break;
+                }
+
+                case NotifyCollectionChangedAction.Replace:
+                    RemoveItems(snapshot, e.OldItems ?? throw new InvalidOperationException(), e.OldStartingIndex);
+                    InsertItems(snapshot, e.NewItems ?? throw new InvalidOperationException(), e.NewStartingIndex);
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private static void InsertItems(List<object?> snapshot, IList items, int index)
+        {
+            if (index < 0)
+            {
+                foreach (var item in items)
+                    snapshot.Add(item);
+                return;
+            }
+
+            for (var i = 0; i < items.Count; ++i)
+                snapshot.Insert(index + i, items[i]);
+        }
+
+        private static void RemoveItems(List<object?> snapshot, IList items, int index)
+        {
+            if (index >= 0)
+            {
+                for (var i = 0; i < items.Count; ++i)
+                    snapshot.RemoveAt(index);
+                return;
+            }
+
+            if (items.Count is 1)
+            {
+                _ = snapshot.Remove(items[0]);
+                return;
+            }
+
+            var removedItems = new HashSet<object?>();
+            foreach (var item in items)
+                removedItems.Add(item);
+            snapshot.RemoveAll(item => removedItems.Contains(item));
         }
     }
 }

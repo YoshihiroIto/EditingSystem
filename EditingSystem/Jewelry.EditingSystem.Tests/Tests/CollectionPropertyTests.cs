@@ -227,6 +227,23 @@ public sealed class CollectionPropertyTests
         Assert.True(model.IntCollection.SequenceEqual(new int[] {}));
     }
 
+    [Fact]
+    public void ClearEx_is_undoable_without_property_observation()
+    {
+        using var history = new History();
+        var collection = new ObservableCollection<int> { 10, 20, 30 };
+
+        collection.ClearEx(history);
+        Assert.Empty(collection);
+        Assert.Equal(1, history.UndoCount);
+
+        history.Undo();
+        Assert.Equal([10, 20, 30], collection);
+
+        history.Redo();
+        Assert.Empty(collection);
+    }
+
     [Theory]
     [ClassData(typeof(TestModelKindsTestData))]
     public void Replace(TestModelKinds testModelKind)
@@ -416,6 +433,29 @@ public sealed class CollectionPropertyTests
 
         history.Redo();
         Assert.Equal([10, 40, 50, 20, 30], collection);
+    }
+
+    [Fact]
+    public void Reset_uses_the_incrementally_updated_collection_snapshot()
+    {
+        using var history = new History();
+        var model = new DirectBasicTestModel(history);
+        var collection = new RangeObservableCollection<int> { 10, 20 };
+        model.IntCollection = collection;
+        history.Clear();
+
+        collection.AddRange([30, 40]);
+        collection.RemoveRange(1, 2);
+        collection.AddRange([50, 60]);
+        collection.MoveRange(1, 2, 1);
+        collection.ReplaceRange(1, 2, [55]);
+        Assert.Equal([10, 55, 60], collection);
+        history.Clear();
+
+        collection.Clear();
+        history.Undo();
+
+        Assert.Equal([10, 55, 60], collection);
     }
 
     private sealed class RangeObservableCollection<T> : ObservableCollection<T>

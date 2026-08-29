@@ -49,6 +49,38 @@ public sealed partial class SampleViewModel : ObservableObject
 The one-parameter `OnXChanging(T value)` and `OnXChanged(T value)` hooks are reserved by the
 integration. The two-parameter changing and changed hooks remain available to application code.
 
+### Safe recording scopes
+
+Use disposable scopes so pause and batch depths are restored even when application code throws.
+
+```cs
+using (history.Pause())
+{
+    LoadInitialValues();
+}
+
+using (history.Batch())
+{
+    model.Width = 100;
+    model.Height = 200;
+}
+
+if (history.TryUndo())
+{
+    // One action was undone.
+}
+```
+
+Long-running editors can bound retained history without changing the default unlimited behavior.
+
+```cs
+history.MaxUndoCount = 500;
+```
+
+`ClearEx`, `UnionWithEx`, `IntersectWithEx`, `ExceptWithEx`,
+`SymmetricExceptWithEx`, and `RemoveWhereEx` record one undo action directly. They can also be
+used with collections that are not assigned to an observed property.
+
 
 ## Example
 

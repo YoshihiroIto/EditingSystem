@@ -103,4 +103,76 @@ public sealed class HistoryTests
         Assert.Equal(1, history.UndoCount);
         Assert.Equal(0, history.RedoCount);
     }
+
+    [Fact]
+    public void TryUndo_and_TryRedo_report_whether_an_action_was_applied()
+    {
+        using var history = new History();
+        var value = 1;
+
+        Assert.False(history.TryUndo());
+        Assert.False(history.TryRedo());
+
+        history.Push(() => value = 0, () => value = 1);
+
+        Assert.True(history.TryUndo());
+        Assert.Equal(0, value);
+        Assert.False(history.TryUndo());
+
+        Assert.True(history.TryRedo());
+        Assert.Equal(1, value);
+        Assert.False(history.TryRedo());
+    }
+
+    [Fact]
+    public void Push_rejects_null_actions_immediately()
+    {
+        using var history = new History();
+
+        Assert.Throws<System.ArgumentNullException>(() => history.Push(null!, () => { }));
+        Assert.Throws<System.ArgumentNullException>(() => history.Push(() => { }, null!));
+    }
+
+    [Fact]
+    public void MaxUndoCount_discards_the_oldest_actions()
+    {
+        using var history = new History { MaxUndoCount = 2 };
+        var value = 0;
+
+        void SetValue(int newValue)
+        {
+            var oldValue = value;
+            history.Push(() => value = oldValue, () => value = newValue);
+            value = newValue;
+        }
+
+        SetValue(1);
+        SetValue(2);
+        SetValue(3);
+
+        Assert.Equal(2, history.UndoCount);
+        Assert.True(history.TryUndo());
+        Assert.Equal(2, value);
+        Assert.True(history.TryUndo());
+        Assert.Equal(1, value);
+        Assert.False(history.TryUndo());
+
+        Assert.True(history.TryRedo());
+        Assert.True(history.TryRedo());
+        Assert.Equal(3, value);
+    }
+
+    [Fact]
+    public void Reducing_MaxUndoCount_trims_existing_history()
+    {
+        using var history = new History();
+        history.Push(() => { }, () => { });
+        history.Push(() => { }, () => { });
+        history.Push(() => { }, () => { });
+
+        history.MaxUndoCount = 1;
+
+        Assert.Equal(1, history.UndoCount);
+        Assert.Throws<System.ArgumentOutOfRangeException>(() => history.MaxUndoCount = -1);
+    }
 }

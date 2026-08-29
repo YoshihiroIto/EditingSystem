@@ -14,6 +14,28 @@ public class History : INotifyPropertyChanged, IDisposable
     public bool CanClear => CanUndo || CanRedo;
     public int UndoCount => _undoStack.Count;
     public int RedoCount => _redoStack.Count;
+    public int MaxUndoCount
+    {
+        get => _maxUndoCount;
+        set
+        {
+            if (value < 0)
+                throw new ArgumentOutOfRangeException(nameof(value));
+            if (_maxUndoCount == value)
+                return;
+
+            var currentFlags = CanUndoRedoClear;
+            var currentUndoRedoCount = UndoRedoCount;
+            var currentDepth = PauseBatchDepth;
+
+            _maxUndoCount = value;
+            _undoStack.TrimOldest(value);
+            _redoStack.TrimOldest(value);
+
+            PropertyChanged?.Invoke(this, MaxUndoCountArgs);
+            InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
+        }
+    }
     public int PauseDepth { get; private set; }
     public int BatchDepth { get; private set; }
     public bool IsInUndoing { get; private set; }
@@ -37,6 +59,15 @@ public class History : INotifyPropertyChanged, IDisposable
 
         if (wasInPaused != IsInPaused)
             PropertyChanged?.Invoke(this, IsInPausedArgs);
+    }
+
+    /// <summary>
+    /// Pauses history recording until the returned scope is disposed.
+    /// </summary>
+    public IDisposable Pause()
+    {
+        BeginPause();
+        return new RecordingScope(this, isBatch: false);
     }
 
     public void EndPause()
@@ -64,6 +95,15 @@ public class History : INotifyPropertyChanged, IDisposable
 
         if (wasInBatch != IsInBatch)
             PropertyChanged?.Invoke(this, IsInBatchArgs);
+    }
+
+    /// <summary>
+    /// Groups recorded changes into one undo action until the returned scope is disposed.
+    /// </summary>
+    public IDisposable Batch()
+    {
+        BeginBatch();
+        return new RecordingScope(this, isBatch: true);
     }
 
     public void EndBatch()
@@ -107,7 +147,7 @@ public class History : INotifyPropertyChanged, IDisposable
         }
         catch
         {
-            _undoStack.Push(action);
+            _undoStack.Push(action, MaxUndoCount);
             throw;
         }
         finally
@@ -115,9 +155,18 @@ public class History : INotifyPropertyChanged, IDisposable
             IsInUndoing = false;
         }
 
-        _redoStack.Push(action);
+        _redoStack.Push(action, MaxUndoCount);
 
         InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
+    }
+
+    public bool TryUndo()
+    {
+        if (CanUndo is false)
+            return false;
+
+        Undo();
+        return true;
     }
 
     public void Redo()
@@ -144,7 +193,7 @@ public class History : INotifyPropertyChanged, IDisposable
         }
         catch
         {
-            _redoStack.Push(action);
+            _redoStack.Push(action, MaxUndoCount);
             throw;
         }
         finally
@@ -152,13 +201,27 @@ public class History : INotifyPropertyChanged, IDisposable
             IsInUndoing = false;
         }
 
-        _undoStack.Push(action);
+        _undoStack.Push(action, MaxUndoCount);
 
         InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
     }
 
+    public bool TryRedo()
+    {
+        if (CanRedo is false)
+            return false;
+
+        Redo();
+        return true;
+    }
+
     public void Push(Action undo, Action redo)
     {
+        if (undo is null)
+            throw new ArgumentNullException(nameof(undo));
+        if (redo is null)
+            throw new ArgumentNullException(nameof(redo));
+
         if (IsInPaused || IsInUndoing)
             return;
 
@@ -174,7 +237,7 @@ public class History : INotifyPropertyChanged, IDisposable
         var currentUndoRedoCount = UndoRedoCount;
         var currentDepth = PauseBatchDepth;
 
-        _undoStack.Push(new HistoryAction(undo, redo));
+        _undoStack.Push(new HistoryAction(undo, redo), MaxUndoCount);
 
         if (_redoStack.Count > 0)
             _redoStack.Clear();
@@ -231,6 +294,12 @@ public class History : INotifyPropertyChanged, IDisposable
     {
         if (IsInUndoing)
             return;
+
+        if (IsInPaused)
+        {
+            NotifyPausedCollectionChange(sender, e);
+            return;
+        }
 
         var list = sender as IList;
         var collection = list is null && e.Action is not NotifyCollectionChangedAction.Reset
@@ -414,10 +483,7 @@ public class History : INotifyPropertyChanged, IDisposable
 
             case NotifyCollectionChangedAction.Reset:
             {
-                    if (IsInPaused)
-                        break;
-
-                    var notifyCollection = sender as INotifyCollectionChanged ?? throw new NullReferenceException();
+                var notifyCollection = sender as INotifyCollectionChanged ?? throw new NullReferenceException();
                     var oldItems = CollectionChangedWeakEventManager.GetSnapshot(notifyCollection);
                     var newItems = SnapshotItems(sender as IEnumerable ?? throw new NotSupportedException(
                         $"Collection type '{sender?.GetType()}' must implement IEnumerable."));
@@ -528,13 +594,52 @@ public class History : INotifyPropertyChanged, IDisposable
     }
 
     private static void NotifyCollectionItems(
-        IReadOnlyList<object?> items,
+        IEnumerable items,
         in CollectionItemChangedInfo changedInfo)
     {
         foreach (var item in items)
         {
             if (item is ICollectionItem collectionItem)
                 collectionItem.Changed(changedInfo);
+        }
+    }
+
+    private void NotifyPausedCollectionChange(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        switch (e.Action)
+        {
+            case NotifyCollectionChangedAction.Add:
+                NotifyCollectionItems(e.NewItems ?? throw new NullReferenceException(), CollectionItemChangedInfo.Add);
+                break;
+
+            case NotifyCollectionChangedAction.Remove:
+                NotifyCollectionItems(e.OldItems ?? throw new NullReferenceException(), CollectionItemChangedInfo.Remove);
+                break;
+
+            case NotifyCollectionChangedAction.Move:
+                NotifyCollectionItems(e.OldItems ?? throw new NullReferenceException(), CollectionItemChangedInfo.Move);
+                break;
+
+            case NotifyCollectionChangedAction.Replace:
+                NotifyCollectionItems(e.OldItems ?? throw new NullReferenceException(), CollectionItemChangedInfo.Remove);
+                NotifyCollectionItems(e.NewItems ?? throw new NullReferenceException(), CollectionItemChangedInfo.Add);
+                break;
+
+            case NotifyCollectionChangedAction.Reset:
+            {
+                var notifyCollection = sender as INotifyCollectionChanged ?? throw new NullReferenceException();
+                NotifyCollectionItems(
+                    CollectionChangedWeakEventManager.GetSnapshot(notifyCollection),
+                    CollectionItemChangedInfo.Remove);
+                NotifyCollectionItems(
+                    sender as IEnumerable ?? throw new NotSupportedException(
+                        $"Collection type '{sender?.GetType()}' must implement IEnumerable."),
+                    CollectionItemChangedInfo.Add);
+                break;
+            }
+
+            default:
+                throw new ArgumentOutOfRangeException();
         }
     }
 
@@ -589,14 +694,16 @@ public class History : INotifyPropertyChanged, IDisposable
 
     private BatchHistory? _batchHistory;
 
-    private readonly Stack<HistoryAction> _undoStack = new();
-    private readonly Stack<HistoryAction> _redoStack = new();
+    private readonly HistoryStack<HistoryAction> _undoStack = new();
+    private readonly HistoryStack<HistoryAction> _redoStack = new();
+    private int _maxUndoCount = int.MaxValue;
 
     private static readonly PropertyChangedEventArgs CanUndoArgs = new(nameof(CanUndo));
     private static readonly PropertyChangedEventArgs CanRedoArgs = new(nameof(CanRedo));
     private static readonly PropertyChangedEventArgs CanClearArgs = new(nameof(CanClear));
     private static readonly PropertyChangedEventArgs UndoCountArgs = new(nameof(UndoCount));
     private static readonly PropertyChangedEventArgs RedoCountArgs = new(nameof(RedoCount));
+    private static readonly PropertyChangedEventArgs MaxUndoCountArgs = new(nameof(MaxUndoCount));
     private static readonly PropertyChangedEventArgs PauseDepthArgs = new(nameof(PauseDepth));
     private static readonly PropertyChangedEventArgs BatchDepthArgs = new(nameof(BatchDepth));
     private static readonly PropertyChangedEventArgs IsInPausedArgs = new(nameof(IsInPaused));
@@ -615,6 +722,119 @@ public class History : INotifyPropertyChanged, IDisposable
             while (CanRedo)
                 Redo();
         }
+    }
+
+    private sealed class RecordingScope : IDisposable
+    {
+        public RecordingScope(History history, bool isBatch)
+        {
+            _history = history;
+            _isBatch = isBatch;
+        }
+
+        public void Dispose()
+        {
+            var history = _history;
+            if (history is null)
+                return;
+
+            _history = null;
+            if (_isBatch)
+                history.EndBatch();
+            else
+                history.EndPause();
+        }
+
+        private History? _history;
+        private readonly bool _isBatch;
+    }
+
+    private sealed class HistoryStack<T>
+    {
+        public int Count => _count;
+
+        public void Push(T item, int maxCount)
+        {
+            if (maxCount is 0)
+                return;
+
+            if (_count == maxCount)
+                RemoveOldest();
+
+            EnsureCapacity(_count + 1, maxCount);
+            _items[(_start + _count) % _items.Length] = item;
+            ++_count;
+        }
+
+        public T Pop()
+        {
+            if (_count is 0)
+                throw new InvalidOperationException("The history stack is empty.");
+
+            var index = (_start + _count - 1) % _items.Length;
+            var item = _items[index];
+            _items[index] = default!;
+            --_count;
+
+            if (_count is 0)
+                _start = 0;
+
+            return item;
+        }
+
+        public void TrimOldest(int maxCount)
+        {
+            while (_count > maxCount)
+                RemoveOldest();
+        }
+
+        public void Clear()
+        {
+            if (_count > 0)
+                Array.Clear(_items, 0, _items.Length);
+            _start = 0;
+            _count = 0;
+        }
+
+        private void EnsureCapacity(int requiredCount, int maxCount)
+        {
+            if (_items.Length >= requiredCount)
+                return;
+
+            var newCapacity = _items.Length is 0
+                ? 4
+                : _items.Length <= int.MaxValue / 2
+                    ? _items.Length * 2
+                    : int.MaxValue;
+            if (newCapacity < requiredCount)
+                newCapacity = requiredCount;
+            if (newCapacity > maxCount)
+                newCapacity = maxCount;
+
+            var newItems = new T[newCapacity];
+            for (var i = 0; i < _count; ++i)
+                newItems[i] = _items[(_start + i) % _items.Length];
+
+            _items = newItems;
+            _start = 0;
+        }
+
+        private void RemoveOldest()
+        {
+            if (_count is 0)
+                return;
+
+            _items[_start] = default!;
+            _start = (_start + 1) % _items.Length;
+            --_count;
+
+            if (_count is 0)
+                _start = 0;
+        }
+
+        private T[] _items = Array.Empty<T>();
+        private int _start;
+        private int _count;
     }
 
     private record struct HistoryAction(Action Undo, Action Redo);

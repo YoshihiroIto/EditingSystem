@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Jewelry.EditingSystem;
 
@@ -13,20 +15,47 @@ internal static class CollectionAdapter
 {
     public static ICollectionAdapter Create(object collection)
     {
-        foreach (var interfaceType in collection.GetType().GetInterfaces())
+        if (collection is null)
+            throw new ArgumentNullException(nameof(collection));
+
+        return Adapters.GetValue(collection, CreateCore);
+    }
+
+    private static ICollectionAdapter CreateCore(object collection)
+    {
+        var factory = Factories.GetOrAdd(collection.GetType(), CreateFactory);
+        return factory.Create(collection);
+    }
+
+    private static ICollectionAdapterFactory CreateFactory(Type collectionType)
+    {
+        foreach (var interfaceType in collectionType.GetInterfaces())
         {
             if (interfaceType.IsGenericType is false ||
                 interfaceType.GetGenericTypeDefinition() != typeof(ICollection<>))
                 continue;
 
             var itemType = interfaceType.GetGenericArguments()[0];
-            var adapterType = typeof(GenericCollectionAdapter<>).MakeGenericType(itemType);
-            return (ICollectionAdapter)(Activator.CreateInstance(adapterType, collection) ??
-                throw new InvalidOperationException("Failed to create a collection adapter."));
+            var factoryType = typeof(GenericCollectionAdapterFactory<>).MakeGenericType(itemType);
+            return (ICollectionAdapterFactory)(Activator.CreateInstance(factoryType) ??
+                throw new InvalidOperationException("Failed to create a collection adapter factory."));
         }
 
         throw new NotSupportedException(
-            $"Collection type '{collection.GetType()}' must implement IList or ICollection<T>.");
+            $"Collection type '{collectionType}' must implement IList or ICollection<T>.");
+    }
+
+    private interface ICollectionAdapterFactory
+    {
+        ICollectionAdapter Create(object collection);
+    }
+
+    private sealed class GenericCollectionAdapterFactory<T> : ICollectionAdapterFactory
+    {
+        public ICollectionAdapter Create(object collection)
+        {
+            return new GenericCollectionAdapter<T>(collection);
+        }
     }
 
     private sealed class GenericCollectionAdapter<T>(object collection) : ICollectionAdapter
@@ -44,4 +73,7 @@ internal static class CollectionAdapter
 
         private readonly ICollection<T> _collection = (ICollection<T>)collection;
     }
+
+    private static readonly ConditionalWeakTable<object, ICollectionAdapter> Adapters = new();
+    private static readonly ConcurrentDictionary<Type, ICollectionAdapterFactory> Factories = new();
 }

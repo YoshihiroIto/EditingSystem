@@ -117,6 +117,24 @@ public sealed class ObservableDictionaryHistoryTests
     }
 
     [Fact]
+    public void ClearEx_is_undoable_without_property_observation()
+    {
+        using var history = new History();
+        var dictionary = new ObservableDictionary<string, int>(
+            new Dictionary<string, int> { ["one"] = 1, ["two"] = 2 });
+
+        dictionary.ClearEx(history);
+        Assert.Empty(dictionary);
+        AssertHistory(history, undoCount: 1, redoCount: 0);
+
+        history.Undo();
+        AssertDictionary(dictionary, ("one", 1), ("two", 2));
+
+        history.Redo();
+        Assert.Empty(dictionary);
+    }
+
+    [Fact]
     public void Clear_can_be_undone_and_redone()
     {
         using var history = new History();
