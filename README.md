@@ -81,6 +81,10 @@ history.MaxUndoCount = 500;
 `SymmetricExceptWithEx`, and `RemoveWhereEx` record one undo action directly. They can also be
 used with collections that are not assigned to an observed property.
 
+For `ObservableCollection<T>`, undo and redo preserve incremental collection notifications:
+insertions and removals raise `Add`/`Remove`, and moves raise `Move`. Replaying a `Clear` does not
+raise `Reset`; `ClearEx` also avoids `Reset` when the clear is first applied.
+
 
 ## Example
 

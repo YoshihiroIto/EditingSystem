@@ -81,12 +81,18 @@ public static class ListExtensions
 
     private static void RemoveAll<T>(IList<T> collection)
     {
-        collection.Clear();
+        while (collection.Count > 0)
+            collection.RemoveAt(collection.Count - 1);
     }
 
     private static void RemoveAll<T>(ICollection<T> collection)
     {
-        collection.Clear();
+        var items = new List<T>(collection);
+        foreach (var item in items)
+        {
+            if (collection.Remove(item) is false)
+                throw new InvalidOperationException("The item to remove was not found in the collection.");
+        }
     }
 
     private static void Restore<T>(IList<T> collection, IReadOnlyList<T> items)

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 
 namespace Jewelry.EditingSystem;
@@ -9,6 +10,7 @@ internal interface ICollectionAdapter
 {
     void Add(object? item);
     void Remove(object? item);
+    bool TryMove(int oldIndex, int newIndex);
 }
 
 internal static class CollectionAdapter
@@ -19,6 +21,18 @@ internal static class CollectionAdapter
             throw new ArgumentNullException(nameof(collection));
 
         return Adapters.GetValue(collection, CreateCore);
+    }
+
+    public static bool TryMove(object collection, int oldIndex, int newIndex)
+    {
+        foreach (var interfaceType in collection.GetType().GetInterfaces())
+        {
+            if (interfaceType.IsGenericType &&
+                interfaceType.GetGenericTypeDefinition() == typeof(ICollection<>))
+                return Create(collection).TryMove(oldIndex, newIndex);
+        }
+
+        return false;
     }
 
     private static ICollectionAdapter CreateCore(object collection)
@@ -69,6 +83,15 @@ internal static class CollectionAdapter
         {
             if (_collection.Remove((T)item!) is false)
                 throw new InvalidOperationException("The item to remove was not found in the collection.");
+        }
+
+        public bool TryMove(int oldIndex, int newIndex)
+        {
+            if (_collection is not ObservableCollection<T> observableCollection)
+                return false;
+
+            observableCollection.Move(oldIndex, newIndex);
+            return true;
         }
 
         private readonly ICollection<T> _collection = (ICollection<T>)collection;

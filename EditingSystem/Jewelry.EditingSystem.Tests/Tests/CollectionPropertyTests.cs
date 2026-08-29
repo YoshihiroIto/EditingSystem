@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using Jewelry.EditingSystem.Tests.TestModels;
 using Xunit;
@@ -42,6 +44,37 @@ public sealed class CollectionPropertyTests
         history.Redo();
         Assert.Equal(3, model.IntCollection.Count);
         Assert.True(model.IntCollection.SequenceEqual(new[] {1, 2, 3}));
+    }
+
+    [Fact]
+    public void Insert_and_remove_undo_redo_do_not_raise_Reset()
+    {
+        using var history = new History();
+        var model = new DirectBasicTestModel(history);
+        var collection = new ObservableCollection<int> { 10, 20 };
+        model.IntCollection = collection;
+        history.Clear();
+
+        var actions = new List<NotifyCollectionChangedAction>();
+        collection.CollectionChanged += (_, e) => actions.Add(e.Action);
+
+        collection.Insert(1, 15);
+        history.Undo();
+        history.Redo();
+        collection.RemoveAt(1);
+        history.Undo();
+        history.Redo();
+
+        Assert.Equal(
+            [
+                NotifyCollectionChangedAction.Add,
+                NotifyCollectionChangedAction.Remove,
+                NotifyCollectionChangedAction.Add,
+                NotifyCollectionChangedAction.Remove,
+                NotifyCollectionChangedAction.Add,
+                NotifyCollectionChangedAction.Remove,
+            ],
+            actions);
     }
 
     [Theory]
@@ -94,6 +127,31 @@ public sealed class CollectionPropertyTests
 
         history.Redo();
         Assert.True(model.IntCollection.SequenceEqual(new[] {3, 0, 1, 2}));
+    }
+
+    [Fact]
+    public void Move_undo_and_redo_raise_Move_instead_of_Remove_and_Add()
+    {
+        using var history = new History();
+        var model = new DirectBasicTestModel(history);
+        var collection = new ObservableCollection<int> { 10, 20, 30 };
+        model.IntCollection = collection;
+        history.Clear();
+
+        var actions = new List<NotifyCollectionChangedAction>();
+        collection.CollectionChanged += (_, e) => actions.Add(e.Action);
+
+        collection.Move(0, 2);
+        history.Undo();
+        history.Redo();
+
+        Assert.Equal(
+            [
+                NotifyCollectionChangedAction.Move,
+                NotifyCollectionChangedAction.Move,
+                NotifyCollectionChangedAction.Move,
+            ],
+            actions);
     }
 
     [Theory]
@@ -242,6 +300,55 @@ public sealed class CollectionPropertyTests
 
         history.Redo();
         Assert.Empty(collection);
+    }
+
+    [Fact]
+    public void Clear_undo_and_redo_do_not_raise_Reset()
+    {
+        using var history = new History();
+        var model = new DirectBasicTestModel(history);
+        var collection = new ObservableCollection<int> { 10, 20, 30 };
+        model.IntCollection = collection;
+        history.Clear();
+
+        var actions = new List<NotifyCollectionChangedAction>();
+        collection.CollectionChanged += (_, e) => actions.Add(e.Action);
+
+        collection.Clear();
+        Assert.Equal([NotifyCollectionChangedAction.Reset], actions);
+
+        actions.Clear();
+        history.Undo();
+        Assert.NotEmpty(actions);
+        Assert.All(actions, action => Assert.Equal(NotifyCollectionChangedAction.Add, action));
+
+        actions.Clear();
+        history.Redo();
+        Assert.NotEmpty(actions);
+        Assert.All(actions, action => Assert.Equal(NotifyCollectionChangedAction.Remove, action));
+    }
+
+    [Fact]
+    public void ClearEx_apply_undo_and_redo_do_not_raise_Reset()
+    {
+        using var history = new History();
+        var collection = new ObservableCollection<int> { 10, 20, 30 };
+        var actions = new List<NotifyCollectionChangedAction>();
+        collection.CollectionChanged += (_, e) => actions.Add(e.Action);
+
+        collection.ClearEx(history);
+        Assert.NotEmpty(actions);
+        Assert.All(actions, action => Assert.Equal(NotifyCollectionChangedAction.Remove, action));
+
+        actions.Clear();
+        history.Undo();
+        Assert.NotEmpty(actions);
+        Assert.All(actions, action => Assert.Equal(NotifyCollectionChangedAction.Add, action));
+
+        actions.Clear();
+        history.Redo();
+        Assert.NotEmpty(actions);
+        Assert.All(actions, action => Assert.Equal(NotifyCollectionChangedAction.Remove, action));
     }
 
     [Theory]

@@ -373,13 +373,13 @@ public class History : INotifyPropertyChanged, IDisposable
 
                     void DoRedo()
                     {
-                        MoveItems(list, e.OldStartingIndex, e.NewStartingIndex, movedItems.Count);
+                        MoveItems(sender!, list, e.OldStartingIndex, e.NewStartingIndex, movedItems.Count);
                         NotifyCollectionItems(movedItems, CollectionItemChangedInfo.Move);
                     }
 
                     void DoUndo()
                     {
-                        MoveItems(list, e.NewStartingIndex, e.OldStartingIndex, movedItems.Count);
+                        MoveItems(sender!, list, e.NewStartingIndex, e.OldStartingIndex, movedItems.Count);
                         NotifyCollectionItems(movedItems, CollectionItemChangedInfo.Move);
                     }
 
@@ -525,8 +525,16 @@ public class History : INotifyPropertyChanged, IDisposable
         return snapshot;
     }
 
-    private static void MoveItems(IList list, int sourceIndex, int destinationIndex, int count)
+    private static void MoveItems(
+        object collectionObject,
+        IList list,
+        int sourceIndex,
+        int destinationIndex,
+        int count)
     {
+        if (count is 1 && CollectionAdapter.TryMove(collectionObject, sourceIndex, destinationIndex))
+            return;
+
         var items = new List<object?>(count);
         for (var i = 0; i < count; ++i)
         {
@@ -566,7 +574,8 @@ public class History : INotifyPropertyChanged, IDisposable
     {
         if (list is not null)
         {
-            list.Clear();
+            while (list.Count > 0)
+                list.RemoveAt(list.Count - 1);
             foreach (var item in replacementItems)
                 list.Add(item);
             return;

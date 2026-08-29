@@ -86,8 +86,11 @@ public static class SetExtensions
     private static void Restore<T>(ISet<T> self, IReadOnlyList<T> items, bool notifyItems)
     {
         List<T>? removedItems = notifyItems ? new List<T>(self) : null;
-        self.Clear();
-        self.UnionWith(items);
+        var currentItems = new List<T>(self);
+        foreach (var item in currentItems)
+            self.Remove(item);
+        foreach (var item in items)
+            self.Add(item);
 
         if (removedItems is not null)
         {
