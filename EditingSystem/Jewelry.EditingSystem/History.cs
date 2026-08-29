@@ -27,18 +27,17 @@ public class History : INotifyPropertyChanged, IDisposable
 
             var currentFlags = CanUndoRedoClear;
             var currentUndoRedoCount = UndoRedoCount;
-            var currentDepth = PauseBatchDepth;
-
+    
             _maxUndoCount = value;
             _undoStack.TrimOldest(value);
             _redoStack.TrimOldest(value);
 
             PropertyChanged?.Invoke(this, MaxUndoCountArgs);
-            InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
+            InvokePropertyChanged(currentFlags, currentUndoRedoCount);
         }
     }
-    public int PauseDepth { get; private set; }
-    public int BatchDepth { get; private set; }
+    internal int PauseDepth { get; private set; }
+    internal int BatchDepth { get; private set; }
     public bool IsInUndoing { get; private set; }
     public bool IsInPaused => PauseDepth > 0;
     public bool IsInBatch => BatchDepth > 0;
@@ -56,7 +55,6 @@ public class History : INotifyPropertyChanged, IDisposable
     {
         var wasInPaused = IsInPaused;
         ++PauseDepth;
-        PropertyChanged?.Invoke(this, PauseDepthArgs);
 
         if (wasInPaused != IsInPaused)
             PropertyChanged?.Invoke(this, IsInPausedArgs);
@@ -78,7 +76,6 @@ public class History : INotifyPropertyChanged, IDisposable
 
         var wasInPaused = IsInPaused;
         --PauseDepth;
-        PropertyChanged?.Invoke(this, PauseDepthArgs);
 
         if (wasInPaused != IsInPaused)
             PropertyChanged?.Invoke(this, IsInPausedArgs);
@@ -111,7 +108,6 @@ public class History : INotifyPropertyChanged, IDisposable
             BeginBatchInternal(isCoalescing);
         }
 
-        PropertyChanged?.Invoke(this, BatchDepthArgs);
 
         if (wasInBatch != IsInBatch)
             PropertyChanged?.Invoke(this, IsInBatchArgs);
@@ -167,7 +163,6 @@ public class History : INotifyPropertyChanged, IDisposable
             _isCoalescingBatch = false;
         }
 
-        PropertyChanged?.Invoke(this, BatchDepthArgs);
 
         if (wasInBatch != IsInBatch)
             PropertyChanged?.Invoke(this, IsInBatchArgs);
@@ -186,7 +181,6 @@ public class History : INotifyPropertyChanged, IDisposable
 
         var currentFlags = CanUndoRedoClear;
         var currentUndoRedoCount = UndoRedoCount;
-        var currentDepth = PauseBatchDepth;
 
         var action = _undoStack.Pop();
 
@@ -207,7 +201,7 @@ public class History : INotifyPropertyChanged, IDisposable
 
         _redoStack.Push(action, MaxUndoCount);
 
-        InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
+        InvokePropertyChanged(currentFlags, currentUndoRedoCount);
     }
 
     public bool TryUndo()
@@ -232,7 +226,6 @@ public class History : INotifyPropertyChanged, IDisposable
 
         var currentFlags = CanUndoRedoClear;
         var currentUndoRedoCount = UndoRedoCount;
-        var currentDepth = PauseBatchDepth;
 
         var action = _redoStack.Pop();
 
@@ -253,7 +246,7 @@ public class History : INotifyPropertyChanged, IDisposable
 
         _undoStack.Push(action, MaxUndoCount);
 
-        InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
+        InvokePropertyChanged(currentFlags, currentUndoRedoCount);
     }
 
     public bool TryRedo()
@@ -323,14 +316,13 @@ public class History : INotifyPropertyChanged, IDisposable
     {
         var currentFlags = CanUndoRedoClear;
         var currentUndoRedoCount = UndoRedoCount;
-        var currentDepth = PauseBatchDepth;
 
         _undoStack.Push(action, MaxUndoCount);
 
         if (_redoStack.Count > 0)
             _redoStack.Clear();
 
-        InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
+        InvokePropertyChanged(currentFlags, currentUndoRedoCount);
     }
 
     /// <summary>
@@ -438,12 +430,11 @@ public class History : INotifyPropertyChanged, IDisposable
     {
         var currentFlags = CanUndoRedoClear;
         var currentUndoRedoCount = UndoRedoCount;
-        var currentDepth = PauseBatchDepth;
 
         _undoStack.Clear();
         _redoStack.Clear();
 
-        InvokePropertyChanged(currentFlags, currentUndoRedoCount, currentDepth);
+        InvokePropertyChanged(currentFlags, currentUndoRedoCount);
     }
 
     internal void OnCollectionPropertyCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -829,7 +820,7 @@ public class History : INotifyPropertyChanged, IDisposable
         }
     }
 
-    private void InvokePropertyChanged((bool CanUndo, bool CanRedo, bool CanClear) flags, (int UndoCount, int RedoCount) undoRedoCount, (int PauseDepth, int BatchDepth) depthCount)
+    private void InvokePropertyChanged((bool CanUndo, bool CanRedo, bool CanClear) flags, (int UndoCount, int RedoCount) undoRedoCount)
     {
         if (PropertyChanged is null)
             return;
@@ -848,12 +839,6 @@ public class History : INotifyPropertyChanged, IDisposable
 
         if (undoRedoCount.RedoCount != RedoCount)
             PropertyChanged.Invoke(this, RedoCountArgs);
-
-        if (depthCount.PauseDepth != PauseDepth)
-            PropertyChanged.Invoke(this, PauseDepthArgs);
-
-        if (depthCount.BatchDepth != BatchDepth)
-            PropertyChanged.Invoke(this, BatchDepthArgs);
     }
 
     private void BeginBatchInternal(bool isCoalescing)
@@ -873,7 +858,6 @@ public class History : INotifyPropertyChanged, IDisposable
 
     private (int UndoCount, int RedoCount) UndoRedoCount => (UndoCount, RedoCount);
     private (bool CanUndo, bool CanRedo, bool CanClear) CanUndoRedoClear => (CanUndo, CanRedo, CanClear);
-    private (int PauseDepth, int BatchDepth) PauseBatchDepth => (PauseDepth, BatchDepth);
 
     private BatchRecorder? _batchRecorder;
     private bool _isCoalescingBatch;
@@ -888,8 +872,6 @@ public class History : INotifyPropertyChanged, IDisposable
     private static readonly PropertyChangedEventArgs UndoCountArgs = new(nameof(UndoCount));
     private static readonly PropertyChangedEventArgs RedoCountArgs = new(nameof(RedoCount));
     private static readonly PropertyChangedEventArgs MaxUndoCountArgs = new(nameof(MaxUndoCount));
-    private static readonly PropertyChangedEventArgs PauseDepthArgs = new(nameof(PauseDepth));
-    private static readonly PropertyChangedEventArgs BatchDepthArgs = new(nameof(BatchDepth));
     private static readonly PropertyChangedEventArgs IsInPausedArgs = new(nameof(IsInPaused));
     private static readonly PropertyChangedEventArgs IsInBatchArgs = new(nameof(IsInBatch));
 
