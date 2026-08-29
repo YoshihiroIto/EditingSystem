@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Runtime.CompilerServices;
 
 namespace Jewelry.EditingSystem;
 
@@ -118,6 +119,7 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
             if (_source.TryGetTarget(out var source) is false)
                 return;
 
+            var forwardedEventArgs = e;
             if (e.Action is NotifyCollectionChangedAction.Reset)
             {
                 _resetSnapshots.Push(_snapshot);
@@ -127,7 +129,7 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
             {
                 try
                 {
-                    ApplyChange(_snapshot, e);
+                    forwardedEventArgs = ApplyChange(source, e);
                 }
                 catch
                 {
@@ -138,7 +140,7 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
             try
             {
                 if (_handler.TryGetTarget(out var handler))
-                    handler(sender, e);
+                    handler(sender, forwardedEventArgs);
                 else
                     Dispose();
             }
@@ -168,17 +170,18 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
             return snapshot;
         }
 
-        private static void ApplyChange(List<object?> snapshot, NotifyCollectionChangedEventArgs e)
+        private NotifyCollectionChangedEventArgs ApplyChange(
+            INotifyCollectionChanged source,
+            NotifyCollectionChangedEventArgs e)
         {
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
-                    InsertItems(snapshot, e.NewItems ?? throw new InvalidOperationException(), e.NewStartingIndex);
-                    break;
+                    InsertItems(_snapshot, e.NewItems ?? throw new InvalidOperationException(), e.NewStartingIndex);
+                    return e;
 
                 case NotifyCollectionChangedAction.Remove:
-                    RemoveItems(snapshot, e.OldItems ?? throw new InvalidOperationException(), e.OldStartingIndex);
-                    break;
+                    return ApplyRemove(source, e);
 
                 case NotifyCollectionChangedAction.Move:
                 {
@@ -186,23 +189,80 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
                     var count = (e.OldItems ?? throw new InvalidOperationException()).Count;
                     for (var i = 0; i < count; ++i)
                     {
-                        items.Add(snapshot[e.OldStartingIndex]);
-                        snapshot.RemoveAt(e.OldStartingIndex);
+                        items.Add(_snapshot[e.OldStartingIndex]);
+                        _snapshot.RemoveAt(e.OldStartingIndex);
                     }
 
                     for (var i = 0; i < items.Count; ++i)
-                        snapshot.Insert(e.NewStartingIndex + i, items[i]);
-                    break;
+                        _snapshot.Insert(e.NewStartingIndex + i, items[i]);
+                    return e;
                 }
 
                 case NotifyCollectionChangedAction.Replace:
-                    RemoveItems(snapshot, e.OldItems ?? throw new InvalidOperationException(), e.OldStartingIndex);
-                    InsertItems(snapshot, e.NewItems ?? throw new InvalidOperationException(), e.NewStartingIndex);
-                    break;
+                    return ApplyReplace(source, e);
 
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }
+
+        private NotifyCollectionChangedEventArgs ApplyRemove(
+            INotifyCollectionChanged source,
+            NotifyCollectionChangedEventArgs e)
+        {
+            var oldItems = e.OldItems ?? throw new InvalidOperationException();
+            if (e.OldStartingIndex >= 0)
+            {
+                RemoveItemsAt(_snapshot, oldItems.Count, e.OldStartingIndex);
+                return e;
+            }
+
+            if (TryRemoveItemsByDefaultEquality(_snapshot, oldItems))
+                return e;
+
+            // Some unordered collections use a custom comparer and report the value passed to
+            // Remove rather than the actual stored value. Rebuild only on that uncommon mismatch
+            // and forward the actual removed instances to History.
+            var newSnapshot = CreateSnapshot(source);
+            var actualRemovedItems = FindExactDifference(_snapshot, newSnapshot);
+            _snapshot = newSnapshot;
+
+            return actualRemovedItems.Count == oldItems.Count
+                ? CreateRemoveEventArgs(actualRemovedItems)
+                : e;
+        }
+
+        private NotifyCollectionChangedEventArgs ApplyReplace(
+            INotifyCollectionChanged source,
+            NotifyCollectionChangedEventArgs e)
+        {
+            var oldItems = e.OldItems ?? throw new InvalidOperationException();
+            var newItems = e.NewItems ?? throw new InvalidOperationException();
+
+            if (e.OldStartingIndex >= 0)
+            {
+                RemoveItemsAt(_snapshot, oldItems.Count, e.OldStartingIndex);
+                InsertItems(_snapshot, newItems, e.NewStartingIndex);
+                return e;
+            }
+
+            if (TryRemoveItemsByDefaultEquality(_snapshot, oldItems))
+            {
+                InsertItems(_snapshot, newItems, e.NewStartingIndex);
+                return e;
+            }
+
+            // Dictionary-like collections may preserve the originally stored key while their
+            // notification contains a comparer-equal key supplied by the caller. Recover both
+            // sides from the snapshots so undo/redo keeps the real key object/representation.
+            var newSnapshot = CreateSnapshot(source);
+            var actualOldItems = FindExactDifference(_snapshot, newSnapshot);
+            var actualNewItems = FindExactDifference(newSnapshot, _snapshot);
+            _snapshot = newSnapshot;
+
+            return actualOldItems.Count == oldItems.Count && actualNewItems.Count == newItems.Count
+                ? CreateReplaceEventArgs(actualNewItems, actualOldItems)
+                : e;
         }
 
         private static void InsertItems(List<object?> snapshot, IList items, int index)
@@ -218,25 +278,121 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
                 snapshot.Insert(index + i, items[i]);
         }
 
-        private static void RemoveItems(List<object?> snapshot, IList items, int index)
+        private static void RemoveItemsAt(List<object?> snapshot, int count, int index)
         {
-            if (index >= 0)
-            {
-                for (var i = 0; i < items.Count; ++i)
-                    snapshot.RemoveAt(index);
-                return;
-            }
+            for (var i = 0; i < count; ++i)
+                snapshot.RemoveAt(index);
+        }
 
+        private static bool TryRemoveItemsByDefaultEquality(List<object?> snapshot, IList items)
+        {
             if (items.Count is 1)
             {
-                _ = snapshot.Remove(items[0]);
-                return;
+                var index = snapshot.IndexOf(items[0]);
+                if (index < 0)
+                    return false;
+
+                snapshot.RemoveAt(index);
+                return true;
             }
 
-            var removedItems = new HashSet<object?>();
+            var updatedSnapshot = new List<object?>(snapshot);
             foreach (var item in items)
-                removedItems.Add(item);
-            snapshot.RemoveAll(item => removedItems.Contains(item));
+            {
+                if (!updatedSnapshot.Remove(item))
+                    return false;
+            }
+
+            snapshot.Clear();
+            snapshot.AddRange(updatedSnapshot);
+            return true;
+        }
+
+        private static List<object?> FindExactDifference(
+            IReadOnlyList<object?> source,
+            IReadOnlyList<object?> other)
+        {
+            var counts = new Dictionary<ExactItemKey, int>();
+            for (var i = 0; i < other.Count; ++i)
+            {
+                var key = new ExactItemKey(other[i]);
+                counts.TryGetValue(key, out var count);
+                counts[key] = count + 1;
+            }
+
+            var difference = new List<object?>();
+            for (var i = 0; i < source.Count; ++i)
+            {
+                var item = source[i];
+                var key = new ExactItemKey(item);
+                if (counts.TryGetValue(key, out var count) && count > 0)
+                {
+                    if (count is 1)
+                        counts.Remove(key);
+                    else
+                        counts[key] = count - 1;
+                }
+                else
+                    difference.Add(item);
+            }
+
+            return difference;
+        }
+
+        private static NotifyCollectionChangedEventArgs CreateRemoveEventArgs(IList items)
+        {
+            return items.Count is 1
+                ? new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, items[0])
+                : new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, items);
+        }
+
+        private static NotifyCollectionChangedEventArgs CreateReplaceEventArgs(IList newItems, IList oldItems)
+        {
+            return newItems.Count is 1 && oldItems.Count is 1
+                ? new NotifyCollectionChangedEventArgs(
+                    NotifyCollectionChangedAction.Replace,
+                    newItems[0],
+                    oldItems[0])
+                : new NotifyCollectionChangedEventArgs(
+                    NotifyCollectionChangedAction.Replace,
+                    newItems,
+                    oldItems);
+        }
+
+        private readonly struct ExactItemKey : IEquatable<ExactItemKey>
+        {
+            public ExactItemKey(object? item)
+            {
+                _item = item;
+            }
+
+            public bool Equals(ExactItemKey other)
+            {
+                if (ReferenceEquals(_item, other._item))
+                    return true;
+                if (_item is null || other._item is null)
+                    return false;
+
+                var type = _item.GetType();
+                return type.IsValueType && type == other._item.GetType() && _item.Equals(other._item);
+            }
+
+            public override bool Equals(object? obj)
+            {
+                return obj is ExactItemKey other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                if (_item is null)
+                    return 0;
+
+                return _item.GetType().IsValueType
+                    ? _item.GetHashCode()
+                    : RuntimeHelpers.GetHashCode(_item);
+            }
+
+            private readonly object? _item;
         }
     }
 }
