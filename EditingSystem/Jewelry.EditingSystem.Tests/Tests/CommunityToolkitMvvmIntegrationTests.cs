@@ -113,6 +113,19 @@ public sealed partial class CommunityToolkitMvvmIntegrationTests
     }
 
     [Fact]
+    public void GeneratedUndoablePropertyDoesNotRetainPreviousReferenceAfterHistoryClear()
+    {
+        using var history = new History();
+        var model = new CommunityToolkitReferenceModel(history);
+        var previousValue = CreatePreviousValueWeakReference(history, model);
+
+        ForceFullGc();
+
+        Assert.False(previousValue.IsAlive);
+        System.GC.KeepAlive(model);
+    }
+
+    [Fact]
     public void EqualAssignmentDoesNotRecordHistoryOrRunHooks()
     {
         using var history = new History();
@@ -136,6 +149,29 @@ public sealed partial class CommunityToolkitMvvmIntegrationTests
         Assert.Equal(0, model.Value);
         Assert.False(history.CanUndo);
         Assert.False(history.CanRedo);
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static System.WeakReference CreatePreviousValueWeakReference(
+        History history,
+        CommunityToolkitReferenceModel model)
+    {
+        var previous = new object();
+        var weakReference = new System.WeakReference(previous);
+
+        model.Reference = previous;
+        history.Clear();
+        model.Reference = new object();
+        history.Clear();
+
+        return weakReference;
+    }
+
+    private static void ForceFullGc()
+    {
+        System.GC.Collect();
+        System.GC.WaitForPendingFinalizers();
+        System.GC.Collect();
     }
 
     [EditingHistory(nameof(history))]
@@ -171,6 +207,14 @@ public sealed partial class CommunityToolkitMvvmIntegrationTests
             ChangedHookCount++;
             LastChangedValues = (oldValue, newValue);
         }
+    }
+
+    [EditingHistory(nameof(history))]
+    private sealed partial class CommunityToolkitReferenceModel(History history) : ObservableObject
+    {
+        [Undoable]
+        [ObservableProperty]
+        public partial object? Reference { get; set; }
     }
 
     [EditingHistory(nameof(history))]

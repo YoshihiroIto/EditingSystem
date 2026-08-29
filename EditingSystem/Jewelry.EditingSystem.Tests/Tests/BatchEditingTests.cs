@@ -215,4 +215,95 @@ public sealed class BatchEditingTests
         Assert.Equal(3, model.IntValue);
         Assert.Equal(3, notificationCount);
     }
+
+    [Fact]
+    public void Failed_batch_undo_resumes_without_replaying_actions_that_already_succeeded()
+    {
+        using var history = new History();
+        var first = 1;
+        var second = 1;
+        var third = 1;
+        var thirdUndoCount = 0;
+        var failSecondUndo = true;
+
+        using (history.Batch())
+        {
+            history.Push(() => first = 0, () => first = 1);
+            history.Push(
+                () =>
+                {
+                    if (failSecondUndo)
+                    {
+                        failSecondUndo = false;
+                        throw new InvalidOperationException("expected");
+                    }
+                    second = 0;
+                },
+                () => second = 1);
+            history.Push(
+                () =>
+                {
+                    ++thirdUndoCount;
+                    third = 0;
+                },
+                () => third = 1);
+        }
+
+        Assert.Throws<InvalidOperationException>(() => history.Undo());
+        Assert.Equal(1, first);
+        Assert.Equal(1, second);
+        Assert.Equal(0, third);
+        Assert.Equal(1, thirdUndoCount);
+
+        history.Undo();
+        Assert.Equal(0, first);
+        Assert.Equal(0, second);
+        Assert.Equal(0, third);
+        Assert.Equal(1, thirdUndoCount);
+    }
+
+    [Fact]
+    public void Failed_batch_redo_resumes_without_replaying_actions_that_already_succeeded()
+    {
+        using var history = new History();
+        var first = 1;
+        var second = 1;
+        var third = 1;
+        var firstRedoCount = 0;
+        var failSecondRedo = false;
+
+        using (history.Batch())
+        {
+            history.Push(() => first = 0, () =>
+            {
+                ++firstRedoCount;
+                first = 1;
+            });
+            history.Push(() => second = 0, () =>
+            {
+                if (failSecondRedo)
+                {
+                    failSecondRedo = false;
+                    throw new InvalidOperationException("expected");
+                }
+                second = 1;
+            });
+            history.Push(() => third = 0, () => third = 1);
+        }
+
+        history.Undo();
+        failSecondRedo = true;
+
+        Assert.Throws<InvalidOperationException>(() => history.Redo());
+        Assert.Equal(1, first);
+        Assert.Equal(0, second);
+        Assert.Equal(0, third);
+        Assert.Equal(1, firstRedoCount);
+
+        history.Redo();
+        Assert.Equal(1, first);
+        Assert.Equal(1, second);
+        Assert.Equal(1, third);
+        Assert.Equal(1, firstRedoCount);
+    }
 }
