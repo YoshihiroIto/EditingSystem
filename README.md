@@ -46,8 +46,8 @@ public sealed partial class SampleViewModel : ObservableObject
 }
 ```
 
-The one-parameter `OnXChanging(T value)` hook is reserved by the integration. The
-two-parameter changing hook and both changed hooks remain available to application code.
+The one-parameter `OnXChanging(T value)` and `OnXChanged(T value)` hooks are reserved by the
+integration. The two-parameter changing and changed hooks remain available to application code.
 
 
 ## Example

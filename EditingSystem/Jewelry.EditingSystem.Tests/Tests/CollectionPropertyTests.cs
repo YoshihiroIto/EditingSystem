@@ -190,9 +190,14 @@ public sealed class CollectionPropertyTests
 
         Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
 
-        Assert.Throws<NotSupportedException>(() =>
-            model.IntCollection.Clear()
-        );
+        model.IntCollection.Clear();
+        Assert.Empty(model.IntCollection);
+
+        history.Undo();
+        Assert.Equal([100, 101, 102, 103], model.IntCollection);
+
+        history.Redo();
+        Assert.Empty(model.IntCollection);
     }
 
     [Theory]
@@ -213,13 +218,13 @@ public sealed class CollectionPropertyTests
 
         model.IntCollection.ClearEx(history);
 
-        Assert.True(model.IntCollection.SequenceEqual(new int[] { }));
+        Assert.True(model.IntCollection.SequenceEqual(new int[] {}));
 
         history.Undo();
         Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
 
         history.Redo();
-        Assert.True(model.IntCollection.SequenceEqual(new int[] { }));
+        Assert.True(model.IntCollection.SequenceEqual(new int[] {}));
     }
 
     [Theory]
@@ -356,6 +361,63 @@ public sealed class CollectionPropertyTests
         Assert.Equal([10], collection);
     }
 
+    [Fact]
+    public void Range_remove_can_be_undone_and_redone()
+    {
+        using var history = new History();
+        var model = new DirectBasicTestModel(history);
+        var collection = new RangeObservableCollection<int> { 10, 20, 30, 40 };
+        model.IntCollection = collection;
+        history.Clear();
+
+        collection.RemoveRange(1, 2);
+        Assert.Equal([10, 40], collection);
+
+        history.Undo();
+        Assert.Equal([10, 20, 30, 40], collection);
+
+        history.Redo();
+        Assert.Equal([10, 40], collection);
+    }
+
+    [Fact]
+    public void Range_replace_can_be_undone_and_redone()
+    {
+        using var history = new History();
+        var model = new DirectBasicTestModel(history);
+        var collection = new RangeObservableCollection<int> { 10, 20, 30, 40 };
+        model.IntCollection = collection;
+        history.Clear();
+
+        collection.ReplaceRange(1, 2, [25, 35, 45]);
+        Assert.Equal([10, 25, 35, 45, 40], collection);
+
+        history.Undo();
+        Assert.Equal([10, 20, 30, 40], collection);
+
+        history.Redo();
+        Assert.Equal([10, 25, 35, 45, 40], collection);
+    }
+
+    [Fact]
+    public void Range_move_can_be_undone_and_redone()
+    {
+        using var history = new History();
+        var model = new DirectBasicTestModel(history);
+        var collection = new RangeObservableCollection<int> { 10, 20, 30, 40, 50 };
+        model.IntCollection = collection;
+        history.Clear();
+
+        collection.MoveRange(1, 3, 2);
+        Assert.Equal([10, 40, 50, 20, 30], collection);
+
+        history.Undo();
+        Assert.Equal([10, 20, 30, 40, 50], collection);
+
+        history.Redo();
+        Assert.Equal([10, 40, 50, 20, 30], collection);
+    }
+
     private sealed class RangeObservableCollection<T> : ObservableCollection<T>
     {
         public void AddRange(System.Collections.Generic.IReadOnlyList<T> items)
@@ -368,6 +430,59 @@ public sealed class CollectionPropertyTests
                 System.Collections.Specialized.NotifyCollectionChangedAction.Add,
                 (System.Collections.IList)items,
                 startingIndex));
+        }
+
+        public void RemoveRange(int index, int count)
+        {
+            var items = new System.Collections.Generic.List<T>(count);
+            for (var i = 0; i < count; ++i)
+            {
+                items.Add(Items[index]);
+                Items.RemoveAt(index);
+            }
+
+            OnCollectionChanged(new System.Collections.Specialized.NotifyCollectionChangedEventArgs(
+                System.Collections.Specialized.NotifyCollectionChangedAction.Remove,
+                (System.Collections.IList)items,
+                index));
+        }
+
+        public void ReplaceRange(int index, int count, System.Collections.Generic.IReadOnlyList<T> replacement)
+        {
+            var oldItems = new System.Collections.Generic.List<T>(count);
+            for (var i = 0; i < count; ++i)
+            {
+                oldItems.Add(Items[index]);
+                Items.RemoveAt(index);
+            }
+
+            for (var i = 0; i < replacement.Count; ++i)
+                Items.Insert(index + i, replacement[i]);
+
+            OnCollectionChanged(new System.Collections.Specialized.NotifyCollectionChangedEventArgs(
+                System.Collections.Specialized.NotifyCollectionChangedAction.Replace,
+                (System.Collections.IList)replacement,
+                (System.Collections.IList)oldItems,
+                index));
+        }
+
+        public void MoveRange(int oldIndex, int newIndex, int count)
+        {
+            var items = new System.Collections.Generic.List<T>(count);
+            for (var i = 0; i < count; ++i)
+            {
+                items.Add(Items[oldIndex]);
+                Items.RemoveAt(oldIndex);
+            }
+
+            for (var i = 0; i < count; ++i)
+                Items.Insert(newIndex + i, items[i]);
+
+            OnCollectionChanged(new System.Collections.Specialized.NotifyCollectionChangedEventArgs(
+                System.Collections.Specialized.NotifyCollectionChangedAction.Move,
+                (System.Collections.IList)items,
+                newIndex,
+                oldIndex));
         }
     }
 }

@@ -62,7 +62,7 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
     private static readonly DiagnosticDescriptor ReservedHookConflict = new(
         "JESCT006",
         "ObservableProperty hook is reserved",
-        "The one-parameter hook '{0}' is reserved by UndoableAttribute; use the two-parameter changing hook or a changed hook",
+        "The one-parameter hook '{0}' is reserved by UndoableAttribute; use a two-parameter hook",
         "Jewelry.EditingSystem.CommunityToolkit.Mvvm",
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -169,10 +169,19 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
                 continue;
             }
 
-            var hookName = $"On{propertyName}Changing";
-            if (HasReservedHookConflict(containingType, hookName, propertyType))
+            var changingHookName = $"On{propertyName}Changing";
+            var changedHookName = $"On{propertyName}Changed";
+            var conflictingHookName = HasReservedHookConflict(containingType, changingHookName, propertyType)
+                ? changingHookName
+                : HasReservedHookConflict(containingType, changedHookName, propertyType)
+                    ? changedHookName
+                    : null;
+            if (conflictingHookName is not null)
             {
-                context.ReportDiagnostic(Diagnostic.Create(ReservedHookConflict, candidate.Location, hookName));
+                context.ReportDiagnostic(Diagnostic.Create(
+                    ReservedHookConflict,
+                    candidate.Location,
+                    conflictingHookName));
                 continue;
             }
 
@@ -191,13 +200,17 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
             var historyAccessExpression = historyAccessorName is not null
                 ? $"this.{EscapeIdentifier(historyAccessorName)}"
                 : $"this.{EscapeIdentifier(historyMember!.Name)}";
+            var oldValueFieldName = GetUniqueMemberName(
+                containingType,
+                $"__jewelryEditingOld{propertyName}");
 
             properties.Add(new PropertyModel(
                 propertyName,
                 propertyType,
                 historyAccessExpression,
                 historyParameterName,
-                historyAccessorName));
+                historyAccessorName,
+                oldValueFieldName));
         }
 
         foreach (var pair in groupedProperties)
@@ -466,13 +479,28 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
 
         foreach (var property in properties.OrderBy(static property => property.PropertyName, StringComparer.Ordinal))
         {
+            var propertyType = property.PropertyType.ToDisplayString(TypeDisplayFormat);
+            AppendIndent(builder, indent);
+            builder.Append("private ");
+            builder.Append(propertyType);
+            builder.Append(' ');
+            builder.Append(EscapeIdentifier(property.OldValueFieldName));
+            builder.AppendLine(" = default!;");
+        }
+
+        builder.AppendLine();
+
+        foreach (var property in properties.OrderBy(static property => property.PropertyName, StringComparer.Ordinal))
+        {
             var propertyName = EscapeIdentifier(property.PropertyName);
-            var hookName = EscapeIdentifier($"On{property.PropertyName}Changing");
+            var changingHookName = EscapeIdentifier($"On{property.PropertyName}Changing");
+            var changedHookName = EscapeIdentifier($"On{property.PropertyName}Changed");
+            var oldValueFieldName = EscapeIdentifier(property.OldValueFieldName);
             var propertyType = property.PropertyType.ToDisplayString(TypeDisplayFormat);
 
             AppendIndent(builder, indent);
             builder.Append("partial void ");
-            builder.Append(hookName);
+            builder.Append(changingHookName);
             builder.Append('(');
             builder.Append(propertyType);
             builder.AppendLine(" value)");
@@ -488,10 +516,37 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
             builder.AppendLine("return;");
             builder.AppendLine();
             AppendIndent(builder, indent + 1);
-            builder.Append("editingHistory.RecordPropertyChange(value => this.");
+            builder.Append("this.");
+            builder.Append(oldValueFieldName);
+            builder.Append(" = this.");
+            builder.Append(propertyName);
+            builder.AppendLine(";");
+            AppendIndent(builder, indent);
+            builder.AppendLine("}");
+            builder.AppendLine();
+
+            AppendIndent(builder, indent);
+            builder.Append("partial void ");
+            builder.Append(changedHookName);
+            builder.Append('(');
+            builder.Append(propertyType);
+            builder.AppendLine(" value)");
+            AppendIndent(builder, indent);
+            builder.AppendLine("{");
+            AppendIndent(builder, indent + 1);
+            builder.Append("var editingHistory = ");
+            builder.Append(property.HistoryAccessExpression);
+            builder.AppendLine(";");
+            AppendIndent(builder, indent + 1);
+            builder.AppendLine("if (editingHistory.IsInUndoing)");
+            AppendIndent(builder, indent + 2);
+            builder.AppendLine("return;");
+            builder.AppendLine();
+            AppendIndent(builder, indent + 1);
+            builder.Append("editingHistory.RecordAppliedPropertyChange(value => this.");
             builder.Append(propertyName);
             builder.Append(" = value, this.");
-            builder.Append(propertyName);
+            builder.Append(oldValueFieldName);
             builder.AppendLine(", value);");
             AppendIndent(builder, indent);
             builder.AppendLine("}");
@@ -543,7 +598,12 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
 
     private static string GetUniqueHistoryAccessorName(INamedTypeSymbol containingType)
     {
-        var name = "__jewelryEditingHistory";
+        return GetUniqueMemberName(containingType, "__jewelryEditingHistory");
+    }
+
+    private static string GetUniqueMemberName(INamedTypeSymbol containingType, string baseName)
+    {
+        var name = baseName;
         while (containingType.GetMembers(name).Length > 0)
             name += "_";
 
@@ -583,13 +643,15 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
             ITypeSymbol propertyType,
             string historyAccessExpression,
             string? historyParameterName,
-            string? historyAccessorName)
+            string? historyAccessorName,
+            string oldValueFieldName)
         {
             PropertyName = propertyName;
             PropertyType = propertyType;
             HistoryAccessExpression = historyAccessExpression;
             HistoryParameterName = historyParameterName;
             HistoryAccessorName = historyAccessorName;
+            OldValueFieldName = oldValueFieldName;
         }
 
         public string PropertyName { get; }
@@ -597,5 +659,6 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
         public string HistoryAccessExpression { get; }
         public string? HistoryParameterName { get; }
         public string? HistoryAccessorName { get; }
+        public string OldValueFieldName { get; }
     }
 }

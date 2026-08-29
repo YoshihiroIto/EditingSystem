@@ -49,9 +49,12 @@ public partial class Outer<T>
         Assert.Contains("partial class Outer<T>", text);
         Assert.Contains("partial class Model<U>", text);
         Assert.Contains("partial void OnFirstChanging(int value)", text);
+        Assert.Contains("partial void OnFirstChanged(int value)", text);
         Assert.Contains("partial void OnSecondChanging(string? value)", text);
         Assert.Contains("partial void OnThirdChanging(int value)", text);
         Assert.Contains("partial void OnFourthChanging(U? value)", text);
+        Assert.Contains("partial void OnFourthChanged(U? value)", text);
+        Assert.Contains("RecordAppliedPropertyChange", text);
         Assert.Contains("value => this.Fourth = value", text);
         Assert.DoesNotContain("__Internals", text);
     }
@@ -120,6 +123,7 @@ public partial class Model(History newValue) : ObservableObject
         var text = generated.SourceText.ToString();
 
         Assert.Contains("partial void OnValueChanging(int value)", text);
+        Assert.Contains("partial void OnValueChanged(int value)", text);
         Assert.Contains("private global::Jewelry.EditingSystem.History __jewelryEditingHistory => newValue;", text);
         Assert.Contains("var editingHistory = this.__jewelryEditingHistory;", text);
         Assert.DoesNotContain(
@@ -204,6 +208,24 @@ public partial class Model : ObservableObject
     private readonly History _history = new();
     [Undoable, ObservableProperty] private int value;
     partial void OnValueChanging(int value) { }
+}
+""", "JESCT006");
+    }
+
+    [Fact]
+    public void ReportsReservedOneParameterChangedHook()
+    {
+        AssertDiagnostic("""
+using CommunityToolkit.Mvvm.ComponentModel;
+using Jewelry.EditingSystem;
+using Jewelry.EditingSystem.CommunityToolkit.Mvvm;
+
+[EditingHistory(nameof(_history))]
+public partial class Model : ObservableObject
+{
+    private readonly History _history = new();
+    [Undoable, ObservableProperty] private int value;
+    partial void OnValueChanged(int value) { }
 }
 """, "JESCT006");
     }

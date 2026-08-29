@@ -78,4 +78,29 @@ public sealed class HistoryTests
             ],
             propertyNames);
     }
+
+    [Fact]
+    public void RecordPropertyChange_does_not_record_again_during_undo_or_redo()
+    {
+        using var history = new History();
+        var value = 0;
+
+        void SetValue(int newValue)
+        {
+            if (history.RecordPropertyChange(SetValue, value, newValue))
+                value = newValue;
+        }
+
+        SetValue(1);
+
+        history.Undo();
+        Assert.Equal(0, value);
+        Assert.Equal(0, history.UndoCount);
+        Assert.Equal(1, history.RedoCount);
+
+        history.Redo();
+        Assert.Equal(1, value);
+        Assert.Equal(1, history.UndoCount);
+        Assert.Equal(0, history.RedoCount);
+    }
 }

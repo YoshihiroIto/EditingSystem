@@ -6,6 +6,19 @@ namespace Jewelry.EditingSystem.Tests.Tests;
 
 public sealed class FlagPropertyTests
 {
+    [Fact]
+    public void Throwing_setter_does_not_leave_phantom_history()
+    {
+        using var history = new History();
+        var model = new ThrowingFlagModel(history);
+
+        Assert.Throws<System.InvalidOperationException>(() => model.IsEnabled = true);
+
+        Assert.False(model.IsEnabled);
+        Assert.False(history.CanUndo);
+        Assert.False(history.CanRedo);
+    }
+
     [Theory]
     [InlineData(TestModelKinds.EditableModel)]
     [InlineData(TestModelKinds.Direct)]
@@ -185,7 +198,7 @@ public sealed class FlagPropertyTests
         Assert.True(model.IsB);
         Assert.True(model.IsC);
     }
-    
+
     [Theory]
     [InlineData(TestModelKinds.EditableModel)]
     [InlineData(TestModelKinds.Direct)]
@@ -205,5 +218,18 @@ public sealed class FlagPropertyTests
 
         model.IsC = true;
         Assert.Equal(3, model.ChangingCount);
+    }
+
+    private sealed class ThrowingFlagModel(History history) : EditableModelBase(history)
+    {
+        public bool IsEnabled
+        {
+            get => false;
+            set => SetEditableFlagProperty<uint>(
+                _ => throw new System.InvalidOperationException(),
+                0,
+                1,
+                value);
+        }
     }
 }

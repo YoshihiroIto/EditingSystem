@@ -76,6 +76,25 @@ public sealed class ObservableHashSetHistoryTests
     }
 
     [Fact]
+    public void Clear_can_be_undone_and_redone()
+    {
+        using var history = new History();
+        var set = Observe(history, new ObservableHashSet<int>([10, 20, 30]));
+
+        set.Clear();
+        Assert.Empty(set);
+        AssertHistory(history, undoCount: 1, redoCount: 0);
+
+        history.Undo();
+        Assert.True(set.SetEquals([10, 20, 30]));
+        AssertHistory(history, undoCount: 0, redoCount: 1);
+
+        history.Redo();
+        Assert.Empty(set);
+        AssertHistory(history, undoCount: 1, redoCount: 0);
+    }
+
+    [Fact]
     public void UnionWithEx_can_be_undone_and_redone_as_one_action()
     {
         using var history = new History();

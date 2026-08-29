@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 
@@ -57,6 +58,17 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
         }
     }
 
+    public IReadOnlyList<object?> GetSnapshot(INotifyCollectionChanged source)
+    {
+        foreach (var registration in _listeners)
+        {
+            if (ReferenceEquals(registration.Listener.Source, source))
+                return registration.Listener.Snapshot;
+        }
+
+        throw new InvalidOperationException("The collection is not registered.");
+    }
+
     public void Dispose()
     {
         foreach (var registration in _listeners)
@@ -83,30 +95,54 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
     {
         public bool IsAlive => _handler.TryGetTarget(out _) && _source.TryGetTarget(out _);
         public object? Source => _source.TryGetTarget(out var source) ? source : default;
+        public IReadOnlyList<object?> Snapshot => _snapshot;
 
         private readonly WeakReference<INotifyCollectionChanged> _source;
         private readonly WeakReference<NotifyCollectionChangedEventHandler> _handler;
+        private List<object?> _snapshot;
 
         public CollectionChangedWeakEventListener(INotifyCollectionChanged source, NotifyCollectionChangedEventHandler handler)
         {
             _source = new WeakReference<INotifyCollectionChanged>(source);
             _handler = new WeakReference<NotifyCollectionChangedEventHandler>(handler);
+            _snapshot = CreateSnapshot(source);
 
             source.CollectionChanged += HandleEvent;
         }
 
         private void HandleEvent(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            if (_handler.TryGetTarget(out var handler))
-                handler(sender, e);
-            else
-                Dispose();
+            try
+            {
+                if (_handler.TryGetTarget(out var handler))
+                    handler(sender, e);
+                else
+                    Dispose();
+            }
+            finally
+            {
+                if (_source.TryGetTarget(out var source))
+                    _snapshot = CreateSnapshot(source);
+            }
         }
 
         public void Dispose()
         {
             if (_source.TryGetTarget(out var source))
                 source.CollectionChanged -= HandleEvent;
+        }
+
+        private static List<object?> CreateSnapshot(INotifyCollectionChanged source)
+        {
+            if (source is not IEnumerable enumerable)
+                throw new NotSupportedException(
+                    $"Collection type '{source.GetType()}' must implement IEnumerable.");
+
+            var snapshot = new List<object?>();
+            foreach (var item in enumerable)
+                snapshot.Add(item);
+
+            return snapshot;
         }
     }
 }

@@ -42,10 +42,10 @@ public sealed partial class CommunityToolkitMvvmBasicTestModel : ObservableObjec
     [ObservableProperty]
     private ObservableDictionary<string, int> _intDictionary = new();
 
-    partial void OnIntValueChanged(int value) => ++ChangingCount;
-    partial void OnStringValueChanged(string value) => ++ChangingCount;
-    partial void OnIntCollectionChanged(ObservableCollection<int> value) => ++ChangingCount;
-    partial void OnCollectionChanged(ObservableCollection<CollectionItem> value) => ++ChangingCount;
+    partial void OnIntValueChanged(int oldValue, int newValue) => ++ChangingCount;
+    partial void OnStringValueChanged(string? oldValue, string newValue) => ++ChangingCount;
+    partial void OnIntCollectionChanged(ObservableCollection<int>? oldValue, ObservableCollection<int> newValue) => ++ChangingCount;
+    partial void OnCollectionChanged(ObservableCollection<CollectionItem>? oldValue, ObservableCollection<CollectionItem> newValue) => ++ChangingCount;
 
     partial void OnIntValueChanging(int oldValue, int newValue) => LastChangingValues = (oldValue, newValue);
 

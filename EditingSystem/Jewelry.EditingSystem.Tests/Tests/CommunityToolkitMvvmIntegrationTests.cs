@@ -125,6 +125,19 @@ public sealed partial class CommunityToolkitMvvmIntegrationTests
         Assert.Equal(0, model.ChangedHookCount);
     }
 
+    [Fact]
+    public void ThrowingChangingHookDoesNotLeavePhantomHistory()
+    {
+        using var history = new History();
+        var model = new CommunityToolkitThrowingChangingModel(history);
+
+        Assert.Throws<System.InvalidOperationException>(() => model.Value = 1);
+
+        Assert.Equal(0, model.Value);
+        Assert.False(history.CanUndo);
+        Assert.False(history.CanRedo);
+    }
+
     [EditingHistory(nameof(history))]
     private sealed partial class CommunityToolkitFeaturesModel(History history) : ObservableObject
     {
@@ -168,6 +181,19 @@ public sealed partial class CommunityToolkitMvvmIntegrationTests
         [NotifyDataErrorInfo]
         [Required]
         public partial string? Name { get; set; }
+    }
+
+    [EditingHistory(nameof(history))]
+    private sealed partial class CommunityToolkitThrowingChangingModel(History history) : ObservableObject
+    {
+        [Undoable]
+        [ObservableProperty]
+        public partial int Value { get; set; }
+
+        partial void OnValueChanging(int oldValue, int newValue)
+        {
+            throw new System.InvalidOperationException();
+        }
     }
 
     [EditingHistory(nameof(_history))]

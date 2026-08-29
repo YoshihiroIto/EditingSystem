@@ -24,7 +24,7 @@ public sealed partial class SampleViewModel : ObservableObject
 Undo and redo call the generated property setter, preserving CommunityToolkit.Mvvm change
 notifications, validation, command notifications, and recipient broadcasts.
 
-The one-parameter `OnXChanging(T value)` hook is reserved. Use the two-parameter changing hook
-or either changed hook for application-specific behavior.
+The one-parameter `OnXChanging(T value)` and `OnXChanged(T value)` hooks are reserved. Use the
+two-parameter changing or changed hooks for application-specific behavior.
 
 `EditingHistory` may name a non-null `History` field, property, or primary constructor parameter.

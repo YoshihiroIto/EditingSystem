@@ -9,10 +9,11 @@ internal static class EditablePropertyCommon
 {
     internal static bool SetEditableProperty<T>(History history, Action<T> setValue, T oldValue, T newValue)
     {
-        if (RecordPropertyChange(history, setValue, oldValue, newValue) is false)
+        if (EqualityComparer<T>.Default.Equals(oldValue, newValue))
             return false;
 
         setValue(newValue);
+        RecordAppliedPropertyChange(history, setValue, oldValue, newValue);
         return true;
     }
 
@@ -20,6 +21,18 @@ internal static class EditablePropertyCommon
     {
         if (EqualityComparer<T>.Default.Equals(oldValue, newValue))
             return false;
+
+        if (history.IsInUndoing)
+            return true;
+
+        RecordAppliedPropertyChange(history, setValue, oldValue, newValue);
+        return true;
+    }
+
+    internal static void RecordAppliedPropertyChange<T>(History history, Action<T> setValue, T oldValue, T newValue)
+    {
+        if (history.IsInUndoing)
+            return;
 
         void ApplyValue(T currentValue, T value)
         {
@@ -32,7 +45,6 @@ internal static class EditablePropertyCommon
             () => ApplyValue(oldValue, newValue));
 
         UpdateCollectionListener(history, oldValue, newValue);
-        return true;
     }
 
     private static void UpdateCollectionListener<T>(History history, T oldValue, T newValue)
@@ -67,9 +79,8 @@ internal static class EditablePropertyCommon
             newValue &= ~newFlags;
         }
 
-        history.Push(() => setValue(oldFlags), () => setValue(newValue));
-
         setValue(newValue);
+        history.Push(() => setValue(oldFlags), () => setValue(newValue));
         return true;
     }
 #endif

@@ -116,6 +116,26 @@ public sealed class ObservableDictionaryHistoryTests
         AssertHistory(history, undoCount: 1, redoCount: 0);
     }
 
+    [Fact]
+    public void Clear_can_be_undone_and_redone()
+    {
+        using var history = new History();
+        var dictionary = Observe(history, new ObservableDictionary<string, int>(
+            new Dictionary<string, int> { ["one"] = 1, ["two"] = 2 }));
+
+        dictionary.Clear();
+        Assert.Empty(dictionary);
+        AssertHistory(history, undoCount: 1, redoCount: 0);
+
+        history.Undo();
+        AssertDictionary(dictionary, ("one", 1), ("two", 2));
+        AssertHistory(history, undoCount: 0, redoCount: 1);
+
+        history.Redo();
+        Assert.Empty(dictionary);
+        AssertHistory(history, undoCount: 1, redoCount: 0);
+    }
+
     private static T Observe<T>(History history, T collection)
     {
         history.RecordPropertyChange<T>(_ => { }, default!, collection);
