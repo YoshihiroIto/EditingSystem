@@ -49,6 +49,37 @@ public sealed class CustomComparerCollectionHistoryTests
         Assert.Equal(1, restored.Value);
     }
 
+    [Fact]
+    public void ObservableDictionary_replace_undo_redo_preserves_the_actual_stored_key()
+    {
+        using var history = new History();
+        var dictionary = Observe(
+            history,
+            new ObservableDictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Original"] = 1
+            });
+
+        history.Clear();
+        dictionary["original"] = 2;
+
+        var changed = Assert.Single(dictionary);
+        Assert.Equal("Original", changed.Key);
+        Assert.Equal(2, changed.Value);
+
+        history.Undo();
+
+        var undone = Assert.Single(dictionary);
+        Assert.Equal("Original", undone.Key);
+        Assert.Equal(1, undone.Value);
+
+        history.Redo();
+
+        var redone = Assert.Single(dictionary);
+        Assert.Equal("Original", redone.Key);
+        Assert.Equal(2, redone.Value);
+    }
+
     private static T Observe<T>(History history, T collection)
     {
         history.RecordPropertyChange<T>(_ => { }, default!, collection);
