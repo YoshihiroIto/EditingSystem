@@ -15,6 +15,7 @@ RunCommunityToolkitSmoke();
 RunObservableCollectionSmoke();
 RunObservableHashSetSmoke();
 RunObservableDictionarySmoke();
+RunCustomComparerIdentitySmoke();
 RunCoalescingSmoke();
 
 Console.WriteLine("NativeAOT smoke tests passed.");
@@ -142,6 +143,47 @@ static void RunObservableDictionarySmoke()
     Assert(model.Dictionary["one"] == 1, "ObservableDictionary replace undo failed.");
     history.Redo();
     Assert(model.Dictionary["one"] == 2, "ObservableDictionary replace redo failed.");
+}
+
+static void RunCustomComparerIdentitySmoke()
+{
+    using (var history = new History())
+    {
+        var original = new string("Original".ToCharArray());
+        var equivalent = new string("original".ToCharArray());
+        var set = new ObservableHashSet<string>([original], StringComparer.OrdinalIgnoreCase);
+        history.RecordPropertyChange<ObservableHashSet<string>>(_ => { }, default!, set);
+        history.Clear();
+
+        Assert(set.Remove(equivalent), "Custom comparer ObservableHashSet remove failed.");
+        history.Undo();
+        Assert(set.TryGetValue(equivalent, out var restored), "Custom comparer ObservableHashSet undo did not restore the item.");
+        Assert(ReferenceEquals(original, restored), "Custom comparer ObservableHashSet undo changed the stored instance.");
+    }
+
+    using (var history = new History())
+    {
+        var dictionary = new ObservableDictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Original"] = 1
+        };
+        history.RecordPropertyChange<ObservableDictionary<string, int>>(_ => { }, default!, dictionary);
+        history.Clear();
+
+        dictionary["original"] = 2;
+        history.Undo();
+        var undone = dictionary.Single();
+        Assert(undone.Key == "Original" && undone.Value == 1, "Custom comparer ObservableDictionary replace undo changed the stored key.");
+        history.Redo();
+        var redone = dictionary.Single();
+        Assert(redone.Key == "Original" && redone.Value == 2, "Custom comparer ObservableDictionary replace redo changed the stored key.");
+
+        history.Clear();
+        Assert(dictionary.Remove("original"), "Custom comparer ObservableDictionary remove failed.");
+        history.Undo();
+        var restored = dictionary.Single();
+        Assert(restored.Key == "Original" && restored.Value == 2, "Custom comparer ObservableDictionary remove undo changed the stored key.");
+    }
 }
 
 static void RunCoalescingSmoke()
