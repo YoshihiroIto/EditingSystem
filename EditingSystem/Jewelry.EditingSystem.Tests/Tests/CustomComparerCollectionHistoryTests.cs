@@ -28,6 +28,23 @@ public sealed class CustomComparerCollectionHistoryTests
     }
 
     [Fact]
+    public void ObservableHashSet_remove_undo_restores_the_actual_instance_when_Equals_matches()
+    {
+        using var history = new History();
+        var original = new EquatableSetItem(1, "original");
+        var equivalent = new EquatableSetItem(1, "equivalent");
+        var set = Observe(history, new ObservableHashSet<EquatableSetItem>([original]));
+
+        Assert.True(set.Remove(equivalent));
+        Assert.Empty(set);
+
+        history.Undo();
+
+        Assert.True(set.TryGetValue(equivalent, out var restored));
+        Assert.Same(original, restored);
+    }
+
+    [Fact]
     public void ObservableDictionary_remove_undo_restores_the_actual_stored_key()
     {
         using var history = new History();
@@ -111,6 +128,33 @@ public sealed class CustomComparerCollectionHistoryTests
         public int GetHashCode(SetItem obj)
         {
             return obj.Key;
+        }
+    }
+
+    private sealed class EquatableSetItem : IEquatable<EquatableSetItem>
+    {
+        public EquatableSetItem(int key, string name)
+        {
+            Key = key;
+            Name = name;
+        }
+
+        public int Key { get; }
+        public string Name { get; }
+
+        public bool Equals(EquatableSetItem? other)
+        {
+            return other is not null && Key == other.Key;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is EquatableSetItem other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return Key;
         }
     }
 }
