@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using Jewelry.Collections;
 using Xunit;
 
@@ -114,6 +116,53 @@ public sealed class ObservableHashSetHistoryTests
     }
 
     [Fact]
+    public void UnionWithEx_undo_redo_replays_only_the_delta()
+    {
+        using var history = new History();
+        var initialItems = new int[100_000];
+        for (var i = 0; i < initialItems.Length; ++i)
+            initialItems[i] = i;
+
+        var set = Observe(history, new ObservableHashSet<int>(initialItems));
+        set.UnionWithEx([100_000], history);
+
+        var addCount = 0;
+        var removeCount = 0;
+        var otherCount = 0;
+        set.CollectionChanged += (_, e) =>
+        {
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    ++addCount;
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    ++removeCount;
+                    break;
+                default:
+                    ++otherCount;
+                    break;
+            }
+        };
+
+        history.Undo();
+        Assert.Equal(0, addCount);
+        Assert.Equal(1, removeCount);
+        Assert.Equal(0, otherCount);
+        Assert.Equal(100_000, set.Count);
+
+        addCount = 0;
+        removeCount = 0;
+        otherCount = 0;
+
+        history.Redo();
+        Assert.Equal(1, addCount);
+        Assert.Equal(0, removeCount);
+        Assert.Equal(0, otherCount);
+        Assert.Equal(100_001, set.Count);
+    }
+
+    [Fact]
     public void Set_extension_is_undoable_without_property_observation()
     {
         using var history = new History();
@@ -188,6 +237,58 @@ public sealed class ObservableHashSetHistoryTests
     }
 
     [Fact]
+    public void SymmetricExceptWithEx_preserves_actual_items_with_custom_comparer()
+    {
+        using var history = new History();
+        var original = new SetItem(1, "original");
+        var equivalent = new SetItem(1, "equivalent");
+        var added = new SetItem(2, "added");
+        var set = Observe(
+            history,
+            new ObservableHashSet<SetItem>([original], SetItemComparer.Instance));
+
+        set.SymmetricExceptWithEx([equivalent, added], history);
+        Assert.False(set.TryGetValue(original, out _));
+        Assert.True(set.TryGetValue(added, out var actualAdded));
+        Assert.Same(added, actualAdded);
+
+        history.Undo();
+        Assert.True(set.TryGetValue(equivalent, out var restored));
+        Assert.Same(original, restored);
+        Assert.False(set.TryGetValue(added, out _));
+
+        history.Redo();
+        Assert.False(set.TryGetValue(original, out _));
+        Assert.True(set.TryGetValue(added, out actualAdded));
+        Assert.Same(added, actualAdded);
+    }
+
+    [Fact]
+    public void HashSet_delta_uses_the_sets_custom_comparer()
+    {
+        using var history = new History();
+        var original = new SetItem(1, "original");
+        var equivalent = new SetItem(1, "equivalent");
+        var added = new SetItem(2, "added");
+        var set = new HashSet<SetItem>([original], SetItemComparer.Instance);
+
+        set.SymmetricExceptWithEx([equivalent, added], history);
+        Assert.False(set.TryGetValue(original, out _));
+        Assert.True(set.TryGetValue(added, out var actualAdded));
+        Assert.Same(added, actualAdded);
+
+        history.Undo();
+        Assert.True(set.TryGetValue(equivalent, out var restored));
+        Assert.Same(original, restored);
+        Assert.False(set.TryGetValue(added, out _));
+
+        history.Redo();
+        Assert.False(set.TryGetValue(original, out _));
+        Assert.True(set.TryGetValue(added, out actualAdded));
+        Assert.Same(added, actualAdded);
+    }
+
+    [Fact]
     public void RemoveWhereEx_can_be_undone_and_redone_as_one_action()
     {
         using var history = new History();
@@ -234,5 +335,32 @@ public sealed class ObservableHashSetHistoryTests
     {
         Assert.Equal(undoCount, history.UndoCount);
         Assert.Equal(redoCount, history.RedoCount);
+    }
+
+    private sealed class SetItem
+    {
+        public SetItem(int key, string name)
+        {
+            Key = key;
+            Name = name;
+        }
+
+        public int Key { get; }
+        public string Name { get; }
+    }
+
+    private sealed class SetItemComparer : IEqualityComparer<SetItem>
+    {
+        public static SetItemComparer Instance { get; } = new();
+
+        public bool Equals(SetItem? x, SetItem? y)
+        {
+            return ReferenceEquals(x, y) || x is not null && y is not null && x.Key == y.Key;
+        }
+
+        public int GetHashCode(SetItem obj)
+        {
+            return obj.Key;
+        }
     }
 }
