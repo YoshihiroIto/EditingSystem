@@ -163,7 +163,7 @@ public sealed class CoalescingBatchTests
     [Theory]
     [InlineData(TestModelKinds.EditableModel)]
     [InlineData(TestModelKinds.Direct)]
-    public void Shared_flag_storage_is_replayed_in_order(TestModelKinds testModelKind)
+    public void Independent_boolean_properties_are_replayed_in_order(TestModelKinds testModelKind)
     {
         using var history = new History();
         var model = CreateFlagTestModel(testModelKind, history);

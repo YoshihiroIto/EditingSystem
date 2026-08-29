@@ -6,36 +6,35 @@ public sealed class EditableFlagTestModel(History history) : EditableModelBase(h
 
     public bool IsA
     {
-        get => (_flags & FlagIsA) != default;
+        get => _isA;
         set
         {
-            if (SetEditableFlagProperty(v => _flags = v, _flags, FlagIsA, value))
+            if (SetEditableProperty(v => _isA = v, _isA, value))
                 ++ChangingCount;
         }
     }
 
     public bool IsB
     {
-        get => (_flags & FlagIsB) != default;
+        get => _isB;
         set
         {
-            if (SetEditableFlagProperty(v => _flags = v, _flags, FlagIsB, value))
+            if (SetEditableProperty(v => _isB = v, _isB, value))
                 ++ChangingCount;
         }
     }
 
     public bool IsC
     {
-        get => (_flags & FlagIsC) != default;
+        get => _isC;
         set
         {
-            if (SetEditableFlagProperty(v => _flags = v, _flags, FlagIsC, value))
+            if (SetEditableProperty(v => _isC = v, _isC, value))
                 ++ChangingCount;
         }
     }
 
-    private byte _flags;
-    private const byte FlagIsA = 1 << 0;
-    private const byte FlagIsB = 1 << 1;
-    private const byte FlagIsC = 1 << 2;
+    private bool _isA;
+    private bool _isB;
+    private bool _isC;
 }

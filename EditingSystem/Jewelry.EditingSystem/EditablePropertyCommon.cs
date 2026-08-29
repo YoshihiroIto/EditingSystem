@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Numerics;
 
 namespace Jewelry.EditingSystem;
 
@@ -102,31 +101,4 @@ internal static class EditablePropertyCommon
                 newNotifyCollectionChanged,
                 history.OnCollectionPropertyCollectionChanged);
     }
-
-#if NET8_0_OR_GREATER 
-    internal static bool SetEditableFlagProperty<T>(History history, Action<T> setValue, T oldFlags, T newFlags, bool value)
-        where T : IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>
-    {
-        var newValue = oldFlags;
-
-        if (value)
-        {
-            if ((oldFlags & newFlags) != default)
-                return false;
-
-            newValue |= newFlags;
-        }
-        else
-        {
-            if ((oldFlags & newFlags) == default)
-                return false;
-
-            newValue &= ~newFlags;
-        }
-
-        setValue(newValue);
-        history.Push(() => setValue(oldFlags), () => setValue(newValue));
-        return true;
-    }
-#endif
 }
