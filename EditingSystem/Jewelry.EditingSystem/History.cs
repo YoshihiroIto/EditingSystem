@@ -517,9 +517,26 @@ public class History : INotifyPropertyChanged, IDisposable
                 if (list is null)
                     throw new NotSupportedException("Move is only supported for IList collections.");
 
-                var movedItems = SnapshotItems(e.OldItems ?? throw new NullReferenceException());
-                if (movedItems.Count != (e.NewItems ?? throw new NullReferenceException()).Count)
+                var oldItems = e.OldItems ?? throw new NullReferenceException();
+                var newItems = e.NewItems ?? throw new NullReferenceException();
+                if (oldItems.Count != newItems.Count)
                     throw new InvalidOperationException("Move item counts do not match.");
+
+                if (oldItems.Count is 1)
+                {
+                    var movedItem = list[e.NewStartingIndex];
+                    if (movedItem is ICollectionItem collectionItem)
+                        collectionItem.Changed(CollectionItemChangedInfo.Move);
+
+                    PushAction(new MoveHistoryAction(
+                        sender!,
+                        e.OldStartingIndex,
+                        e.NewStartingIndex,
+                        movedItem));
+                    break;
+                }
+
+                var movedItems = SnapshotItems(oldItems);
 
                 void DoRedo()
                 {
@@ -1017,6 +1034,23 @@ public class History : INotifyPropertyChanged, IDisposable
     {
         public override void Undo() => undo();
         public override void Redo() => redo();
+    }
+
+    private sealed class MoveHistoryAction(
+        object collectionObject,
+        int oldIndex,
+        int newIndex,
+        object? movedItem) : HistoryAction
+    {
+        public override void Undo() => Apply(newIndex, oldIndex);
+        public override void Redo() => Apply(oldIndex, newIndex);
+
+        private void Apply(int sourceIndex, int destinationIndex)
+        {
+            MoveItems(collectionObject, (IList)collectionObject, sourceIndex, destinationIndex, 1);
+            if (movedItem is ICollectionItem collectionItem)
+                collectionItem.Changed(CollectionItemChangedInfo.Move);
+        }
     }
 
     private sealed class BatchHistoryAction(List<HistoryAction> actions) : HistoryAction

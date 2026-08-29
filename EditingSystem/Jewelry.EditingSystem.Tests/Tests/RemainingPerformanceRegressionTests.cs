@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Jewelry.Collections;
 using Xunit;
@@ -100,6 +101,28 @@ public sealed class RemainingPerformanceRegressionTests
         Assert.True(
             allocatedBytes < 800_000,
             $"Recording 10,000 property changes allocated {allocatedBytes:N0} bytes.");
+    }
+
+    [Fact]
+    public void Observed_single_item_move_does_not_allocate_delegate_history_state_per_change()
+    {
+        using var history = new History { MaxUndoCount = 1 };
+        var items = new ObservableCollection<int>(Enumerable.Range(0, 1_000));
+        history.RecordPropertyChange<ObservableCollection<int>>(static _ => { }, default!, items);
+        history.Clear();
+
+        for (var i = 0; i < 128; ++i)
+            items.Move(0, 999);
+
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        for (var i = 0; i < 10_000; ++i)
+            items.Move(0, 999);
+        var allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - before;
+
+        Assert.True(
+            allocatedBytes < 3_500_000,
+            $"Recording 10,000 single-item moves allocated {allocatedBytes:N0} bytes.");
+        Assert.Equal(1, history.UndoCount);
     }
 
     private static void NoOp()

@@ -68,17 +68,20 @@ public class PropertyHistoryBenchmarks
 [MemoryDiagnoser]
 public class BatchHistoryBenchmarks
 {
+    [Params(16, 256, 4_096, 65_536)]
+    public int ActionCount { get; set; }
+
     [IterationSetup]
     public void Setup()
     {
         _history = new History();
         _history.BeginBatch();
-        for (var i = 0; i < 4_096; ++i)
+        for (var i = 0; i < ActionCount; ++i)
             _history.Push(NoOp, NoOp);
     }
 
     [Benchmark]
-    public void EndBatch4096()
+    public void EndBatch()
     {
         _history.EndBatch();
     }
@@ -93,17 +96,20 @@ public class BatchHistoryBenchmarks
 [MemoryDiagnoser]
 public class SetHistoryBenchmarks
 {
+    [Params(1_000, 100_000, 1_000_000)]
+    public int SetSize { get; set; }
+
     [IterationSetup]
     public void Setup()
     {
         _history = new History();
-        _set = new ObservableHashSet<int>(Enumerable.Range(0, 100_000));
+        _set = new ObservableHashSet<int>(Enumerable.Range(0, SetSize));
     }
 
     [Benchmark]
-    public void UnionOneInto100K()
+    public void UnionOneIntoSet()
     {
-        _set.UnionWithEx([100_000], _history);
+        _set.UnionWithEx([SetSize], _history);
     }
 
     private History _history = null!;
@@ -113,21 +119,34 @@ public class SetHistoryBenchmarks
 [MemoryDiagnoser]
 public class ObservableCollectionMoveBenchmarks
 {
-    [IterationSetup]
-    public void Setup()
+    [IterationSetup(Target = nameof(MoveOneItemWithoutHistory))]
+    public void SetupWithoutHistory()
+    {
+        _history = null;
+        _items = new ObservableCollection<int>(Enumerable.Range(0, 1_000));
+    }
+
+    [IterationSetup(Target = nameof(MoveOneItemWithHistory))]
+    public void SetupWithHistory()
     {
         _history = new History();
         _items = new ObservableCollection<int>(Enumerable.Range(0, 1_000));
-        _history.RecordPropertyChange<ObservableCollection<int>>(_ => { }, default!, _items);
+        _history.RecordPropertyChange<ObservableCollection<int>>(static _ => { }, default!, _items);
         _history.Clear();
     }
 
-    [Benchmark]
-    public void MoveOneItem()
+    [Benchmark(Baseline = true)]
+    public void MoveOneItemWithoutHistory()
     {
         _items.Move(0, 999);
     }
 
-    private History _history = null!;
+    [Benchmark]
+    public void MoveOneItemWithHistory()
+    {
+        _items.Move(0, 999);
+    }
+
+    private History? _history;
     private ObservableCollection<int> _items = null!;
 }
