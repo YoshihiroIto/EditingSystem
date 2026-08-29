@@ -18,13 +18,24 @@ internal static class EditablePropertyCommon
         object? propertyKey,
         Action<T> setValue,
         T oldValue,
-        T newValue)
+        T newValue,
+        EditableModelBase? notificationTarget = null,
+        string? notificationPropertyName = null)
     {
         if (EqualityComparer<T>.Default.Equals(oldValue, newValue))
             return false;
 
         setValue(newValue);
-        RecordAppliedPropertyChange(history, target, propertyKey, setValue, oldValue, newValue);
+        notificationTarget?.RaisePropertyChangedFromHistory(notificationPropertyName!);
+        RecordAppliedPropertyChange(
+            history,
+            target,
+            propertyKey,
+            setValue,
+            oldValue,
+            newValue,
+            notificationTarget,
+            notificationPropertyName);
         return true;
     }
 
@@ -62,30 +73,26 @@ internal static class EditablePropertyCommon
         object? propertyKey,
         Action<T> setValue,
         T oldValue,
-        T newValue)
+        T newValue,
+        EditableModelBase? notificationTarget = null,
+        string? notificationPropertyName = null)
     {
         if (history.IsInUndoing)
             return;
 
-        void ApplyValue(T currentValue, T value)
-        {
-            UpdateCollectionListener(history, currentValue, value);
-            setValue(value);
-        }
-
-        if (target is not null && propertyKey is not null)
-            history.PushPropertyChange(target, propertyKey, ApplyValue, oldValue, newValue);
-        else
-        {
-            history.Push(
-                () => ApplyValue(newValue, oldValue),
-                () => ApplyValue(oldValue, newValue));
-        }
+        history.PushPropertyChange(
+            target,
+            propertyKey,
+            setValue,
+            oldValue,
+            newValue,
+            notificationTarget,
+            notificationPropertyName);
 
         UpdateCollectionListener(history, oldValue, newValue);
     }
 
-    private static void UpdateCollectionListener<T>(History history, T oldValue, T newValue)
+    internal static void UpdateCollectionListener<T>(History history, T oldValue, T newValue)
     {
         if (oldValue is INotifyCollectionChanged oldNotifyCollectionChanged)
             history.CollectionChangedWeakEventManager.RemoveWeakEventListener(oldNotifyCollectionChanged);

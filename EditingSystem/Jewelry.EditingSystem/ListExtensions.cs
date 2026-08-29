@@ -57,7 +57,7 @@ public static class ListExtensions
         {
             try
             {
-                RemoveAll(self);
+                RemoveItems(self, oldItems);
             }
             catch (Exception applyException)
             {
@@ -74,7 +74,7 @@ public static class ListExtensions
             },
             () =>
             {
-                RemoveAll(self);
+                RemoveItems(self, oldItems);
                 NotifyItems(oldItems, CollectionItemChangedInfo.Remove);
             });
     }
@@ -88,9 +88,14 @@ public static class ListExtensions
     private static void RemoveAll<T>(ICollection<T> collection)
     {
         var items = new List<T>(collection);
-        foreach (var item in items)
+        RemoveItems(collection, items);
+    }
+
+    private static void RemoveItems<T>(ICollection<T> collection, IReadOnlyList<T> items)
+    {
+        for (var i = 0; i < items.Count; ++i)
         {
-            if (collection.Remove(item) is false)
+            if (collection.Remove(items[i]) is false)
                 throw new InvalidOperationException("The item to remove was not found in the collection.");
         }
     }

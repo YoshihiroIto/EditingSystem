@@ -9,58 +9,210 @@ public static class SetExtensions
 {
     public static void UnionWithEx<T>(this ISet<T> self, IEnumerable<T> other, History history)
     {
-        if (other is null)
-            throw new ArgumentNullException(nameof(other));
-        ExecuteAsSingleAction(self, history, () => self.UnionWith(other));
+        Validate(self, other, history);
+
+        ExecuteDelta(self, history, (_, addedItems) =>
+        {
+            foreach (var item in other)
+            {
+                if (self.Add(item))
+                    addedItems.Add(item);
+            }
+        });
     }
 
     public static void IntersectWithEx<T>(this ISet<T> self, IEnumerable<T> other, History history)
     {
-        if (other is null)
-            throw new ArgumentNullException(nameof(other));
-        ExecuteAsSingleAction(self, history, () => self.IntersectWith(other));
+        Validate(self, other, history);
+
+        if (!TryCreateLookupSet(self, other, out var otherSet))
+        {
+            ExecuteAsSingleAction(self, history, () => self.IntersectWith(other));
+            return;
+        }
+
+        var removedItems = new List<T>();
+        foreach (var item in self)
+        {
+            if (!otherSet.Contains(item))
+                removedItems.Add(item);
+        }
+
+        ExecuteDelta(self, history, (removed, _) =>
+        {
+            foreach (var item in removedItems)
+            {
+                if (!self.Remove(item))
+                    throw new InvalidOperationException("The item to remove was not found in the set.");
+                removed.Add(item);
+            }
+        });
     }
 
     public static void ExceptWithEx<T>(this ISet<T> self, IEnumerable<T> other, History history)
     {
-        if (other is null)
-            throw new ArgumentNullException(nameof(other));
-        ExecuteAsSingleAction(self, history, () => self.ExceptWith(other));
+        Validate(self, other, history);
+
+        if (!TryCreateLookupSet(self, other, out var otherSet))
+        {
+            ExecuteAsSingleAction(self, history, () => self.ExceptWith(other));
+            return;
+        }
+
+        ExecuteDelta(self, history, (removedItems, _) =>
+        {
+            foreach (var candidate in otherSet)
+            {
+                if (!TryGetActualItem(self, candidate, out var actualItem))
+                    continue;
+
+                if (!self.Remove(candidate))
+                    throw new InvalidOperationException("The item to remove was not found in the set.");
+                removedItems.Add(actualItem);
+            }
+        });
     }
 
     public static void SymmetricExceptWithEx<T>(this ISet<T> self, IEnumerable<T> other, History history)
     {
-        if (other is null)
-            throw new ArgumentNullException(nameof(other));
-        ExecuteAsSingleAction(self, history, () => self.SymmetricExceptWith(other));
+        Validate(self, other, history);
+
+        if (!TryCreateLookupSet(self, other, out var otherSet))
+        {
+            ExecuteAsSingleAction(self, history, () => self.SymmetricExceptWith(other));
+            return;
+        }
+
+        ExecuteDelta(self, history, (removedItems, addedItems) =>
+        {
+            foreach (var candidate in otherSet)
+            {
+                if (TryGetActualItem(self, candidate, out var actualItem))
+                {
+                    if (!self.Remove(candidate))
+                        throw new InvalidOperationException("The item to remove was not found in the set.");
+                    removedItems.Add(actualItem);
+                }
+                else if (self.Add(candidate))
+                    addedItems.Add(candidate);
+            }
+        });
     }
 
     public static int RemoveWhereEx<T>(this ISet<T> self, Predicate<T> match, History history)
     {
+        if (self is null)
+            throw new ArgumentNullException(nameof(self));
         if (match is null)
             throw new ArgumentNullException(nameof(match));
+        if (history is null)
+            throw new ArgumentNullException(nameof(history));
 
+        var items = new List<T>(self);
         var removedCount = 0;
-        var items = new List<T>(self ?? throw new ArgumentNullException(nameof(self)));
-        ExecuteAsSingleAction(self, history, () =>
+
+        ExecuteDelta(self, history, (removedItems, _) =>
         {
             foreach (var item in items)
             {
-                if (match(item) && self.Remove(item))
-                    ++removedCount;
+                if (!match(item) || !self.Remove(item))
+                    continue;
+
+                removedItems.Add(item);
+                ++removedCount;
             }
         });
 
         return removedCount;
     }
 
-    private static void ExecuteAsSingleAction<T>(ISet<T> self, History history, Action action)
+    private static void Validate<T>(ISet<T> self, IEnumerable<T> other, History history)
     {
         if (self is null)
             throw new ArgumentNullException(nameof(self));
+        if (other is null)
+            throw new ArgumentNullException(nameof(other));
         if (history is null)
             throw new ArgumentNullException(nameof(history));
+    }
 
+    private static void ExecuteDelta<T>(
+        ISet<T> self,
+        History history,
+        Action<List<T>, List<T>> action)
+    {
+        var removedItems = new List<T>();
+        var addedItems = new List<T>();
+
+        using (history.Pause())
+        {
+            try
+            {
+                action(removedItems, addedItems);
+            }
+            catch (Exception applyException)
+            {
+                RollBack(() => RollBackDelta(self, removedItems, addedItems), applyException);
+                throw;
+            }
+        }
+
+        if (removedItems.Count is 0 && addedItems.Count is 0)
+            return;
+
+        var state = new DeltaHistoryState<T>(self, removedItems.ToArray(), addedItems.ToArray());
+        history.Push(state.Undo, state.Redo);
+    }
+
+    private static void RollBackDelta<T>(ISet<T> self, IReadOnlyList<T> removedItems, IReadOnlyList<T> addedItems)
+    {
+        for (var i = addedItems.Count - 1; i >= 0; --i)
+        {
+            if (!self.Remove(addedItems[i]))
+                throw new InvalidOperationException("The item added by the failed set operation could not be removed during rollback.");
+        }
+
+        for (var i = removedItems.Count - 1; i >= 0; --i)
+        {
+            if (!self.Add(removedItems[i]))
+                throw new InvalidOperationException("The item removed by the failed set operation could not be restored during rollback.");
+        }
+    }
+
+    private static bool TryCreateLookupSet<T>(ISet<T> self, IEnumerable<T> other, out ISet<T> lookup)
+    {
+#if NET8_0_OR_GREATER
+        switch (self)
+        {
+            case HashSet<T> hashSet:
+                lookup = new HashSet<T>(other, hashSet.Comparer);
+                return true;
+            case SortedSet<T> sortedSet:
+                lookup = new SortedSet<T>(other, sortedSet.Comparer);
+                return true;
+        }
+#endif
+        lookup = null!;
+        return false;
+    }
+
+    private static bool TryGetActualItem<T>(ISet<T> self, T equalValue, out T actualValue)
+    {
+#if NET8_0_OR_GREATER
+        switch (self)
+        {
+            case HashSet<T> hashSet:
+                return hashSet.TryGetValue(equalValue, out actualValue!);
+            case SortedSet<T> sortedSet:
+                return sortedSet.TryGetValue(equalValue, out actualValue!);
+        }
+#endif
+        actualValue = default!;
+        return false;
+    }
+
+    private static void ExecuteAsSingleAction<T>(ISet<T> self, History history, Action action)
+    {
         var oldItems = new List<T>(self);
         using var changeRecorder = SetChangeRecorder<T>.TryCreate(self);
 

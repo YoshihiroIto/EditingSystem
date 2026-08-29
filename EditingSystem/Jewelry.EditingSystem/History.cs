@@ -278,20 +278,30 @@ public class History : INotifyPropertyChanged, IDisposable
     }
 
     internal void PushPropertyChange<T>(
-        object target,
-        object propertyKey,
-        Action<T, T> applyValue,
+        object? target,
+        object? propertyKey,
+        Action<T> setValue,
         T oldValue,
-        T newValue)
+        T newValue,
+        EditableModelBase? notificationTarget = null,
+        string? notificationPropertyName = null)
     {
         if (IsInPaused || IsInUndoing)
             return;
+        if (!IsInBatch && MaxUndoCount is 0)
+            return;
 
+        PropertyChangeKey? key = target is not null && propertyKey is not null
+            ? new PropertyChangeKey(target, propertyKey)
+            : null;
         PushAction(new PropertyHistoryAction<T>(
-            new PropertyChangeKey(target, propertyKey),
-            applyValue,
+            this,
+            key,
+            setValue,
             oldValue,
-            newValue));
+            newValue,
+            notificationTarget,
+            notificationPropertyName));
     }
 
     private void PushAction(HistoryAction action)
@@ -311,7 +321,6 @@ public class History : INotifyPropertyChanged, IDisposable
 
     private void PushRecordedAction(HistoryAction action)
     {
-
         var currentFlags = CanUndoRedoClear;
         var currentUndoRedoCount = UndoRedoCount;
         var currentDepth = PauseBatchDepth;
@@ -457,205 +466,199 @@ public class History : INotifyPropertyChanged, IDisposable
         {
             case NotifyCollectionChangedAction.Add:
             {
-                    void DoRedo()
+                void DoRedo()
+                {
+                    var addItems = e.NewItems ?? throw new NullReferenceException();
+                    var addCount = addItems.Count;
+
+                    for (var i = 0; i != addCount; ++i)
                     {
-                        var addItems = e.NewItems ?? throw new NullReferenceException();
-                        var addCount = addItems.Count;
+                        if (list is not null)
+                            list.Insert(e.NewStartingIndex + i, addItems[i]);
+                        else
+                            collection!.Add(addItems[i]);
 
-                        // ICollectionItem
-                        for (var i = 0; i != addCount; ++i)
-                        {
-                            if (list is not null)
-                                list.Insert(e.NewStartingIndex + i, addItems[i]);
-                            else
-                                collection!.Add(addItems[i]);
-
-                            if (addItems[i] is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Add);
-                        }
+                        if (addItems[i] is ICollectionItem collItem)
+                            collItem.Changed(CollectionItemChangedInfo.Add);
                     }
+                }
 
-                    void DoUndo()
+                void DoUndo()
+                {
+                    var addItems = e.NewItems ?? throw new NullReferenceException();
+                    var addCount = addItems.Count;
+
+                    for (var i = 0; i != addCount; ++i)
                     {
-                        var addItems = e.NewItems ?? throw new NullReferenceException();
-                        var addCount = addItems.Count;
+                        if (list is not null)
+                            list.RemoveAt(e.NewStartingIndex);
+                        else
+                            collection!.Remove(addItems[i]);
 
-                        // ICollectionItem
-                        for (var i = 0; i != addCount; ++i)
-                        {
-                            if (list is not null)
-                                list.RemoveAt(e.NewStartingIndex);
-                            else
-                                collection!.Remove(addItems[i]);
-
-                            if (addItems[i] is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Remove);
-                        }
+                        if (addItems[i] is ICollectionItem collItem)
+                            collItem.Changed(CollectionItemChangedInfo.Remove);
                     }
+                }
 
-                    // ICollectionItem
-                    {
-                        var addItems = e.NewItems ?? throw new NullReferenceException();
-                        var addCount = addItems.Count;
+                var addItems = e.NewItems ?? throw new NullReferenceException();
+                var addCount = addItems.Count;
+                for (var i = 0; i != addCount; ++i)
+                {
+                    if (addItems[i] is ICollectionItem collItem)
+                        collItem.Changed(CollectionItemChangedInfo.Add);
+                }
 
-                        for (var i = 0; i != addCount; ++i)
-                        {
-                            if (addItems[i] is ICollectionItem collItem)
-                                collItem.Changed(CollectionItemChangedInfo.Add);
-                        }
-                    }
-
-                    Push(DoUndo, DoRedo);
-                    break;
+                Push(DoUndo, DoRedo);
+                break;
             }
 
             case NotifyCollectionChangedAction.Move:
             {
-                    if (list is null)
-                        throw new NotSupportedException("Move is only supported for IList collections.");
+                if (list is null)
+                    throw new NotSupportedException("Move is only supported for IList collections.");
 
-                    var movedItems = SnapshotItems(e.OldItems ?? throw new NullReferenceException());
-                    if (movedItems.Count != (e.NewItems ?? throw new NullReferenceException()).Count)
-                        throw new InvalidOperationException("Move item counts do not match.");
+                var movedItems = SnapshotItems(e.OldItems ?? throw new NullReferenceException());
+                if (movedItems.Count != (e.NewItems ?? throw new NullReferenceException()).Count)
+                    throw new InvalidOperationException("Move item counts do not match.");
 
-                    void DoRedo()
-                    {
-                        MoveItems(sender!, list, e.OldStartingIndex, e.NewStartingIndex, movedItems.Count);
-                        NotifyCollectionItems(movedItems, CollectionItemChangedInfo.Move);
-                    }
-
-                    void DoUndo()
-                    {
-                        MoveItems(sender!, list, e.NewStartingIndex, e.OldStartingIndex, movedItems.Count);
-                        NotifyCollectionItems(movedItems, CollectionItemChangedInfo.Move);
-                    }
-
+                void DoRedo()
+                {
+                    MoveItems(sender!, list, e.OldStartingIndex, e.NewStartingIndex, movedItems.Count);
                     NotifyCollectionItems(movedItems, CollectionItemChangedInfo.Move);
+                }
 
-                    Push(DoUndo, DoRedo);
-                    break;
+                void DoUndo()
+                {
+                    MoveItems(sender!, list, e.NewStartingIndex, e.OldStartingIndex, movedItems.Count);
+                    NotifyCollectionItems(movedItems, CollectionItemChangedInfo.Move);
+                }
+
+                NotifyCollectionItems(movedItems, CollectionItemChangedInfo.Move);
+
+                Push(DoUndo, DoRedo);
+                break;
             }
 
             case NotifyCollectionChangedAction.Remove:
             {
-                    if (e.NewItems is not null)
-                        throw new InvalidOperationException("Remove notifications cannot contain new items.");
+                if (e.NewItems is not null)
+                    throw new InvalidOperationException("Remove notifications cannot contain new items.");
 
-                    var removedItems = SnapshotItems(e.OldItems ?? throw new NullReferenceException());
+                var removedItems = SnapshotItems(e.OldItems ?? throw new NullReferenceException());
 
-                    void DoRedo()
+                void DoRedo()
+                {
+                    if (list is not null)
                     {
-                        if (list is not null)
-                        {
-                            for (var i = 0; i < removedItems.Count; ++i)
-                                list.RemoveAt(e.OldStartingIndex);
-                        }
-                        else
-                        {
-                            foreach (var item in removedItems)
-                                collection!.Remove(item);
-                        }
-
-                        NotifyCollectionItems(removedItems, CollectionItemChangedInfo.Remove);
+                        for (var i = 0; i < removedItems.Count; ++i)
+                            list.RemoveAt(e.OldStartingIndex);
                     }
-
-                    void DoUndo()
+                    else
                     {
-                        if (list is not null)
-                        {
-                            for (var i = 0; i < removedItems.Count; ++i)
-                                list.Insert(e.OldStartingIndex + i, removedItems[i]);
-                        }
-                        else
-                        {
-                            foreach (var item in removedItems)
-                                collection!.Add(item);
-                        }
-
-                        NotifyCollectionItems(removedItems, CollectionItemChangedInfo.Add);
+                        foreach (var item in removedItems)
+                            collection!.Remove(item);
                     }
 
                     NotifyCollectionItems(removedItems, CollectionItemChangedInfo.Remove);
+                }
 
-                    Push(DoUndo, DoRedo);
-                    break;
+                void DoUndo()
+                {
+                    if (list is not null)
+                    {
+                        for (var i = 0; i < removedItems.Count; ++i)
+                            list.Insert(e.OldStartingIndex + i, removedItems[i]);
+                    }
+                    else
+                    {
+                        foreach (var item in removedItems)
+                            collection!.Add(item);
+                    }
+
+                    NotifyCollectionItems(removedItems, CollectionItemChangedInfo.Add);
+                }
+
+                NotifyCollectionItems(removedItems, CollectionItemChangedInfo.Remove);
+
+                Push(DoUndo, DoRedo);
+                break;
             }
 
             case NotifyCollectionChangedAction.Replace:
             {
-                    if (e.NewStartingIndex != e.OldStartingIndex)
-                        throw new InvalidOperationException("Replace indices do not match.");
+                if (e.NewStartingIndex != e.OldStartingIndex)
+                    throw new InvalidOperationException("Replace indices do not match.");
 
-                    var oldItems = SnapshotItems(e.OldItems ?? throw new NullReferenceException());
-                    var newItems = SnapshotItems(e.NewItems ?? throw new NullReferenceException());
+                var oldItems = SnapshotItems(e.OldItems ?? throw new NullReferenceException());
+                var newItems = SnapshotItems(e.NewItems ?? throw new NullReferenceException());
 
-                    void DoRedo()
+                void DoRedo()
+                {
+                    if (list is not null)
+                        ReplaceItems(list, e.OldStartingIndex, oldItems.Count, newItems);
+                    else
                     {
-                        if (list is not null)
-                            ReplaceItems(list, e.OldStartingIndex, oldItems.Count, newItems);
-                        else
-                        {
-                            foreach (var item in oldItems)
-                                collection!.Remove(item);
-                            foreach (var item in newItems)
-                                collection!.Add(item);
-                        }
-
-                        NotifyCollectionItems(oldItems, CollectionItemChangedInfo.Remove);
-                        NotifyCollectionItems(newItems, CollectionItemChangedInfo.Add);
-                    }
-
-                    void DoUndo()
-                    {
-                        if (list is not null)
-                            ReplaceItems(list, e.OldStartingIndex, newItems.Count, oldItems);
-                        else
-                        {
-                            foreach (var item in newItems)
-                                collection!.Remove(item);
-                            foreach (var item in oldItems)
-                                collection!.Add(item);
-                        }
-
-                        NotifyCollectionItems(newItems, CollectionItemChangedInfo.Remove);
-                        NotifyCollectionItems(oldItems, CollectionItemChangedInfo.Add);
+                        foreach (var item in oldItems)
+                            collection!.Remove(item);
+                        foreach (var item in newItems)
+                            collection!.Add(item);
                     }
 
                     NotifyCollectionItems(oldItems, CollectionItemChangedInfo.Remove);
                     NotifyCollectionItems(newItems, CollectionItemChangedInfo.Add);
+                }
 
-                    Push(DoUndo, DoRedo);
-                    break;
+                void DoUndo()
+                {
+                    if (list is not null)
+                        ReplaceItems(list, e.OldStartingIndex, newItems.Count, oldItems);
+                    else
+                    {
+                        foreach (var item in newItems)
+                            collection!.Remove(item);
+                        foreach (var item in oldItems)
+                            collection!.Add(item);
+                    }
+
+                    NotifyCollectionItems(newItems, CollectionItemChangedInfo.Remove);
+                    NotifyCollectionItems(oldItems, CollectionItemChangedInfo.Add);
+                }
+
+                NotifyCollectionItems(oldItems, CollectionItemChangedInfo.Remove);
+                NotifyCollectionItems(newItems, CollectionItemChangedInfo.Add);
+
+                Push(DoUndo, DoRedo);
+                break;
             }
 
             case NotifyCollectionChangedAction.Reset:
             {
                 var notifyCollection = sender as INotifyCollectionChanged ?? throw new NullReferenceException();
-                    var oldItems = CollectionChangedWeakEventManager.GetSnapshot(notifyCollection);
-                    var newItems = SnapshotItems(sender as IEnumerable ?? throw new NotSupportedException(
-                        $"Collection type '{sender?.GetType()}' must implement IEnumerable."));
+                var oldItems = CollectionChangedWeakEventManager.GetSnapshot(notifyCollection);
+                var newItems = SnapshotItems(sender as IEnumerable ?? throw new NotSupportedException(
+                    $"Collection type '{sender?.GetType()}' must implement IEnumerable."));
 
-                    if (ItemsEqual(oldItems, newItems))
-                        break;
+                if (ItemsEqual(oldItems, newItems))
+                    break;
 
-                    void DoUndo()
-                    {
-                        ReplaceAllItems(sender!, list, newItems, oldItems);
-                        NotifyCollectionItems(newItems, CollectionItemChangedInfo.Remove);
-                        NotifyCollectionItems(oldItems, CollectionItemChangedInfo.Add);
-                    }
+                void DoUndo()
+                {
+                    ReplaceAllItems(sender!, list, newItems, oldItems);
+                    NotifyCollectionItems(newItems, CollectionItemChangedInfo.Remove);
+                    NotifyCollectionItems(oldItems, CollectionItemChangedInfo.Add);
+                }
 
-                    void DoRedo()
-                    {
-                        ReplaceAllItems(sender!, list, oldItems, newItems);
-                        NotifyCollectionItems(oldItems, CollectionItemChangedInfo.Remove);
-                        NotifyCollectionItems(newItems, CollectionItemChangedInfo.Add);
-                    }
-
+                void DoRedo()
+                {
+                    ReplaceAllItems(sender!, list, oldItems, newItems);
                     NotifyCollectionItems(oldItems, CollectionItemChangedInfo.Remove);
                     NotifyCollectionItems(newItems, CollectionItemChangedInfo.Add);
-                    Push(DoUndo, DoRedo);
-                    break;
+                }
+
+                NotifyCollectionItems(oldItems, CollectionItemChangedInfo.Remove);
+                NotifyCollectionItems(newItems, CollectionItemChangedInfo.Add);
+                Push(DoUndo, DoRedo);
+                break;
             }
 
             default:
@@ -665,7 +668,9 @@ public class History : INotifyPropertyChanged, IDisposable
 
     private static List<object?> SnapshotItems(IEnumerable items)
     {
-        var snapshot = new List<object?>();
+        var snapshot = items is ICollection collection
+            ? new List<object?>(collection.Count)
+            : new List<object?>();
         foreach (var item in items)
             snapshot.Add(item);
 
@@ -679,8 +684,16 @@ public class History : INotifyPropertyChanged, IDisposable
         int destinationIndex,
         int count)
     {
-        if (count is 1 && CollectionAdapter.TryMove(collectionObject, sourceIndex, destinationIndex))
+        if (count is 1)
+        {
+            if (CollectionAdapter.TryMove(collectionObject, sourceIndex, destinationIndex))
+                return;
+
+            var item = list[sourceIndex];
+            list.RemoveAt(sourceIndex);
+            list.Insert(destinationIndex, item);
             return;
+        }
 
         var items = new List<object?>(count);
         for (var i = 0; i < count; ++i)
@@ -829,21 +842,16 @@ public class History : INotifyPropertyChanged, IDisposable
     private void BeginBatchInternal(bool isCoalescing)
     {
         Debug.Assert(_batchRecorder is null);
-
         _batchRecorder = new BatchRecorder(isCoalescing);
     }
 
     private void EndBatchInternal()
     {
         var batchRecorder = _batchRecorder ?? throw new InvalidOperationException();
-        var batchHistory = batchRecorder.CreateHistory();
-
-        if (batchHistory.CanUndo)
-            Push(batchHistory.UndoAll, batchHistory.RedoAll);
-
-        batchHistory.Dispose();
-
         _batchRecorder = null;
+
+        if (batchRecorder.CreateAction() is { } action)
+            PushRecordedAction(action);
     }
 
     private (int UndoCount, int RedoCount) UndoRedoCount => (UndoCount, RedoCount);
@@ -867,26 +875,6 @@ public class History : INotifyPropertyChanged, IDisposable
     private static readonly PropertyChangedEventArgs BatchDepthArgs = new(nameof(BatchDepth));
     private static readonly PropertyChangedEventArgs IsInPausedArgs = new(nameof(IsInPaused));
     private static readonly PropertyChangedEventArgs IsInBatchArgs = new(nameof(IsInBatch));
-
-    private sealed class BatchHistory : History
-    {
-        public void Add(HistoryAction action)
-        {
-            _undoStack.Push(action, int.MaxValue);
-        }
-
-        public void UndoAll()
-        {
-            while (CanUndo)
-                Undo();
-        }
-
-        public void RedoAll()
-        {
-            while (CanRedo)
-                Redo();
-        }
-    }
 
     private sealed class RecordingScope : IDisposable
     {
@@ -962,16 +950,22 @@ public class History : INotifyPropertyChanged, IDisposable
             _actions.Add(action);
         }
 
-        public BatchHistory CreateHistory()
+        public BatchHistoryAction? CreateAction()
         {
-            var history = new BatchHistory();
-            foreach (var action in _actions)
+            var writeIndex = 0;
+            for (var readIndex = 0; readIndex < _actions.Count; ++readIndex)
             {
-                if (action.IsNoOp is false)
-                    history.Add(action);
+                var action = _actions[readIndex];
+                if (action.IsNoOp)
+                    continue;
+
+                _actions[writeIndex++] = action;
             }
 
-            return history;
+            if (writeIndex < _actions.Count)
+                _actions.RemoveRange(writeIndex, _actions.Count - writeIndex);
+
+            return _actions.Count is 0 ? null : new BatchHistoryAction(_actions);
         }
 
         private readonly List<HistoryAction> _actions = new();
@@ -1025,31 +1019,84 @@ public class History : INotifyPropertyChanged, IDisposable
         public override void Redo() => redo();
     }
 
-    private sealed class PropertyHistoryAction<T>(
-        PropertyChangeKey key,
-        Action<T, T> applyValue,
-        T oldValue,
-        T newValue) : HistoryAction
+    private sealed class BatchHistoryAction(List<HistoryAction> actions) : HistoryAction
     {
-        public override PropertyChangeKey? CoalescingKey => _key;
-        public override bool IsNoOp => EqualityComparer<T>.Default.Equals(oldValue, _newValue);
+        public override void Undo()
+        {
+            while (_appliedCount > 0)
+            {
+                actions[_appliedCount - 1].Undo();
+                --_appliedCount;
+            }
+        }
 
-        public override void Undo() => _applyValue(_newValue, oldValue);
-        public override void Redo() => _applyValue(oldValue, _newValue);
+        public override void Redo()
+        {
+            while (_appliedCount < actions.Count)
+            {
+                actions[_appliedCount].Redo();
+                ++_appliedCount;
+            }
+        }
+
+        private int _appliedCount = actions.Count;
+    }
+
+    private sealed class PropertyHistoryAction<T> : HistoryAction
+    {
+        public PropertyHistoryAction(
+            History history,
+            PropertyChangeKey? key,
+            Action<T> setValue,
+            T oldValue,
+            T newValue,
+            EditableModelBase? notificationTarget,
+            string? notificationPropertyName)
+        {
+            _history = history;
+            _key = key;
+            _setValue = setValue;
+            _oldValue = oldValue;
+            _newValue = newValue;
+            _notificationTarget = notificationTarget;
+            _notificationPropertyName = notificationPropertyName;
+        }
+
+        public override PropertyChangeKey? CoalescingKey => _key;
+        public override bool IsNoOp => EqualityComparer<T>.Default.Equals(_oldValue, _newValue);
+
+        public override void Undo() => Apply(_newValue, _oldValue);
+        public override void Redo() => Apply(_oldValue, _newValue);
 
         public override bool TryMerge(HistoryAction newerAction)
         {
-            if (newerAction is not PropertyHistoryAction<T> newer || _key.Equals(newer._key) is false)
+            if (_key is not { } key ||
+                newerAction is not PropertyHistoryAction<T> newer ||
+                newer._key is not { } newerKey ||
+                key.Equals(newerKey) is false)
                 return false;
 
-            _applyValue = newer._applyValue;
+            _setValue = newer._setValue;
             _newValue = newer._newValue;
+            _notificationTarget = newer._notificationTarget;
+            _notificationPropertyName = newer._notificationPropertyName;
             return true;
         }
 
-        private Action<T, T> _applyValue = applyValue;
-        private readonly PropertyChangeKey _key = key;
-        private T _newValue = newValue;
+        private void Apply(T currentValue, T value)
+        {
+            EditablePropertyCommon.UpdateCollectionListener(_history, currentValue, value);
+            _setValue(value);
+            _notificationTarget?.RaisePropertyChangedFromHistory(_notificationPropertyName!);
+        }
+
+        private readonly History _history;
+        private readonly PropertyChangeKey? _key;
+        private Action<T> _setValue;
+        private readonly T _oldValue;
+        private T _newValue;
+        private EditableModelBase? _notificationTarget;
+        private string? _notificationPropertyName;
     }
 
     private sealed class HistoryStack<T>
@@ -1089,6 +1136,9 @@ public class History : INotifyPropertyChanged, IDisposable
         {
             while (_count > maxCount)
                 RemoveOldest();
+
+            if (_items.Length > maxCount)
+                Resize(maxCount);
         }
 
         public void Clear()
@@ -1113,6 +1163,18 @@ public class History : INotifyPropertyChanged, IDisposable
                 newCapacity = requiredCount;
             if (newCapacity > maxCount)
                 newCapacity = maxCount;
+
+            Resize(newCapacity);
+        }
+
+        private void Resize(int newCapacity)
+        {
+            if (newCapacity is 0)
+            {
+                _items = Array.Empty<T>();
+                _start = 0;
+                return;
+            }
 
             var newItems = new T[newCapacity];
             for (var i = 0; i < _count; ++i)
@@ -1139,5 +1201,4 @@ public class History : INotifyPropertyChanged, IDisposable
         private int _start;
         private int _count;
     }
-
 }
