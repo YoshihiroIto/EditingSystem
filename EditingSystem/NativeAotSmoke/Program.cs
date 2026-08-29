@@ -112,6 +112,14 @@ static void RunObservableHashSetSmoke()
     model.Set.Clear();
     history.Undo();
     Assert(model.Set.SetEquals([10]), "ObservableHashSet clear undo failed.");
+
+    history.Clear();
+    model.Set.UnionWithEx([20, 30], history);
+    Assert(model.Set.SetEquals([10, 20, 30]), "SetExtensions UnionWithEx failed.");
+    history.Undo();
+    Assert(model.Set.SetEquals([10]), "SetExtensions differential undo failed.");
+    history.Redo();
+    Assert(model.Set.SetEquals([10, 20, 30]), "SetExtensions differential redo failed.");
 }
 
 static void RunObservableDictionarySmoke()
