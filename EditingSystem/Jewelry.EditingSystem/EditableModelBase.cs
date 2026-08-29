@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace Jewelry.EditingSystem;
@@ -29,20 +28,6 @@ public class EditableModelBase : INotifyPropertyChanged
             propertyName);
     }
     
-#if NET8_0_OR_GREATER 
-    protected bool SetEditableFlagProperty<T>(Action<T> setValue, T oldFlags, T newFlags, bool value, [CallerMemberName] string propertyName = "")
-        where T : IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>
-    {
-        void SetValueWithRaisePropertyChanged(T v)
-        {
-            setValue(v);
-            RaisePropertyChanged(propertyName);
-        }
-        
-        return EditablePropertyCommon.SetEditableFlagProperty(_history, SetValueWithRaisePropertyChanged, oldFlags, newFlags, value);
-    }
-#endif
-    
     protected bool SetPropertyWithoutHistory<T>(ref T storage, T value, [CallerMemberName] string propertyName = "")
     {
         if (EqualityComparer<T>.Default.Equals(storage, value))
@@ -54,31 +39,6 @@ public class EditableModelBase : INotifyPropertyChanged
 
         return true;
     }
-
-#if NET8_0_OR_GREATER 
-    protected bool SetFlagPropertyWithoutHistory<T>(ref T storage, T flag, bool value, [CallerMemberName] string propertyName = "")
-        where T : struct, IBitwiseOperators<T, T, T>, IEqualityOperators<T, T, bool>, IUnsignedNumber<T>
-    {
-        if (value)
-        {
-            if ((storage & flag) != default)
-                return false;
-
-            storage |= flag;
-        }
-        else
-        {
-            if ((storage & flag) == default)
-                return false;
-
-            storage &= ~flag;
-        }
-
-        RaisePropertyChanged(propertyName);
-
-        return true;
-    }
-#endif
 
     protected void RaisePropertyChanged([CallerMemberName] string propertyName = "")
     {
