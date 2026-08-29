@@ -54,7 +54,7 @@ public sealed class HistoryTests
     }
 
     [Fact]
-    public void Pause_and_batch_depth_changes_raise_property_changed()
+    public void Pause_and_batch_state_changes_raise_property_changed()
     {
         using var history = new History();
         var propertyNames = new System.Collections.Generic.List<string?>();
@@ -67,16 +67,22 @@ public sealed class HistoryTests
 
         Assert.Equal(
             [
-                nameof(History.PauseDepth),
                 nameof(History.IsInPaused),
-                nameof(History.PauseDepth),
                 nameof(History.IsInPaused),
-                nameof(History.BatchDepth),
                 nameof(History.IsInBatch),
-                nameof(History.BatchDepth),
                 nameof(History.IsInBatch)
             ],
             propertyNames);
+    }
+
+    [Fact]
+    public void Pause_and_batch_depth_are_not_public_api()
+    {
+        const System.Reflection.BindingFlags publicInstance =
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public;
+
+        Assert.Null(typeof(History).GetProperty(nameof(History.PauseDepth), publicInstance));
+        Assert.Null(typeof(History).GetProperty(nameof(History.BatchDepth), publicInstance));
     }
 
     [Fact]
