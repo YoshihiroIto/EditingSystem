@@ -97,8 +97,6 @@ internal static class EditablePropertyCommon
             history.CollectionChangedWeakEventManager.RemoveWeakEventListener(oldNotifyCollectionChanged);
 
         if (newValue is INotifyCollectionChanged newNotifyCollectionChanged)
-            history.CollectionChangedWeakEventManager.AddWeakEventListener(
-                newNotifyCollectionChanged,
-                history.OnCollectionPropertyCollectionChanged);
+            history.CollectionChangedWeakEventManager.AddWeakEventListener(newNotifyCollectionChanged, history.OnCollectionPropertyCollectionChanged);
     }
 }

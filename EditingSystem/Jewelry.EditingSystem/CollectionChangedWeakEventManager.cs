@@ -91,6 +91,7 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
     {
         public bool IsAlive => _handler.TryGetTarget(out _) && _source.TryGetTarget(out _);
         public object? Source => _source.TryGetTarget(out var source) ? source : default;
+
         public IReadOnlyList<object?> Snapshot => _resetSnapshots.Count > 0
             ? _resetSnapshots.Peek()
             : _snapshot;
@@ -369,14 +370,8 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
         private static NotifyCollectionChangedEventArgs CreateReplaceEventArgs(IList newItems, IList oldItems)
         {
             return newItems.Count is 1 && oldItems.Count is 1
-                ? new NotifyCollectionChangedEventArgs(
-                    NotifyCollectionChangedAction.Replace,
-                    newItems[0],
-                    oldItems[0])
-                : new NotifyCollectionChangedEventArgs(
-                    NotifyCollectionChangedAction.Replace,
-                    newItems,
-                    oldItems);
+                ? new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newItems[0], oldItems[0])
+                : new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newItems, oldItems);
         }
 
         private readonly struct ExactItemKey(object? item) : IEquatable<ExactItemKey>

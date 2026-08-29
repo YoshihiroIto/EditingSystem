@@ -78,7 +78,7 @@ internal static class CollectionAdapter
             var itemType = interfaceType.GetGenericArguments()[0];
             var factoryType = typeof(GenericCollectionAdapterFactory<>).MakeGenericType(itemType);
             return (ICollectionAdapterFactory)(Activator.CreateInstance(factoryType) ??
-                throw new InvalidOperationException("Failed to create a collection adapter factory."));
+                                               throw new InvalidOperationException("Failed to create a collection adapter factory."));
         }
 
         throw new NotSupportedException(
@@ -96,7 +96,7 @@ internal static class CollectionAdapter
         "Trimming",
         "IL2075",
         Justification = "The reflected type is verified to be ICollection<T>, whose Add/Remove members are preserved explicitly.")]
-    private static ICollectionAdapterFactory CreateAotFactory(Type collectionType)
+    private static ReflectionCollectionAdapterFactory CreateAotFactory(Type collectionType)
     {
         Type? collectionInterface = null;
 
@@ -114,10 +114,8 @@ internal static class CollectionAdapter
             throw new NotSupportedException(
                 $"Collection type '{collectionType}' must implement IList or ICollection<T>.");
 
-        var addMethod = collectionInterface.GetMethod(nameof(ICollection<object>.Add)) ??
-            throw new InvalidOperationException("ICollection<T>.Add method was not found.");
-        var removeMethod = collectionInterface.GetMethod(nameof(ICollection<object>.Remove)) ??
-            throw new InvalidOperationException("ICollection<T>.Remove method was not found.");
+        var addMethod = collectionInterface.GetMethod(nameof(ICollection<>.Add)) ?? throw new InvalidOperationException("ICollection<T>.Add method was not found.");
+        var removeMethod = collectionInterface.GetMethod(nameof(ICollection<>.Remove)) ?? throw new InvalidOperationException("ICollection<T>.Remove method was not found.");
         var moveMethod = FindObservableCollectionMoveMethod(collectionType);
 
         return new ReflectionCollectionAdapterFactory(addMethod, removeMethod, moveMethod);
