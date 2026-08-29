@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <PublishAot>true</PublishAot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Jewelry" Version="2.0.45" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Jewelry.EditingSystem\Jewelry.EditingSystem.csproj" />
+    <ProjectReference Include="..\Jewelry.EditingSystem.CommunityToolkit.Mvvm\Jewelry.EditingSystem.CommunityToolkit.Mvvm.csproj" />
+    <ProjectReference Include="..\Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators\Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <TrimmerRootAssembly Include="Jewelry.EditingSystem" />
+    <TrimmerRootAssembly Include="Jewelry.EditingSystem.CommunityToolkit.Mvvm" />
+  </ItemGroup>
+</Project>
