@@ -1,0 +1,26 @@
+name: NativeAOT compatibility
+
+on:
+  pull_request:
+    branches:
+      - improve-perf
+  workflow_dispatch:
+
+jobs:
+  nativeaot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Run tests
+        run: dotnet test EditingSystem/Jewelry.EditingSystem.sln -c Release
+
+      - name: Publish NativeAOT smoke test
+        run: dotnet publish EditingSystem/NativeAotSmoke/NativeAotSmoke.csproj -c Release -r linux-x64 --self-contained true
+
+      - name: Run NativeAOT smoke test
+        run: ./EditingSystem/NativeAotSmoke/bin/Release/net10.0/linux-x64/publish/NativeAotSmoke

@@ -9,16 +9,17 @@ public static class NotifyPropertyChangedExtensionsForDirectMode
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool SetEditableProperty<T>(
-        this INotifyPropertyChanged _,
+        this INotifyPropertyChanged target,
         History history,
         Action<T> setValue,
         T oldValue,
-        T newValue)
+        T newValue,
+        [CallerMemberName] string propertyName = "")
     {
         return EditablePropertyCommon.SetEditableProperty(
             history,
-            _,
-            setValue.Method,
+            target,
+            propertyName,
             setValue,
             oldValue,
             newValue);
