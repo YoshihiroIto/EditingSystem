@@ -77,13 +77,41 @@ Long-running editors can bound retained history without changing the default unl
 history.MaxUndoCount = 500;
 ```
 
-`ClearEx`, `UnionWithEx`, `IntersectWithEx`, `ExceptWithEx`,
-`SymmetricExceptWithEx`, and `RemoveWhereEx` record one undo action directly. They can also be
-used with collections that are not assigned to an observed property.
+### Undoable collection operations
 
-For `ObservableCollection<T>`, undo and redo preserve incremental collection notifications:
-insertions and removals raise `Add`/`Remove`, and moves raise `Move`. Replaying a `Clear` does not
-raise `Reset`; `ClearEx` also avoids `Reset` when the clear is first applied.
+Changes to a collection assigned through an editable collection property are recorded
+automatically. For `ObservableCollection<T>`, normal insert, remove, and move operations preserve
+their incremental notifications during undo and redo.
+
+| Operation | Initial notification | Undo notification | Redo notification |
+| --- | --- | --- | --- |
+| `Add` / `Insert` | `Add` | `Remove` | `Add` |
+| `Remove` / `RemoveAt` | `Remove` | `Add` | `Remove` |
+| `Move` | `Move` | `Move` | `Move` |
+| `Clear` | `Reset` | one `Add` per item | one `Remove` per item |
+| `ClearEx(history)` | one `Remove` per item | one `Add` per item | one `Remove` per item |
+
+`ObservableCollection<T>.Clear()` always raises `Reset` when it is initially called. EditingSystem
+cannot prevent that original notification, but its undo and redo replay items incrementally and do
+not raise another `Reset`.
+
+Use `ClearEx` when a bound control must not receive `Reset`, for example to avoid a Reset-driven
+full refresh of a WPF `ListBox`. `ClearEx` records the whole clear as one undo action even though
+it raises one `Remove` notification per item.
+
+```cs
+model.IntCollection.ClearEx(history);
+history.Undo(); // Restores the items with Add notifications; no Reset.
+history.Redo(); // Removes the items with Remove notifications; no Reset.
+```
+
+Unlike `Clear`, which is undoable only when the collection is already observed by a `History`,
+`ClearEx` also works with a collection that is not assigned to an editable property. The tradeoff
+is that large collections produce one notification per item instead of a single `Reset`.
+
+`UnionWithEx`, `IntersectWithEx`, `ExceptWithEx`, `SymmetricExceptWithEx`, and `RemoveWhereEx`
+similarly record one undo action directly and work with collections that are not assigned to an
+observed property.
 
 
 ## Example
