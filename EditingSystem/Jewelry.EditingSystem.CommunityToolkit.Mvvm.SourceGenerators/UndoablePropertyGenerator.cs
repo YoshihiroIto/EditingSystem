@@ -203,6 +203,9 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
             var oldValueFieldName = GetUniqueMemberName(
                 containingType,
                 $"__jewelryEditingOld{propertyName}");
+            var setterFieldName = GetUniqueMemberName(
+                containingType,
+                $"__jewelryEditingSetter{propertyName}");
 
             properties.Add(new PropertyModel(
                 propertyName,
@@ -210,7 +213,8 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
                 historyAccessExpression,
                 historyParameterName,
                 historyAccessorName,
-                oldValueFieldName));
+                oldValueFieldName,
+                setterFieldName));
         }
 
         foreach (var pair in groupedProperties)
@@ -486,6 +490,12 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
             builder.Append(' ');
             builder.Append(EscapeIdentifier(property.OldValueFieldName));
             builder.AppendLine(" = default!;");
+            AppendIndent(builder, indent);
+            builder.Append("private global::System.Action<");
+            builder.Append(propertyType);
+            builder.Append(">? ");
+            builder.Append(EscapeIdentifier(property.SetterFieldName));
+            builder.AppendLine(";");
         }
 
         builder.AppendLine();
@@ -496,6 +506,7 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
             var changingHookName = EscapeIdentifier($"On{property.PropertyName}Changing");
             var changedHookName = EscapeIdentifier($"On{property.PropertyName}Changed");
             var oldValueFieldName = EscapeIdentifier(property.OldValueFieldName);
+            var setterFieldName = EscapeIdentifier(property.SetterFieldName);
             var propertyType = property.PropertyType.ToDisplayString(TypeDisplayFormat);
 
             AppendIndent(builder, indent);
@@ -560,9 +571,11 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
             builder.Append(propertyName);
             builder.AppendLine("),");
             AppendIndent(builder, indent + 2);
-            builder.Append("value => this.");
+            builder.Append("(this.");
+            builder.Append(setterFieldName);
+            builder.Append(" ??= value => this.");
             builder.Append(propertyName);
-            builder.AppendLine(" = value,");
+            builder.AppendLine(" = value),");
             AppendIndent(builder, indent + 2);
             builder.AppendLine("oldValue,");
             AppendIndent(builder, indent + 2);
@@ -663,7 +676,8 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
             string historyAccessExpression,
             string? historyParameterName,
             string? historyAccessorName,
-            string oldValueFieldName)
+            string oldValueFieldName,
+            string setterFieldName)
         {
             PropertyName = propertyName;
             PropertyType = propertyType;
@@ -671,6 +685,7 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
             HistoryParameterName = historyParameterName;
             HistoryAccessorName = historyAccessorName;
             OldValueFieldName = oldValueFieldName;
+            SetterFieldName = setterFieldName;
         }
 
         public string PropertyName { get; }
@@ -679,5 +694,6 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
         public string? HistoryParameterName { get; }
         public string? HistoryAccessorName { get; }
         public string OldValueFieldName { get; }
+        public string SetterFieldName { get; }
     }
 }

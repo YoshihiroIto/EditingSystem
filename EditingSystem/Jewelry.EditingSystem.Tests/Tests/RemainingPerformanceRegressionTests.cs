@@ -19,7 +19,7 @@ public sealed class RemainingPerformanceRegressionTests
         set.RemoveWhereEx(static value => value == 500, history);
 
         Assert.Equal(999, set.Count);
-        Assert.InRange(set.CopyToCount, 0, 1);
+        Assert.Equal(0, set.CopyToCount);
     }
 
     [Fact]
@@ -101,6 +101,53 @@ public sealed class RemainingPerformanceRegressionTests
         Assert.True(
             allocatedBytes < 800_000,
             $"Recording 10,000 property changes allocated {allocatedBytes:N0} bytes.");
+    }
+
+    [Fact]
+    public void Coalescing_repeated_property_changes_does_not_allocate_an_action_per_change()
+    {
+        using var history = new History();
+        var target = new ValueHolder();
+        Action<int> setter = value => target.Value = value;
+
+        using (history.CoalescingBatch())
+        {
+            for (var i = 1; i <= 128; ++i)
+            {
+                var oldValue = target.Value;
+                target.Value = i;
+                history.RecordAppliedPropertyChange(
+                    target,
+                    nameof(ValueHolder.Value),
+                    setter,
+                    oldValue,
+                    i);
+            }
+        }
+        history.Clear();
+        target.Value = 0;
+
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        using (history.CoalescingBatch())
+        {
+            for (var i = 1; i <= 10_000; ++i)
+            {
+                var oldValue = target.Value;
+                target.Value = i;
+                history.RecordAppliedPropertyChange(
+                    target,
+                    nameof(ValueHolder.Value),
+                    setter,
+                    oldValue,
+                    i);
+            }
+        }
+        var allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - before;
+
+        Assert.True(
+            allocatedBytes < 100_000,
+            $"Coalescing 10,000 property changes allocated {allocatedBytes:N0} bytes.");
+        Assert.Equal(1, history.UndoCount);
     }
 
     [Fact]

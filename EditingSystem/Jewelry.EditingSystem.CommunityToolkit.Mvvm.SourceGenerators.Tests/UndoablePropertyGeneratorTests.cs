@@ -56,6 +56,8 @@ public partial class Outer<T>
         Assert.Contains("partial void OnFourthChanged(U? value)", text);
         Assert.Contains("RecordAppliedPropertyChange", text);
         Assert.Contains("value => this.Fourth = value", text);
+        Assert.Contains("private global::System.Action<U?>? __jewelryEditingSetterFourth;", text);
+        Assert.Contains("this.__jewelryEditingSetterFourth ??= value => this.Fourth = value", text);
         Assert.DoesNotContain("__Internals", text);
     }
 

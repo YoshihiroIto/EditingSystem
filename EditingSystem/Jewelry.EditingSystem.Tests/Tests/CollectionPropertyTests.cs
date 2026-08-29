@@ -31,19 +31,19 @@ public sealed class CollectionPropertyTests
 
         history.Undo();
         Assert.Equal(2, model.IntCollection.Count);
-        Assert.True(model.IntCollection.SequenceEqual(new[] {1, 2}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 1, 2 }));
 
         history.Undo();
         Assert.Single(model.IntCollection);
-        Assert.True(model.IntCollection.SequenceEqual(new[] {1}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 1 }));
 
         history.Redo();
         Assert.Equal(2, model.IntCollection.Count);
-        Assert.True(model.IntCollection.SequenceEqual(new[] {1, 2}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 1, 2 }));
 
         history.Redo();
         Assert.Equal(3, model.IntCollection.Count);
-        Assert.True(model.IntCollection.SequenceEqual(new[] {1, 2, 3}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 1, 2, 3 }));
     }
 
     [Fact]
@@ -91,16 +91,16 @@ public sealed class CollectionPropertyTests
         model.IntCollection.Add(2);
         model.IntCollection.Add(3);
 
-        Assert.True(model.IntCollection.SequenceEqual(new[] {0, 1, 2, 3}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 0, 1, 2, 3 }));
 
         model.IntCollection.Move(0, 3);
-        Assert.True(model.IntCollection.SequenceEqual(new[] {1, 2, 3, 0}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 1, 2, 3, 0 }));
 
         history.Undo();
-        Assert.True(model.IntCollection.SequenceEqual(new[] {0, 1, 2, 3}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 0, 1, 2, 3 }));
 
         history.Redo();
-        Assert.True(model.IntCollection.SequenceEqual(new[] {1, 2, 3, 0}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 1, 2, 3, 0 }));
     }
 
     [Theory]
@@ -117,16 +117,16 @@ public sealed class CollectionPropertyTests
         model.IntCollection.Add(2);
         model.IntCollection.Add(3);
 
-        Assert.True(model.IntCollection.SequenceEqual(new[] {0, 1, 2, 3}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 0, 1, 2, 3 }));
 
         model.IntCollection.Move(3, 0);
-        Assert.True(model.IntCollection.SequenceEqual(new[] {3, 0, 1, 2}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 3, 0, 1, 2 }));
 
         history.Undo();
-        Assert.True(model.IntCollection.SequenceEqual(new[] {0, 1, 2, 3}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 0, 1, 2, 3 }));
 
         history.Redo();
-        Assert.True(model.IntCollection.SequenceEqual(new[] {3, 0, 1, 2}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 3, 0, 1, 2 }));
     }
 
     [Fact]
@@ -168,16 +168,16 @@ public sealed class CollectionPropertyTests
         model.IntCollection.Add(102);
         model.IntCollection.Add(103);
 
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 102, 103 }));
 
         model.IntCollection.Remove(103);
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 102 }));
 
         history.Undo();
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 102, 103 }));
 
         history.Redo();
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 102 }));
     }
 
     [Theory]
@@ -194,16 +194,16 @@ public sealed class CollectionPropertyTests
         model.IntCollection.Add(102);
         model.IntCollection.Add(103);
 
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 102, 103 }));
 
         model.IntCollection.RemoveAt(3);
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 102 }));
 
         history.Undo();
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 102, 103 }));
 
         history.Redo();
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 102 }));
     }
 
     [Theory]
@@ -220,16 +220,16 @@ public sealed class CollectionPropertyTests
         model.IntCollection.Add(102);
         model.IntCollection.Add(103);
 
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 102, 103 }));
 
         model.IntCollection.Insert(2, 999);
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 999, 102, 103}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 999, 102, 103 }));
 
         history.Undo();
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 102, 103 }));
 
         history.Redo();
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 999, 102, 103}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 999, 102, 103 }));
     }
 
     [Theory]
@@ -246,7 +246,7 @@ public sealed class CollectionPropertyTests
         model.IntCollection.Add(102);
         model.IntCollection.Add(103);
 
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 102, 103 }));
 
         model.IntCollection.Clear();
         Assert.Empty(model.IntCollection);
@@ -272,17 +272,17 @@ public sealed class CollectionPropertyTests
         model.IntCollection.Add(102);
         model.IntCollection.Add(103);
 
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 102, 103 }));
 
         model.IntCollection.ClearEx(history);
 
-        Assert.True(model.IntCollection.SequenceEqual(new int[] {}));
+        Assert.True(model.IntCollection.SequenceEqual(new int[] { }));
 
         history.Undo();
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 102, 103 }));
 
         history.Redo();
-        Assert.True(model.IntCollection.SequenceEqual(new int[] {}));
+        Assert.True(model.IntCollection.SequenceEqual(new int[] { }));
     }
 
     [Fact]
@@ -365,16 +365,16 @@ public sealed class CollectionPropertyTests
         model.IntCollection.Add(102);
         model.IntCollection.Add(103);
 
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 102, 103 }));
 
         model.IntCollection[2] = 999;
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 999, 103}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 999, 103 }));
 
         history.Undo();
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 102, 103 }));
 
         history.Redo();
-        Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 999, 103}));
+        Assert.True(model.IntCollection.SequenceEqual(new[] { 100, 101, 999, 103 }));
     }
 
     [Theory]
@@ -565,8 +565,93 @@ public sealed class CollectionPropertyTests
         Assert.Equal([10, 55, 60], collection);
     }
 
+    [Fact]
+    public void Reset_replacing_an_equal_reference_item_preserves_object_identity_on_undo_and_redo()
+    {
+        using var history = new History();
+        var oldItem = new EqualByValueItem(1, "old");
+        var newItem = new EqualByValueItem(1, "new");
+        var collection = new RangeObservableCollection<EqualByValueItem> { oldItem };
+        history.RecordPropertyChange<RangeObservableCollection<EqualByValueItem>>(
+            static _ => { },
+            null!,
+            collection);
+        history.Clear();
+
+        collection.ReplaceWithReset(0, newItem);
+
+        Assert.Equal(1, history.UndoCount);
+        history.Undo();
+        Assert.Same(oldItem, Assert.Single(collection));
+        history.Redo();
+        Assert.Same(newItem, Assert.Single(collection));
+    }
+
+    [Fact]
+    public void Add_without_an_index_can_be_undone_and_redone()
+    {
+        using var history = new History();
+        var collection = new RangeObservableCollection<int> { 10, 20 };
+        history.RecordPropertyChange<RangeObservableCollection<int>>(static _ => { }, null!, collection);
+        history.Clear();
+
+        collection.AddWithoutIndex(30);
+        history.Undo();
+        Assert.Equal([10, 20], collection);
+        history.Redo();
+        Assert.Equal([10, 20, 30], collection);
+    }
+
+    [Fact]
+    public void Remove_without_an_index_can_be_undone_and_redone()
+    {
+        using var history = new History();
+        var collection = new RangeObservableCollection<int> { 10, 20, 30 };
+        history.RecordPropertyChange<RangeObservableCollection<int>>(static _ => { }, null!, collection);
+        history.Clear();
+
+        collection.RemoveWithoutIndex(1);
+        history.Undo();
+        Assert.Equal([10, 20, 30], collection);
+        history.Redo();
+        Assert.Equal([10, 30], collection);
+    }
+
+    private sealed class EqualByValueItem(int value, string name)
+    {
+        public int Value { get; } = value;
+        public string Name { get; } = name;
+
+        public override bool Equals(object? obj) => obj is EqualByValueItem other && Value == other.Value;
+        public override int GetHashCode() => Value;
+    }
+
     private sealed class RangeObservableCollection<T> : ObservableCollection<T>
     {
+        public void AddWithoutIndex(T item)
+        {
+            Items.Add(item);
+            OnCollectionChanged(new System.Collections.Specialized.NotifyCollectionChangedEventArgs(
+                System.Collections.Specialized.NotifyCollectionChangedAction.Add,
+                item));
+        }
+
+        public void RemoveWithoutIndex(int index)
+        {
+            var item = Items[index];
+            Items.RemoveAt(index);
+            OnCollectionChanged(new System.Collections.Specialized.NotifyCollectionChangedEventArgs(
+                System.Collections.Specialized.NotifyCollectionChangedAction.Remove,
+                item));
+        }
+
+        public void ReplaceWithReset(int index, T item)
+        {
+            Items[index] = item;
+            OnCollectionChanged(new System.Collections.Specialized.NotifyCollectionChangedEventArgs(
+                System.Collections.Specialized.NotifyCollectionChangedAction.Reset));
+        }
+
         public void AddRange(System.Collections.Generic.IReadOnlyList<T> items)
         {
             var startingIndex = Count;

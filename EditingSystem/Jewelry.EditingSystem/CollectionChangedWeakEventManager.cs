@@ -175,34 +175,33 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
-                    InsertItems(_snapshot, e.NewItems ?? throw new InvalidOperationException(), e.NewStartingIndex);
-                    return e;
+                    return ApplyAdd(source, e);
 
                 case NotifyCollectionChangedAction.Remove:
                     return ApplyRemove(source, e);
 
                 case NotifyCollectionChangedAction.Move:
-                {
-                    var count = (e.OldItems ?? throw new InvalidOperationException()).Count;
-                    if (count is 1)
                     {
-                        var item = _snapshot[e.OldStartingIndex];
-                        _snapshot.RemoveAt(e.OldStartingIndex);
-                        _snapshot.Insert(e.NewStartingIndex, item);
+                        var count = (e.OldItems ?? throw new InvalidOperationException()).Count;
+                        if (count is 1)
+                        {
+                            var item = _snapshot[e.OldStartingIndex];
+                            _snapshot.RemoveAt(e.OldStartingIndex);
+                            _snapshot.Insert(e.NewStartingIndex, item);
+                            return e;
+                        }
+
+                        var items = new List<object?>(count);
+                        for (var i = 0; i < count; ++i)
+                        {
+                            items.Add(_snapshot[e.OldStartingIndex]);
+                            _snapshot.RemoveAt(e.OldStartingIndex);
+                        }
+
+                        for (var i = 0; i < items.Count; ++i)
+                            _snapshot.Insert(e.NewStartingIndex + i, items[i]);
                         return e;
                     }
-
-                    var items = new List<object?>(count);
-                    for (var i = 0; i < count; ++i)
-                    {
-                        items.Add(_snapshot[e.OldStartingIndex]);
-                        _snapshot.RemoveAt(e.OldStartingIndex);
-                    }
-
-                    for (var i = 0; i < items.Count; ++i)
-                        _snapshot.Insert(e.NewStartingIndex + i, items[i]);
-                    return e;
-                }
 
                 case NotifyCollectionChangedAction.Replace:
                     return ApplyReplace(source, e);
@@ -210,6 +209,32 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }
+
+        private NotifyCollectionChangedEventArgs ApplyAdd(
+            INotifyCollectionChanged source,
+            NotifyCollectionChangedEventArgs e)
+        {
+            var newItems = e.NewItems ?? throw new InvalidOperationException();
+            if (e.NewStartingIndex >= 0 || source is not IList)
+            {
+                InsertItems(_snapshot, newItems, e.NewStartingIndex);
+                return e;
+            }
+
+            var newSnapshot = CreateSnapshot(source);
+            if (TryFindInsertionIndex(_snapshot, newSnapshot, newItems.Count, out var index))
+            {
+                var actualNewItems = newSnapshot.GetRange(index, newItems.Count);
+                _snapshot = newSnapshot;
+                return new NotifyCollectionChangedEventArgs(
+                    NotifyCollectionChangedAction.Add,
+                    actualNewItems,
+                    index);
+            }
+
+            _snapshot = newSnapshot;
+            return e;
         }
 
         private NotifyCollectionChangedEventArgs ApplyRemove(
@@ -221,6 +246,20 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
             {
                 RemoveItemsAt(_snapshot, oldItems.Count, e.OldStartingIndex);
                 return e;
+            }
+
+            if (source is IList)
+            {
+                var listSnapshot = CreateSnapshot(source);
+                if (TryFindRemovalIndex(_snapshot, listSnapshot, oldItems.Count, out var index))
+                {
+                    var actualOldItems = _snapshot.GetRange(index, oldItems.Count);
+                    _snapshot = listSnapshot;
+                    return new NotifyCollectionChangedEventArgs(
+                        NotifyCollectionChangedAction.Remove,
+                        actualOldItems,
+                        index);
+                }
             }
 
             if (TryRemoveItemsByExactIdentity(_snapshot, oldItems))
@@ -236,6 +275,73 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
             return actualRemovedItems.Count == oldItems.Count
                 ? CreateRemoveEventArgs(actualRemovedItems)
                 : e;
+        }
+
+        private static bool TryFindInsertionIndex(
+            IReadOnlyList<object?> oldItems,
+            IReadOnlyList<object?> newItems,
+            int addedCount,
+            out int index)
+        {
+            if (addedCount <= 0 || newItems.Count != oldItems.Count + addedCount)
+            {
+                index = -1;
+                return false;
+            }
+
+            index = 0;
+            while (index < oldItems.Count && ItemsExactlyEqual(oldItems[index], newItems[index]))
+                ++index;
+
+            for (var oldIndex = index; oldIndex < oldItems.Count; ++oldIndex)
+            {
+                if (!ItemsExactlyEqual(oldItems[oldIndex], newItems[oldIndex + addedCount]))
+                {
+                    index = -1;
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool TryFindRemovalIndex(
+            IReadOnlyList<object?> oldItems,
+            IReadOnlyList<object?> newItems,
+            int removedCount,
+            out int index)
+        {
+            if (removedCount <= 0 || oldItems.Count != newItems.Count + removedCount)
+            {
+                index = -1;
+                return false;
+            }
+
+            index = 0;
+            while (index < newItems.Count && ItemsExactlyEqual(oldItems[index], newItems[index]))
+                ++index;
+
+            for (var newIndex = index; newIndex < newItems.Count; ++newIndex)
+            {
+                if (!ItemsExactlyEqual(oldItems[newIndex + removedCount], newItems[newIndex]))
+                {
+                    index = -1;
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool ItemsExactlyEqual(object? left, object? right)
+        {
+            if (ReferenceEquals(left, right))
+                return true;
+            if (left is null || right is null)
+                return false;
+
+            var type = left.GetType();
+            return type.IsValueType && type == right.GetType() && left.Equals(right);
         }
 
         private NotifyCollectionChangedEventArgs ApplyReplace(

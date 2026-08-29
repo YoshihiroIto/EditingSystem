@@ -64,6 +64,63 @@ public sealed class SetEditablePropertyTests
         Assert.False(history.CanUndo);
     }
 
+    [Fact]
+    public void Failed_collection_property_undo_keeps_observing_the_current_collection()
+    {
+        using var history = new History();
+        var model = new ThrowingCollectionModel(history);
+        var oldItems = new System.Collections.ObjectModel.ObservableCollection<int>();
+        var currentItems = new System.Collections.ObjectModel.ObservableCollection<int>();
+        model.Items = oldItems;
+        history.Clear();
+        model.Items = currentItems;
+
+        model.ThrowOnSet = true;
+        Assert.Throws<System.InvalidOperationException>(() => history.Undo());
+
+        Assert.Same(currentItems, model.Items);
+        Assert.Equal(1, history.UndoCount);
+
+        history.Clear();
+        currentItems.Add(1);
+        Assert.Equal(1, history.UndoCount);
+        history.Undo();
+        Assert.Empty(currentItems);
+
+        history.Clear();
+        oldItems.Add(1);
+        Assert.False(history.CanUndo);
+    }
+
+    [Fact]
+    public void Failed_collection_property_redo_keeps_observing_the_current_collection()
+    {
+        using var history = new History();
+        var model = new ThrowingCollectionModel(history);
+        var currentItems = new System.Collections.ObjectModel.ObservableCollection<int>();
+        var redoItems = new System.Collections.ObjectModel.ObservableCollection<int>();
+        model.Items = currentItems;
+        history.Clear();
+        model.Items = redoItems;
+        history.Undo();
+
+        model.ThrowOnSet = true;
+        Assert.Throws<System.InvalidOperationException>(() => history.Redo());
+
+        Assert.Same(currentItems, model.Items);
+        Assert.Equal(1, history.RedoCount);
+
+        history.Clear();
+        currentItems.Add(1);
+        Assert.Equal(1, history.UndoCount);
+        history.Undo();
+        Assert.Empty(currentItems);
+
+        history.Clear();
+        redoItems.Add(1);
+        Assert.False(history.CanUndo);
+    }
+
     private sealed class ThrowingEditableModel(History history) : EditableModelBase(history)
     {
         public int Value

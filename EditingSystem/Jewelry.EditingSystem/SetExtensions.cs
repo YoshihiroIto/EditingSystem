@@ -108,22 +108,25 @@ public static class SetExtensions
         if (history is null)
             throw new ArgumentNullException(nameof(history));
 
-        var items = new List<T>(self);
-        var removedCount = 0;
+        var itemsToRemove = new List<T>();
+        foreach (var item in self)
+        {
+            if (match(item))
+                itemsToRemove.Add(item);
+        }
 
         ExecuteDelta(self, history, (removedItems, _) =>
         {
-            foreach (var item in items)
+            foreach (var item in itemsToRemove)
             {
-                if (!match(item) || !self.Remove(item))
-                    continue;
+                if (!self.Remove(item))
+                    throw new InvalidOperationException("The item to remove was not found in the set.");
 
                 removedItems.Add(item);
-                ++removedCount;
             }
         });
 
-        return removedCount;
+        return itemsToRemove.Count;
     }
 
     private static void Validate<T>(ISet<T> self, IEnumerable<T> other, History history)
