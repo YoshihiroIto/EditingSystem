@@ -160,11 +160,11 @@ public static class SetExtensions
         if (removedItems.Count is 0 && addedItems.Count is 0)
             return;
 
-        var state = new DeltaHistoryState<T>(self, removedItems.ToArray(), addedItems.ToArray());
+        var state = new DeltaHistoryState<T>(self, [.. removedItems], [.. addedItems]);
         history.Push(state.Undo, state.Redo);
     }
 
-    private static void RollBackDelta<T>(ISet<T> self, IReadOnlyList<T> removedItems, IReadOnlyList<T> addedItems)
+    private static void RollBackDelta<T>(ISet<T> self, List<T> removedItems, List<T> addedItems)
     {
         for (var i = addedItems.Count - 1; i >= 0; --i)
         {
@@ -251,7 +251,7 @@ public static class SetExtensions
         }
 
         var newItems = new List<T>(self).ToArray();
-        var snapshotState = new SnapshotHistoryState<T>(self, oldItems.ToArray(), newItems);
+        var snapshotState = new SnapshotHistoryState<T>(self, [.. oldItems], newItems);
         history.Push(snapshotState.Undo, snapshotState.Redo);
     }
 
@@ -278,7 +278,7 @@ public static class SetExtensions
                     removed.Add(item);
             }
 
-            removedItems = removed.ToArray();
+            removedItems = [.. removed];
         }
         else
             removedItems = [];
@@ -290,7 +290,7 @@ public static class SetExtensions
                 added.Add(item);
         }
 
-        addedItems = added.ToArray();
+        addedItems = [.. added];
         return removedItems.Length > 0 || addedItems.Length > 0;
     }
 
@@ -328,8 +328,8 @@ public static class SetExtensions
                 added.Add(item);
         }
 
-        removedItems = removed.ToArray();
-        addedItems = added.ToArray();
+        removedItems = [.. removed];
+        addedItems = [.. added];
         return true;
     }
 
@@ -458,8 +458,8 @@ public static class SetExtensions
 
             try
             {
-                for (var i = 0; i < items.Count; ++i)
-                    _addedItems.Add((T)items[i]!);
+                foreach (var t in items)
+                    _addedItems.Add((T)t!);
             }
             catch (InvalidCastException)
             {
@@ -482,51 +482,29 @@ public static class SetExtensions
         private bool _isStopped;
     }
 
-    private sealed class DeltaHistoryState<T>
+    private sealed class DeltaHistoryState<T>(ISet<T> self, T[] removedItems, T[] addedItems)
     {
-        public DeltaHistoryState(ISet<T> self, T[] removedItems, T[] addedItems)
-        {
-            _self = self;
-            _removedItems = removedItems;
-            _addedItems = addedItems;
-        }
-
         public void Undo()
         {
-            ApplyDelta(_self, _addedItems, _removedItems);
+            ApplyDelta(self, addedItems, removedItems);
         }
 
         public void Redo()
         {
-            ApplyDelta(_self, _removedItems, _addedItems);
+            ApplyDelta(self, removedItems, addedItems);
         }
-
-        private readonly ISet<T> _self;
-        private readonly T[] _removedItems;
-        private readonly T[] _addedItems;
     }
 
-    private sealed class SnapshotHistoryState<T>
+    private sealed class SnapshotHistoryState<T>(ISet<T> self, T[] oldItems, T[] newItems)
     {
-        public SnapshotHistoryState(ISet<T> self, T[] oldItems, T[] newItems)
-        {
-            _self = self;
-            _oldItems = oldItems;
-            _newItems = newItems;
-        }
-
         public void Undo()
         {
-            RestoreSnapshot(_self, _oldItems, notifyItems: true);
+            RestoreSnapshot(self, oldItems, notifyItems: true);
         }
 
         public void Redo()
         {
-            RestoreSnapshot(_self, _newItems, notifyItems: true);
+            RestoreSnapshot(self, newItems, notifyItems: true);
         }
-
-        private readonly ISet<T> _self;
-        private readonly T[] _oldItems;
-        private readonly T[] _newItems;
     }
 }

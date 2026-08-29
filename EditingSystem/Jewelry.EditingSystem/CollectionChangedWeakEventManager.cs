@@ -78,17 +78,12 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
         _listeners.Clear();
     }
 
-    private sealed class Registration
+    private sealed class Registration(INotifyCollectionChanged source, NotifyCollectionChangedEventHandler handler)
     {
-        public Registration(INotifyCollectionChanged source, NotifyCollectionChangedEventHandler handler)
-        {
-            Listener = new CollectionChangedWeakEventListener(source, handler);
-            Handler = handler;
-        }
+        public CollectionChangedWeakEventListener Listener { get; } = new(source, handler);
 
-        public CollectionChangedWeakEventListener Listener { get; }
         // Keep the weak listener's delegate alive for as long as this registration is active.
-        public NotifyCollectionChangedEventHandler Handler { get; }
+        public NotifyCollectionChangedEventHandler Handler { get; } = handler;
         public int ReferenceCount { get; set; } = 1;
     }
 
@@ -384,13 +379,8 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
                     oldItems);
         }
 
-        private readonly struct ExactItemKey : IEquatable<ExactItemKey>
+        private readonly struct ExactItemKey(object? item) : IEquatable<ExactItemKey>
         {
-            public ExactItemKey(object? item)
-            {
-                _item = item;
-            }
-
             public bool Equals(ExactItemKey other)
             {
                 if (ReferenceEquals(_item, other._item))
@@ -417,7 +407,7 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
                     : RuntimeHelpers.GetHashCode(_item);
             }
 
-            private readonly object? _item;
+            private readonly object? _item = item;
         }
     }
 }

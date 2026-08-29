@@ -156,10 +156,6 @@ internal static class CollectionAdapter
 
     private sealed class GenericCollectionAdapterFactory<T> : ICollectionAdapterFactory
     {
-        public GenericCollectionAdapterFactory()
-        {
-        }
-
         public ICollectionAdapter Create(object collection)
         {
             return new GenericCollectionAdapter<T>(collection);
@@ -192,26 +188,19 @@ internal static class CollectionAdapter
     }
 
 #if NET8_0_OR_GREATER
-    private sealed class ReflectionCollectionAdapterFactory : ICollectionAdapterFactory
+    private sealed class ReflectionCollectionAdapterFactory(
+        MethodInfo addMethod,
+        MethodInfo removeMethod,
+        MethodInfo? moveMethod) : ICollectionAdapterFactory
     {
-        public ReflectionCollectionAdapterFactory(
-            MethodInfo addMethod,
-            MethodInfo removeMethod,
-            MethodInfo? moveMethod)
-        {
-            _addInvoker = MethodInvoker.Create(addMethod);
-            _removeInvoker = MethodInvoker.Create(removeMethod);
-            _moveInvoker = moveMethod is null ? null : MethodInvoker.Create(moveMethod);
-        }
-
         public ICollectionAdapter Create(object collection)
         {
             return new ReflectionCollectionAdapter(collection, _addInvoker, _removeInvoker, _moveInvoker);
         }
 
-        private readonly MethodInvoker _addInvoker;
-        private readonly MethodInvoker _removeInvoker;
-        private readonly MethodInvoker? _moveInvoker;
+        private readonly MethodInvoker _addInvoker = MethodInvoker.Create(addMethod);
+        private readonly MethodInvoker _removeInvoker = MethodInvoker.Create(removeMethod);
+        private readonly MethodInvoker? _moveInvoker = moveMethod is null ? null : MethodInvoker.Create(moveMethod);
     }
 
     private sealed class ReflectionCollectionAdapter(

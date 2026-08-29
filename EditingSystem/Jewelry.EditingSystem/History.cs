@@ -15,27 +15,29 @@ public class History : INotifyPropertyChanged, IDisposable
     public bool CanClear => CanUndo || CanRedo;
     public int UndoCount => _undoStack.Count;
     public int RedoCount => _redoStack.Count;
+
     public int MaxUndoCount
     {
-        get => _maxUndoCount;
+        get;
         set
         {
             if (value < 0)
                 throw new ArgumentOutOfRangeException(nameof(value));
-            if (_maxUndoCount == value)
+            if (field == value)
                 return;
 
             var currentFlags = CanUndoRedoClear;
             var currentUndoRedoCount = UndoRedoCount;
-    
-            _maxUndoCount = value;
+
+            field = value;
             _undoStack.TrimOldest(value);
             _redoStack.TrimOldest(value);
 
             PropertyChanged?.Invoke(this, MaxUndoCountArgs);
             InvokePropertyChanged(currentFlags, currentUndoRedoCount);
         }
-    }
+    } = int.MaxValue;
+
     internal int PauseDepth { get; private set; }
     internal int BatchDepth { get; private set; }
     public bool IsInUndoing { get; private set; }
@@ -644,7 +646,7 @@ public class History : INotifyPropertyChanged, IDisposable
                 var notifyCollection = sender as INotifyCollectionChanged ?? throw new NullReferenceException();
                 var oldItems = CollectionChangedWeakEventManager.GetSnapshot(notifyCollection);
                 var newItems = SnapshotItems(sender as IEnumerable ?? throw new NotSupportedException(
-                    $"Collection type '{sender?.GetType()}' must implement IEnumerable."));
+                    $"Collection type '{sender!.GetType()}' must implement IEnumerable."));
 
                 if (ItemsEqual(oldItems, newItems))
                     break;
@@ -718,7 +720,7 @@ public class History : INotifyPropertyChanged, IDisposable
         IList list,
         int index,
         int removeCount,
-        IReadOnlyList<object?> replacementItems)
+        List<object?> replacementItems)
     {
         if (removeCount == replacementItems.Count)
         {
@@ -809,8 +811,7 @@ public class History : INotifyPropertyChanged, IDisposable
                     CollectionChangedWeakEventManager.GetSnapshot(notifyCollection),
                     CollectionItemChangedInfo.Remove);
                 NotifyCollectionItems(
-                    sender as IEnumerable ?? throw new NotSupportedException(
-                        $"Collection type '{sender?.GetType()}' must implement IEnumerable."),
+                    sender as IEnumerable ?? throw new NotSupportedException($"Collection type '{sender!.GetType()}' must implement IEnumerable."),
                     CollectionItemChangedInfo.Add);
                 break;
             }
@@ -864,7 +865,6 @@ public class History : INotifyPropertyChanged, IDisposable
 
     private readonly HistoryStack<HistoryAction> _undoStack = new();
     private readonly HistoryStack<HistoryAction> _redoStack = new();
-    private int _maxUndoCount = int.MaxValue;
 
     private static readonly PropertyChangedEventArgs CanUndoArgs = new(nameof(CanUndo));
     private static readonly PropertyChangedEventArgs CanRedoArgs = new(nameof(CanRedo));
@@ -875,14 +875,8 @@ public class History : INotifyPropertyChanged, IDisposable
     private static readonly PropertyChangedEventArgs IsInPausedArgs = new(nameof(IsInPaused));
     private static readonly PropertyChangedEventArgs IsInBatchArgs = new(nameof(IsInBatch));
 
-    private sealed class RecordingScope : IDisposable
+    private sealed class RecordingScope(History history, RecordingScopeKind kind) : IDisposable
     {
-        public RecordingScope(History history, RecordingScopeKind kind)
-        {
-            _history = history;
-            _kind = kind;
-        }
-
         public void Dispose()
         {
             var history = _history;
@@ -890,7 +884,7 @@ public class History : INotifyPropertyChanged, IDisposable
                 return;
 
             _history = null;
-            switch (_kind)
+            switch (kind)
             {
                 case RecordingScopeKind.Pause:
                     history.EndPause();
@@ -906,8 +900,7 @@ public class History : INotifyPropertyChanged, IDisposable
             }
         }
 
-        private History? _history;
-        private readonly RecordingScopeKind _kind;
+        private History? _history = history;
     }
 
     private enum RecordingScopeKind
@@ -917,14 +910,13 @@ public class History : INotifyPropertyChanged, IDisposable
         CoalescingBatch,
     }
 
-    private sealed class BatchRecorder
+    private sealed class BatchRecorder(bool isCoalescing)
     {
-        public BatchRecorder(bool isCoalescing)
-        {
-            _coalescingIndices = isCoalescing
-                ? new Dictionary<PropertyChangeKey, int>()
-                : null;
-        }
+        private readonly List<HistoryAction> _actions = new();
+
+        private readonly Dictionary<PropertyChangeKey, int>? _coalescingIndices = isCoalescing
+            ? new Dictionary<PropertyChangeKey, int>()
+            : null;
 
         public void Add(HistoryAction action)
         {
@@ -966,26 +958,17 @@ public class History : INotifyPropertyChanged, IDisposable
 
             return _actions.Count is 0 ? null : new BatchHistoryAction(_actions);
         }
-
-        private readonly List<HistoryAction> _actions = new();
-        private readonly Dictionary<PropertyChangeKey, int>? _coalescingIndices;
     }
 
-    private readonly struct PropertyChangeKey : IEquatable<PropertyChangeKey>
+    private readonly struct PropertyChangeKey(object target, object propertyKey) : IEquatable<PropertyChangeKey>
     {
-        public PropertyChangeKey(object target, object propertyKey)
-        {
-            Target = target;
-            PropertyKey = propertyKey;
-        }
-
-        public object Target { get; }
-        public object PropertyKey { get; }
+        private object Target { get; } = target;
+        private object PropertyKey { get; } = propertyKey;
 
         public bool Equals(PropertyChangeKey other)
         {
             return ReferenceEquals(Target, other.Target) &&
-                object.Equals(PropertyKey, other.PropertyKey);
+                   Equals(PropertyKey, other.PropertyKey);
         }
 
         public override bool Equals(object? obj)
@@ -998,7 +981,7 @@ public class History : INotifyPropertyChanged, IDisposable
             unchecked
             {
                 return (RuntimeHelpers.GetHashCode(Target) * 397) ^
-                    PropertyKey.GetHashCode();
+                       PropertyKey.GetHashCode();
             }
         }
     }
@@ -1058,37 +1041,28 @@ public class History : INotifyPropertyChanged, IDisposable
         private int _appliedCount = actions.Count;
     }
 
-    private sealed class PropertyHistoryAction<T> : HistoryAction
+    private sealed class PropertyHistoryAction<T>(
+        History history,
+        PropertyChangeKey? key,
+        Action<T> setValue,
+        T oldValue,
+        T newValue,
+        EditableModelBase? notificationTarget,
+        string? notificationPropertyName)
+        : HistoryAction
     {
-        public PropertyHistoryAction(
-            History history,
-            PropertyChangeKey? key,
-            Action<T> setValue,
-            T oldValue,
-            T newValue,
-            EditableModelBase? notificationTarget,
-            string? notificationPropertyName)
-        {
-            _history = history;
-            _key = key;
-            _setValue = setValue;
-            _oldValue = oldValue;
-            _newValue = newValue;
-            _notificationTarget = notificationTarget;
-            _notificationPropertyName = notificationPropertyName;
-        }
+        public override PropertyChangeKey? CoalescingKey { get; } = key;
 
-        public override PropertyChangeKey? CoalescingKey => _key;
-        public override bool IsNoOp => EqualityComparer<T>.Default.Equals(_oldValue, _newValue);
+        public override bool IsNoOp => EqualityComparer<T>.Default.Equals(oldValue, _newValue);
 
-        public override void Undo() => Apply(_newValue, _oldValue);
-        public override void Redo() => Apply(_oldValue, _newValue);
+        public override void Undo() => Apply(_newValue, oldValue);
+        public override void Redo() => Apply(oldValue, _newValue);
 
         public override bool TryMerge(HistoryAction newerAction)
         {
-            if (_key is not { } key ||
+            if (CoalescingKey is not { } key ||
                 newerAction is not PropertyHistoryAction<T> newer ||
-                newer._key is not { } newerKey ||
+                newer.CoalescingKey is not { } newerKey ||
                 key.Equals(newerKey) is false)
                 return false;
 
@@ -1101,48 +1075,45 @@ public class History : INotifyPropertyChanged, IDisposable
 
         private void Apply(T currentValue, T value)
         {
-            EditablePropertyCommon.UpdateCollectionListener(_history, currentValue, value);
+            EditablePropertyCommon.UpdateCollectionListener(history, currentValue, value);
             _setValue(value);
             _notificationTarget?.RaisePropertyChangedFromHistory(_notificationPropertyName!);
         }
 
-        private readonly History _history;
-        private readonly PropertyChangeKey? _key;
-        private Action<T> _setValue;
-        private readonly T _oldValue;
-        private T _newValue;
-        private EditableModelBase? _notificationTarget;
-        private string? _notificationPropertyName;
+        private Action<T> _setValue = setValue;
+        private T _newValue = newValue;
+        private EditableModelBase? _notificationTarget = notificationTarget;
+        private string? _notificationPropertyName = notificationPropertyName;
     }
 
     private sealed class HistoryStack<T>
     {
-        public int Count => _count;
+        public int Count { get; private set; }
 
         public void Push(T item, int maxCount)
         {
             if (maxCount is 0)
                 return;
 
-            if (_count == maxCount)
+            if (Count == maxCount)
                 RemoveOldest();
 
-            EnsureCapacity(_count + 1, maxCount);
-            _items[(_start + _count) % _items.Length] = item;
-            ++_count;
+            EnsureCapacity(Count + 1, maxCount);
+            _items[(_start + Count) % _items.Length] = item;
+            ++Count;
         }
 
         public T Pop()
         {
-            if (_count is 0)
+            if (Count is 0)
                 throw new InvalidOperationException("The history stack is empty.");
 
-            var index = (_start + _count - 1) % _items.Length;
+            var index = (_start + Count - 1) % _items.Length;
             var item = _items[index];
             _items[index] = default!;
-            --_count;
+            --Count;
 
-            if (_count is 0)
+            if (Count is 0)
                 _start = 0;
 
             return item;
@@ -1150,7 +1121,7 @@ public class History : INotifyPropertyChanged, IDisposable
 
         public void TrimOldest(int maxCount)
         {
-            while (_count > maxCount)
+            while (Count > maxCount)
                 RemoveOldest();
 
             if (_items.Length > maxCount)
@@ -1159,10 +1130,10 @@ public class History : INotifyPropertyChanged, IDisposable
 
         public void Clear()
         {
-            if (_count > 0)
+            if (Count > 0)
                 Array.Clear(_items, 0, _items.Length);
             _start = 0;
-            _count = 0;
+            Count = 0;
         }
 
         private void EnsureCapacity(int requiredCount, int maxCount)
@@ -1193,7 +1164,7 @@ public class History : INotifyPropertyChanged, IDisposable
             }
 
             var newItems = new T[newCapacity];
-            for (var i = 0; i < _count; ++i)
+            for (var i = 0; i < Count; ++i)
                 newItems[i] = _items[(_start + i) % _items.Length];
 
             _items = newItems;
@@ -1202,19 +1173,18 @@ public class History : INotifyPropertyChanged, IDisposable
 
         private void RemoveOldest()
         {
-            if (_count is 0)
+            if (Count is 0)
                 return;
 
             _items[_start] = default!;
             _start = (_start + 1) % _items.Length;
-            --_count;
+            --Count;
 
-            if (_count is 0)
+            if (Count is 0)
                 _start = 0;
         }
 
-        private T[] _items = Array.Empty<T>();
+        private T[] _items = [];
         private int _start;
-        private int _count;
     }
 }

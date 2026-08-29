@@ -93,14 +93,14 @@ public static class ListExtensions
 
     private static void RemoveItems<T>(ICollection<T> collection, IReadOnlyList<T> items)
     {
-        for (var i = 0; i < items.Count; ++i)
+        foreach (var t in items)
         {
-            if (collection.Remove(items[i]) is false)
+            if (collection.Remove(t) is false)
                 throw new InvalidOperationException("The item to remove was not found in the collection.");
         }
     }
 
-    private static void Restore<T>(IList<T> collection, IReadOnlyList<T> items)
+    private static void Restore<T>(IList<T> collection, List<T> items)
     {
         RemoveAll(collection);
         for (var i = 0; i < items.Count; ++i)
