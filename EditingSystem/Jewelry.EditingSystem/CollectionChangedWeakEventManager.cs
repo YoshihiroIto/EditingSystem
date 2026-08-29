@@ -217,12 +217,12 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
                 return e;
             }
 
-            if (TryRemoveItemsByDefaultEquality(_snapshot, oldItems))
+            if (TryRemoveItemsByExactIdentity(_snapshot, oldItems))
                 return e;
 
-            // Some unordered collections use a custom comparer and report the value passed to
-            // Remove rather than the actual stored value. Rebuild only on that uncommon mismatch
-            // and forward the actual removed instances to History.
+            // Some unordered collections report the comparer-equal value passed to Remove rather
+            // than the actual stored value. Rebuild only on that uncommon mismatch and forward the
+            // actual removed instances to History.
             var newSnapshot = CreateSnapshot(source);
             var actualRemovedItems = FindExactDifference(_snapshot, newSnapshot);
             _snapshot = newSnapshot;
@@ -246,7 +246,7 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
                 return e;
             }
 
-            if (TryRemoveItemsByDefaultEquality(_snapshot, oldItems))
+            if (TryRemoveItemsByExactIdentity(_snapshot, oldItems))
             {
                 InsertItems(_snapshot, newItems, e.NewStartingIndex);
                 return e;
@@ -284,11 +284,11 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
                 snapshot.RemoveAt(index);
         }
 
-        private static bool TryRemoveItemsByDefaultEquality(List<object?> snapshot, IList items)
+        private static bool TryRemoveItemsByExactIdentity(List<object?> snapshot, IList items)
         {
             if (items.Count is 1)
             {
-                var index = snapshot.IndexOf(items[0]);
+                var index = FindExactIndex(snapshot, items[0]);
                 if (index < 0)
                     return false;
 
@@ -299,13 +299,28 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
             var updatedSnapshot = new List<object?>(snapshot);
             foreach (var item in items)
             {
-                if (!updatedSnapshot.Remove(item))
+                var index = FindExactIndex(updatedSnapshot, item);
+                if (index < 0)
                     return false;
+
+                updatedSnapshot.RemoveAt(index);
             }
 
             snapshot.Clear();
             snapshot.AddRange(updatedSnapshot);
             return true;
+        }
+
+        private static int FindExactIndex(IReadOnlyList<object?> items, object? target)
+        {
+            var targetKey = new ExactItemKey(target);
+            for (var i = 0; i < items.Count; ++i)
+            {
+                if (targetKey.Equals(new ExactItemKey(items[i])))
+                    return i;
+            }
+
+            return -1;
         }
 
         private static List<object?> FindExactDifference(
