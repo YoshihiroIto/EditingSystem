@@ -175,4 +175,36 @@ public sealed class HistoryTests
         Assert.Equal(1, history.UndoCount);
         Assert.Throws<System.ArgumentOutOfRangeException>(() => history.MaxUndoCount = -1);
     }
+
+    [Fact]
+    public void Reducing_MaxUndoCount_releases_excess_history_array_capacity()
+    {
+        using var history = new History();
+        for (var i = 0; i < 1_024; ++i)
+            history.Push(static () => { }, static () => { });
+
+        Assert.True(GetUndoCapacity(history) >= 1_024);
+
+        history.MaxUndoCount = 8;
+
+        Assert.Equal(8, history.UndoCount);
+        Assert.Equal(8, GetUndoCapacity(history));
+    }
+
+    private static int GetUndoCapacity(History history)
+    {
+        var undoStackField = typeof(History).GetField(
+            "_undoStack",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            ?? throw new System.InvalidOperationException("History._undoStack was not found.");
+        var stack = undoStackField.GetValue(history)
+            ?? throw new System.InvalidOperationException("History._undoStack was null.");
+        var itemsField = stack.GetType().GetField(
+            "_items",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            ?? throw new System.InvalidOperationException("HistoryStack._items was not found.");
+        var items = itemsField.GetValue(stack) as System.Array
+            ?? throw new System.InvalidOperationException("HistoryStack._items was not an array.");
+        return items.Length;
+    }
 }

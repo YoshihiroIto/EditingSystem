@@ -163,7 +163,9 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
                 throw new NotSupportedException(
                     $"Collection type '{source.GetType()}' must implement IEnumerable.");
 
-            var snapshot = new List<object?>();
+            var snapshot = source is ICollection collection
+                ? new List<object?>(collection.Count)
+                : new List<object?>();
             foreach (var item in enumerable)
                 snapshot.Add(item);
 
@@ -185,8 +187,16 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
 
                 case NotifyCollectionChangedAction.Move:
                 {
-                    var items = new List<object?>();
                     var count = (e.OldItems ?? throw new InvalidOperationException()).Count;
+                    if (count is 1)
+                    {
+                        var item = _snapshot[e.OldStartingIndex];
+                        _snapshot.RemoveAt(e.OldStartingIndex);
+                        _snapshot.Insert(e.NewStartingIndex, item);
+                        return e;
+                    }
+
+                    var items = new List<object?>(count);
                     for (var i = 0; i < count; ++i)
                     {
                         items.Add(_snapshot[e.OldStartingIndex]);

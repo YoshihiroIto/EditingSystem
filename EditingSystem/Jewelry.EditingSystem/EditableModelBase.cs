@@ -18,19 +18,15 @@ public class EditableModelBase : INotifyPropertyChanged
 
     protected bool SetEditableProperty<T>(Action<T> setValue, T oldValue, T newValue, [CallerMemberName] string propertyName = "")
     {
-        void SetValueWithRaisePropertyChanged(T v)
-        {
-            setValue(v);
-            RaisePropertyChanged(propertyName);
-        }
-        
         return EditablePropertyCommon.SetEditableProperty(
             _history,
             this,
             propertyName,
-            SetValueWithRaisePropertyChanged,
+            setValue,
             oldValue,
-            newValue);
+            newValue,
+            this,
+            propertyName);
     }
     
 #if NET8_0_OR_GREATER 
@@ -86,10 +82,15 @@ public class EditableModelBase : INotifyPropertyChanged
 
     protected void RaisePropertyChanged([CallerMemberName] string propertyName = "")
     {
+        RaisePropertyChangedFromHistory(propertyName);
+    }
+
+    internal void RaisePropertyChangedFromHistory(string propertyName)
+    {
         if (PropertyChanged is null)
             return;
 
-        var pc = PropChanged.GetOrAdd(propertyName, name => new PropertyChangedEventArgs(name));
+        var pc = PropChanged.GetOrAdd(propertyName, static name => new PropertyChangedEventArgs(name));
 
         PropertyChanged.Invoke(this, pc);
     }
