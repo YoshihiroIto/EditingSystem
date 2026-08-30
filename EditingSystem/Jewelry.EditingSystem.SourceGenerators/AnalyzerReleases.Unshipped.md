@@ -9,3 +9,4 @@ JES002 | Jewelry.EditingSystem | Error | EditingHistory configuration is require
 JES003 | Jewelry.EditingSystem | Error | Invalid editing history member
 JES004 | Jewelry.EditingSystem | Error | Containing types must be partial
 JES005 | Jewelry.EditingSystem | Warning | INotifyPropertyChanged is implemented but no supported notification path is accessible
+JES006 | Jewelry.EditingSystem | Error | EditingPropertyChanged names an invalid or inaccessible notification method
