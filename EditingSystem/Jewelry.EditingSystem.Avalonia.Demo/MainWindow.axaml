@@ -117,6 +117,8 @@
                                     <Border Background="{Binding Brush}"
                                             CornerRadius="4"
                                             Opacity="{Binding Opacity}"
+                                            BorderThickness="1"
+                                            BorderBrush="#121212"
                                             PointerMoved="Object_PointerMoved"
                                             PointerPressed="Object_PointerPressed"
                                             PointerReleased="Object_PointerReleased">
