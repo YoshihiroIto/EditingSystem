@@ -1,0 +1,334 @@
+﻿<Window x:Class="Jewelry.EditingSystem.Avalonia.Demo.MainWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:Jewelry.EditingSystem.Avalonia.Demo"
+        Title="EditingSystem Avalonia Demo"
+        Width="1200"
+        MinWidth="900"
+        MinHeight="600"
+        Closed="Window_Closed"
+        RequestedThemeVariant="Dark"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterScreen">
+    <Window.DataContext>
+        <local:MainWindowViewModel />
+    </Window.DataContext>
+
+    <Window.KeyBindings>
+        <KeyBinding Command="{Binding UndoCommand}"
+                    Gesture="Ctrl+Z" />
+        <KeyBinding Command="{Binding RedoCommand}"
+                    Gesture="Ctrl+Y" />
+    </Window.KeyBindings>
+
+    <Window.Styles>
+        <Style Selector="Border.resize-handle">
+            <Setter Property="Width" Value="10" />
+            <Setter Property="Height" Value="10" />
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="#2563EB" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="CornerRadius" Value="2" />
+        </Style>
+        <Style Selector="Border.resize-handle:pointerover">
+            <Setter Property="Background" Value="#DBEAFE" />
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*"
+          Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+        <Border Grid.Row="0"
+                Padding="10"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="Auto,18,Auto,*,Auto"
+                  VerticalAlignment="Center">
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal"
+                            Spacing="8">
+                    <Button Command="{Binding AddObjectCommand}"
+                            Content="Add" />
+                    <Button Command="{Binding DeleteSelectedCommand}"
+                            Content="Delete"
+                            IsEnabled="{Binding HasSelection}" />
+                    <Button Command="{Binding AlignLeftCommand}"
+                            Content="Align Left"
+                            IsEnabled="{Binding HasMultipleSelection}" />
+                    <Button Command="{Binding AlignTopCommand}"
+                            Content="Align Top"
+                            IsEnabled="{Binding HasMultipleSelection}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2"
+                            Margin="16,0,0,0"
+                            Orientation="Horizontal"
+                            Spacing="6">
+                    <Button Command="{Binding UndoCommand}"
+                            Content="Undo"
+                            IsEnabled="{Binding History.CanUndo}" />
+                    <TextBlock VerticalAlignment="Center"
+                               Text="{Binding History.UndoCount}" />
+                    <Button Margin="8,0,0,0"
+                            Command="{Binding RedoCommand}"
+                            Content="Redo"
+                            IsEnabled="{Binding History.CanRedo}" />
+                    <TextBlock VerticalAlignment="Center"
+                               Text="{Binding History.RedoCount}" />
+                </StackPanel>
+
+                <TextBlock Grid.Column="4"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           Text="Click: select   Ctrl+Click: multi-select   Drag: move selection" />
+            </Grid>
+        </Border>
+
+        <Grid ColumnDefinitions="*,400"
+              Grid.Row="1">
+            <Border Grid.Column="0"
+                    Margin="12"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                <Grid x:Name="EditorSurface"
+                      Background="#20252B"
+                      ClipToBounds="True"
+                      PointerPressed="EditorSurface_PointerPressed">
+                    <ItemsControl x:Name="ObjectItems"
+                                  Margin="0"
+                                  ItemsSource="{Binding Objects}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+
+                        <ItemsControl.Styles>
+                            <Style Selector="ContentPresenter">
+                                <Setter Property="Canvas.Left" Value="{Binding X}" />
+                                <Setter Property="Canvas.Top" Value="{Binding Y}" />
+                            </Style>
+                        </ItemsControl.Styles>
+
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="local:DemoObject">
+                                <Grid Width="{Binding Width}"
+                                      Height="{Binding Height}">
+                                    <Border Background="{Binding Brush}"
+                                            CornerRadius="4"
+                                            Opacity="{Binding Opacity}"
+                                            PointerMoved="Object_PointerMoved"
+                                            PointerPressed="Object_PointerPressed"
+                                            PointerReleased="Object_PointerReleased">
+                                        <TextBlock HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="White"
+                                                   IsHitTestVisible="False"
+                                                   Text="{Binding Name}" />
+                                    </Border>
+
+                                    <Border BorderBrush="#60A5FA"
+                                            BorderThickness="2"
+                                            CornerRadius="4"
+                                            IsHitTestVisible="False"
+                                            IsVisible="{Binding IsSelected}" />
+
+                                    <Border Classes="resize-handle"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Top"
+                                            Cursor="TopLeftCorner"
+                                            IsVisible="{Binding IsSelected}"
+                                            PointerMoved="ResizeHandle_PointerMoved"
+                                            PointerPressed="ResizeHandle_PointerPressed"
+                                            PointerReleased="ResizeHandle_PointerReleased"
+                                            Tag="NorthWest" />
+                                    <Border Classes="resize-handle"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Top"
+                                            Cursor="SizeNorthSouth"
+                                            IsVisible="{Binding IsSelected}"
+                                            PointerMoved="ResizeHandle_PointerMoved"
+                                            PointerPressed="ResizeHandle_PointerPressed"
+                                            PointerReleased="ResizeHandle_PointerReleased"
+                                            Tag="North" />
+                                    <Border Classes="resize-handle"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Top"
+                                            Cursor="TopRightCorner"
+                                            IsVisible="{Binding IsSelected}"
+                                            PointerMoved="ResizeHandle_PointerMoved"
+                                            PointerPressed="ResizeHandle_PointerPressed"
+                                            PointerReleased="ResizeHandle_PointerReleased"
+                                            Tag="NorthEast" />
+                                    <Border Classes="resize-handle"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            Cursor="SizeWestEast"
+                                            IsVisible="{Binding IsSelected}"
+                                            PointerMoved="ResizeHandle_PointerMoved"
+                                            PointerPressed="ResizeHandle_PointerPressed"
+                                            PointerReleased="ResizeHandle_PointerReleased"
+                                            Tag="East" />
+                                    <Border Classes="resize-handle"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Bottom"
+                                            Cursor="BottomRightCorner"
+                                            IsVisible="{Binding IsSelected}"
+                                            PointerMoved="ResizeHandle_PointerMoved"
+                                            PointerPressed="ResizeHandle_PointerPressed"
+                                            PointerReleased="ResizeHandle_PointerReleased"
+                                            Tag="SouthEast" />
+                                    <Border Classes="resize-handle"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Bottom"
+                                            Cursor="SizeNorthSouth"
+                                            IsVisible="{Binding IsSelected}"
+                                            PointerMoved="ResizeHandle_PointerMoved"
+                                            PointerPressed="ResizeHandle_PointerPressed"
+                                            PointerReleased="ResizeHandle_PointerReleased"
+                                            Tag="South" />
+                                    <Border Classes="resize-handle"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Bottom"
+                                            Cursor="BottomLeftCorner"
+                                            IsVisible="{Binding IsSelected}"
+                                            PointerMoved="ResizeHandle_PointerMoved"
+                                            PointerPressed="ResizeHandle_PointerPressed"
+                                            PointerReleased="ResizeHandle_PointerReleased"
+                                            Tag="SouthWest" />
+                                    <Border Classes="resize-handle"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center"
+                                            Cursor="SizeWestEast"
+                                            IsVisible="{Binding IsSelected}"
+                                            PointerMoved="ResizeHandle_PointerMoved"
+                                            PointerPressed="ResizeHandle_PointerPressed"
+                                            PointerReleased="ResizeHandle_PointerReleased"
+                                            Tag="West" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Border Margin="12"
+                            Padding="8,5"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Bottom"
+                            Background="#AA000000"
+                            CornerRadius="4"
+                            IsHitTestVisible="False">
+                        <TextBlock FontSize="12"
+                                   Foreground="White"
+                                   Text="Move / Resize / Opacity / Color = CoalescingBatch   •   Name = normal Undo   •   Align / Multi-delete = Batch" />
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="1"
+                    Margin="0,12,12,12"
+                    Padding="16"
+                    Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                <Border.Styles>
+                    <Style Selector="TextBlock.info">
+                        <Setter Property="FontSize" Value="12" />
+                        <Setter Property="Foreground" Value="Orange" />
+                        <Setter Property="VerticalAlignment" Value="Bottom" />
+                    </Style>
+                </Border.Styles>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock FontSize="20"
+                                   FontWeight="SemiBold"
+                                   Text="Properties" />
+
+                        <StackPanel Margin="0,8,0,0"
+                                    Orientation="Horizontal"
+                                    Spacing="5">
+                            <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Text="Selected:" />
+                            <TextBlock FontWeight="SemiBold"
+                                       Text="{Binding SelectionCount}" />
+                        </StackPanel>
+
+                        <Separator Margin="0,4,0,16" />
+
+                        <StackPanel Margin="0,8,0,0"
+                                    Orientation="Horizontal"
+                                    Spacing="8">
+                            <TextBlock FontWeight="SemiBold"
+                                       Text="Name:" />
+
+                            <TextBlock Classes="info"
+                                       IsVisible="{Binding HasMultipleSelection}"
+                                       Text="Name editing is available for a single selection." />
+                        </StackPanel>
+
+                        <TextBox x:Name="NameEditor"
+                                 Margin="0,6,0,8"
+                                 IsEnabled="{Binding HasSingleSelection}"
+                                 PlaceholderText="Select one object to edit its name"
+                                 Text="{Binding SelectedObject?.Name,
+                                                Mode=TwoWay,
+                                                UpdateSourceTrigger=LostFocus}" />
+
+                        <StackPanel Margin="0,8,0,0"
+                                    Orientation="Horizontal"
+                                    Spacing="8">
+                            <TextBlock FontWeight="SemiBold"
+                                       Text="Opacity:" />
+                            <TextBlock Classes="info"
+                                       IsVisible="{Binding HasMixedOpacity}"
+                                       Text="Mixed values" />
+                        </StackPanel>
+
+                        <DockPanel HorizontalSpacing="8">
+                            <TextBlock DockPanel.Dock="Right"
+                                       VerticalAlignment="Center"
+                                       Text="{Binding SelectionOpacity,
+                                                      StringFormat='{}{0:F2}'}" />
+                            <Slider x:Name="OpacityEditor"
+                                    Maximum="1"
+                                    Minimum="0"
+                                    IsEnabled="{Binding HasSelection}"
+                                    Value="{Binding SelectionOpacity,
+                                                    Mode=TwoWay}" />
+                        </DockPanel>
+
+                        <StackPanel Margin="0,8,0,8"
+                                    Orientation="Horizontal"
+                                    Spacing="8">
+                            <TextBlock FontWeight="SemiBold"
+                                       Text="Color:" />
+                            <TextBlock Classes="info"
+                                       IsVisible="{Binding HasMixedColor}"
+                                       Text="Mixed values" />
+                        </StackPanel>
+
+                        <ColorView x:Name="ColorEditor"
+                                   IsAlphaEnabled="False"
+                                   IsAlphaVisible="False"
+                                   IsColorComponentsVisible="True"
+                                   IsColorPaletteVisible="True"
+                                   IsColorSpectrumVisible="True"
+                                   IsEnabled="{Binding HasSelection}"
+                                   Color="{Binding SelectionColor,
+                                                   Mode=TwoWay}" />
+
+                        <Separator Margin="0,12,0,4" />
+
+                        <TextBlock FontWeight="SemiBold"
+                                   Text="How to try it" />
+                        <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   Text="Select one rectangle and edit its name; leaving the field records one undoable change. Select several rectangles with Ctrl+Click, then drag one of the selected rectangles. All selected rectangles move together and a single Undo returns the whole drag. Grab any edge or corner handle to resize one rectangle. Drag Opacity or ColorView to see continuous edits coalesced into one history entry."
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

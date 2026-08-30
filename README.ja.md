@@ -5,6 +5,12 @@
 
 .NET 向けの使いやすい Undo/Redo システムです。
 
+## Avalonia デモ
+
+[`EditingSystem/Jewelry.EditingSystem.Avalonia.Demo`](EditingSystem/Jewelry.EditingSystem.Avalonia.Demo) に Avalonia のデモを用意しています。EditingSystem と CommunityToolkit.Mvvm をアプリへ組み込む際のコード量や、Undo/Redo、`Batch`、`CoalescingBatch`、複数オブジェクトの移動・リサイズ・プロパティ編集、Z-order 変更に使う `ObservableCollection<T>.Move` の Undo/Redo などを、実際の操作とコードから確認できます。
+
+![demo](demo00.png)
+
 ## インストール
 ```
 PM> Install-Package Jewelry.EditingSystem

@@ -15,6 +15,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jewelry.EditingSystem.Commu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jewelry.EditingSystem.Benchmarks", "Jewelry.EditingSystem.Benchmarks\Jewelry.EditingSystem.Benchmarks.csproj", "{AF26957B-1F1D-4D56-A9DE-107CB4DB293A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jewelry.EditingSystem.Avalonia.Demo", "Jewelry.EditingSystem.Avalonia.Demo\Jewelry.EditingSystem.Avalonia.Demo.csproj", "{D2F8A6D3-C7B9-4F90-AE91-7A5C2E3D6B41}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jewelry.EditingSystem.Avalonia.Demo.Tests", "Jewelry.EditingSystem.Avalonia.Demo.Tests\Jewelry.EditingSystem.Avalonia.Demo.Tests.csproj", "{9F13A478-7B16-4465-ACF9-D540F06A74CC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +49,14 @@ Global
 		{AF26957B-1F1D-4D56-A9DE-107CB4DB293A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AF26957B-1F1D-4D56-A9DE-107CB4DB293A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AF26957B-1F1D-4D56-A9DE-107CB4DB293A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2F8A6D3-C7B9-4F90-AE91-7A5C2E3D6B41}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2F8A6D3-C7B9-4F90-AE91-7A5C2E3D6B41}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2F8A6D3-C7B9-4F90-AE91-7A5C2E3D6B41}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2F8A6D3-C7B9-4F90-AE91-7A5C2E3D6B41}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F13A478-7B16-4465-ACF9-D540F06A74CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F13A478-7B16-4465-ACF9-D540F06A74CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F13A478-7B16-4465-ACF9-D540F06A74CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F13A478-7B16-4465-ACF9-D540F06A74CC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
