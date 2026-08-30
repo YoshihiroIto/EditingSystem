@@ -13,7 +13,6 @@ public sealed partial class MainWindow : Window
     private readonly Dictionary<DemoObject, Point> _moveStartPositions = [];
     private Point _pointerStart;
     private Control? _capturedControl;
-    private DemoObject? _pointerOperationObject;
     private DemoObject? _resizeObject;
     private ResizeDirection _resizeDirection;
     private Rect _resizeStartBounds;
@@ -74,7 +73,6 @@ public sealed partial class MainWindow : Window
         foreach (var selected in ViewModel.GetSelectedObjects())
             _moveStartPositions[selected] = new Point(selected.X, selected.Y);
 
-        _pointerOperationObject = item;
         _capturedControl = control;
         e.Pointer.Capture(EditorSurface);
         e.Handled = true;
@@ -126,7 +124,6 @@ public sealed partial class MainWindow : Window
         _resizeDirection = direction;
         _resizeStartBounds = new Rect(item.X, item.Y, item.Width, item.Height);
         _pointerStart = e.GetPosition(EditorSurface);
-        _pointerOperationObject = item;
         _capturedControl = control;
         e.Pointer.Capture(EditorSurface);
         e.Handled = true;
@@ -180,8 +177,6 @@ public sealed partial class MainWindow : Window
             return;
 
         ViewModel.BeginContinuousEdit();
-        if (_pointerOperationObject is not null)
-            ViewModel.BringToFront(_pointerOperationObject);
         _pointerContinuousEdit = true;
     }
 
@@ -267,7 +262,6 @@ public sealed partial class MainWindow : Window
     {
         _capturedControl = null;
         _moveStartPositions.Clear();
-        _pointerOperationObject = null;
         _resizeObject = null;
 
         if (_pointerContinuousEdit)

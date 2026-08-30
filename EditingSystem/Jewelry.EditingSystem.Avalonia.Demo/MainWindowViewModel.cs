@@ -127,15 +127,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         UpdateSelectionState();
     }
 
-    public void BringToFront(DemoObject item)
-    {
-        var index = Objects.IndexOf(item);
-        if (index < 0 || index == Objects.Count - 1)
-            return;
-
-        Objects.Move(index, Objects.Count - 1);
-    }
-
     public void BeginContinuousEdit()
     {
         if (_isContinuousEdit)
@@ -172,7 +163,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void AddObject()
     {
-        var index = Objects.Count;
         var x = Random.Shared.NextDouble() * 600d + 40d;
         var y = Random.Shared.NextDouble() * 600d + 40d;
         var item = CreateObject(x, y, 140d, 90d);
@@ -227,6 +217,45 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             foreach (var item in selected)
                 item.Y = top;
+        }
+    }
+
+    [RelayCommand]
+    private void BringSelectedToFront()
+    {
+        var selected = GetSelectedObjects();
+        if (selected.Count is 0)
+            return;
+
+        var desiredOrder = Objects.Where(item => !item.IsSelected).Concat(selected).ToArray();
+        if (Objects.SequenceEqual(desiredOrder))
+            return;
+
+        using (_history.Batch())
+        {
+            foreach (var item in selected)
+                Objects.Move(Objects.IndexOf(item), Objects.Count - 1);
+        }
+    }
+
+    [RelayCommand]
+    private void SendSelectedToBack()
+    {
+        var selected = GetSelectedObjects();
+        if (selected.Count is 0)
+            return;
+
+        var desiredOrder = selected.Concat(Objects.Where(item => !item.IsSelected)).ToArray();
+        if (Objects.SequenceEqual(desiredOrder))
+            return;
+
+        using (_history.Batch())
+        {
+            for (var i = selected.Count - 1; i >= 0; i--)
+            {
+                var item = selected[i];
+                Objects.Move(Objects.IndexOf(item), 0);
+            }
         }
     }
 
