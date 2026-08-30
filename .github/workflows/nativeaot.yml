@@ -17,7 +17,9 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Run tests
-        run: dotnet test EditingSystem/Jewelry.EditingSystem.sln -c Release
+        run: |
+          dotnet test EditingSystem/Jewelry.EditingSystem.Tests/Jewelry.EditingSystem.Tests.csproj -c Release
+          dotnet test EditingSystem/Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators.Tests/Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators.Tests.csproj -c Release
 
       - name: Run Avalonia headless demo tests
         run: dotnet run --project EditingSystem/Jewelry.EditingSystem.Avalonia.Demo.Tests/Jewelry.EditingSystem.Avalonia.Demo.Tests.csproj -c Release --no-launch-profile
