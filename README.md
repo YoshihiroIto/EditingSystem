@@ -74,7 +74,32 @@ public sealed partial class Document(History history) : INotifyPropertyChanged
 }
 ```
 
-The generator looks for these notification paths in order:
+#### Explicit notification method
+
+If your notification method is not named `RaisePropertyChanged` or `OnPropertyChanged`, use `[EditingPropertyChanged]` to select it explicitly.
+
+```cs
+[EditingHistory(nameof(history))]
+[EditingPropertyChanged(nameof(NotifyPropertyChanged))]
+public sealed partial class Document(History history) : INotifyPropertyChanged
+{
+    [Undoable]
+    public partial string? Name { get; set; }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void NotifyPropertyChanged(string propertyName)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+}
+```
+
+The method selected by `EditingPropertyChanged` takes precedence over automatic discovery and is called for normal changes, undo, and redo. It must be an accessible instance `void` method with exactly one `string` or `PropertyChangedEventArgs` parameter. Generic methods are not supported.
+
+If the configured method does not exist, has an unsupported signature, or is inaccessible, the generator reports `JES006` as an error.
+
+When `EditingPropertyChanged` is not specified, the generator looks for these notification paths in order:
 
 1. accessible `RaisePropertyChanged(string)`
 2. accessible `OnPropertyChanged(string)`
@@ -290,6 +315,7 @@ The generator resolves the following at compile time:
 - the configured `History`
 - partial-property implementation
 - `INotifyPropertyChanged` detection
+- notification methods explicitly selected with `[EditingPropertyChanged]`
 - inherited notification methods
 - notification-method accessibility
 - undo/redo setter code
