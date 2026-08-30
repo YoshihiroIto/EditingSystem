@@ -1,22 +1,35 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <Authors>Yoshihiro Ito</Authors>
-    <Description>Easy to use undo/redo system for .NET Standard.</Description>
-    <Copyright>Copyright (c) 2018-2025 copyright Yoshihiro Ito (yo.i.jewelry.bab@gmail.com)</Copyright>
+    <Description>Undo/redo for .NET with attribute-based undoable properties, batching, and collection support.</Description>
+    <Copyright>Copyright (c) 2018-2026 copyright Yoshihiro Ito (yo.i.jewelry.bab@gmail.com)</Copyright>
     <PackageProjectUrl>https://github.com/YoshihiroIto/EditingSystem</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YoshihiroIto/EditingSystem</RepositoryUrl>
-    <PackageTags>undo editing</PackageTags>
+    <PackageTags>undo redo editing source-generator nativeaot</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RootNamespace>Jewelry.EditingSystem</RootNamespace>
-    <PackageVersion>2.2.3</PackageVersion>
+    <PackageVersion>2.3.0</PackageVersion>
     <Title>EditingSystem</Title>
-    <PackageLicenseUrl></PackageLicenseUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <TargetFrameworks>net10.0;net9.0;net8.0;netstandard2.0</TargetFrameworks>
     <IsAotCompatible Condition="'$(TargetFramework)' != 'netstandard2.0'">true</IsAotCompatible>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="System.Buffers" Version="4.6.1" />
+    <ProjectReference Include="..\Jewelry.EditingSystem.SourceGenerators\Jewelry.EditingSystem.SourceGenerators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Link="README.md" />
+    <None Include="$(MSBuildProjectDirectory)\..\Jewelry.EditingSystem.SourceGenerators\bin\$(Configuration)\netstandard2.0\Jewelry.EditingSystem.SourceGenerators.dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
   </ItemGroup>
 </Project>

@@ -11,6 +11,7 @@ Assert(!RuntimeFeature.IsDynamicCodeSupported, "NativeAOT smoke unexpectedly sup
 RunHistorySmoke();
 RunEditableModelSmoke();
 RunDirectModeSmoke();
+RunCoreUndoableSmoke();
 RunCommunityToolkitSmoke();
 RunObservableCollectionSmoke();
 RunObservableHashSetSmoke();
@@ -60,6 +61,26 @@ static void RunDirectModeSmoke()
     Assert(model.Value == 0, "Direct mode coalesced undo failed.");
     history.Redo();
     Assert(model.Value == 3, "Direct mode coalesced redo failed.");
+}
+
+static void RunCoreUndoableSmoke()
+{
+    using var history = new History();
+    var model = new CoreUndoableSmokeModel(history);
+    var notifications = 0;
+    model.PropertyChanged += (_, e) =>
+    {
+        if (e.PropertyName == nameof(CoreUndoableSmokeModel.Value))
+            ++notifications;
+    };
+
+    model.Value = 42;
+    Assert(model.Value == 42, "Core Undoable property set failed.");
+    history.Undo();
+    Assert(model.Value == 0, "Core Undoable undo failed.");
+    history.Redo();
+    Assert(model.Value == 42, "Core Undoable redo failed.");
+    Assert(notifications == 3, "Core Undoable PropertyChanged notifications failed.");
 }
 
 static void RunCommunityToolkitSmoke()
@@ -261,6 +282,22 @@ internal sealed class DirectSmokeModel(History history) : INotifyPropertyChanged
     private int _value;
 }
 
+[Jewelry.EditingSystem.Annotations.EditingHistory(nameof(_history))]
+internal sealed partial class CoreUndoableSmokeModel : INotifyPropertyChanged
+{
+    public CoreUndoableSmokeModel(History history)
+    {
+        _history = history;
+    }
+
+    [Jewelry.EditingSystem.Annotations.Undoable]
+    public partial int Value { get; set; }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private readonly History _history;
+}
+
 [EditingHistory(nameof(_history))]
 internal sealed partial class ToolkitSmokeModel : ObservableObject
 {
@@ -269,8 +306,7 @@ internal sealed partial class ToolkitSmokeModel : ObservableObject
         _history = history;
     }
 
-    [ObservableProperty]
-    [Undoable]
+    [Undoable, ObservableProperty]
     private int _value;
 
     private readonly History _history;
