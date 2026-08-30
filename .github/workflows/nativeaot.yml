@@ -19,6 +19,9 @@ jobs:
       - name: Run tests
         run: dotnet test EditingSystem/Jewelry.EditingSystem.sln -c Release
 
+      - name: Run Avalonia headless demo tests
+        run: dotnet run --project EditingSystem/Jewelry.EditingSystem.Avalonia.Demo.Tests/Jewelry.EditingSystem.Avalonia.Demo.Tests.csproj -c Release --no-launch-profile
+
       - name: Publish NativeAOT smoke test
         run: dotnet publish EditingSystem/NativeAotSmoke/NativeAotSmoke.csproj -c Release -r linux-x64 --self-contained true
 

@@ -5,6 +5,11 @@
 
 Easy to use undo/redo system for .NET
 
+## Avalonia demo
+
+An Avalonia demo is available in [`EditingSystem/Jewelry.EditingSystem.Avalonia.Demo`](EditingSystem/Jewelry.EditingSystem.Avalonia.Demo). It shows how little application-side code is needed to integrate EditingSystem with CommunityToolkit.Mvvm, and demonstrates Undo/Redo, `Batch`, `CoalescingBatch`, multi-object move/resize/property editing, and undoable `ObservableCollection<T>.Move` operations used for Z-order changes.
+
+![demo](demo00.png)
 
 ## Install
 ```
