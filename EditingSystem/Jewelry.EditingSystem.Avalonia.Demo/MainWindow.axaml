@@ -52,11 +52,18 @@
                             Content="Delete"
                             IsEnabled="{Binding HasSelection}" />
                     <Button Command="{Binding AlignLeftCommand}"
+                            Margin="24,0,0,0"
                             Content="Align Left"
                             IsEnabled="{Binding HasMultipleSelection}" />
                     <Button Command="{Binding AlignTopCommand}"
                             Content="Align Top"
                             IsEnabled="{Binding HasMultipleSelection}" />
+                    <Button Command="{Binding BringSelectedToFrontCommand}"
+                            Content="To Front"
+                            IsEnabled="{Binding HasSelection}" />
+                    <Button Command="{Binding SendSelectedToBackCommand}"
+                            Content="To Back"
+                            IsEnabled="{Binding HasSelection}" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="2"
@@ -222,7 +229,7 @@
                             IsHitTestVisible="False">
                         <TextBlock FontSize="12"
                                    Foreground="White"
-                                   Text="Move / Resize / Opacity / Color = CoalescingBatch   •   Name = normal Undo   •   Align / Multi-delete = Batch" />
+                                   Text="Move / Resize / Opacity / Color = CoalescingBatch   •   Name = normal Undo   •   Z-order / Align / Multi-delete = Batch" />
                     </Border>
                 </Grid>
             </Border>
@@ -326,7 +333,7 @@
                         <TextBlock FontWeight="SemiBold"
                                    Text="How to try it" />
                         <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                   Text="Select one rectangle and edit its name; leaving the field records one undoable change. Select several rectangles with Ctrl+Click, then drag one of the selected rectangles. All selected rectangles move together and a single Undo returns the whole drag. Grab any edge or corner handle to resize one rectangle. Drag Opacity or ColorView to see continuous edits coalesced into one history entry."
+                                   Text="Select one rectangle and edit its name; leaving the field records one undoable change. Select several rectangles with Ctrl+Click, then drag one of the selected rectangles. All selected rectangles move together and a single Undo returns the whole drag. Use To Front / To Back to change the selected objects' Z-order explicitly; each operation is one undoable batch. Grab any edge or corner handle to resize one rectangle. Drag Opacity or ColorView to see continuous edits coalesced into one history entry."
                                    TextWrapping="Wrap" />
                     </StackPanel>
                 </ScrollViewer>
