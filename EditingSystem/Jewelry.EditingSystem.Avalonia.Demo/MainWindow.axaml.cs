@@ -27,6 +27,8 @@ public sealed partial class MainWindow : Window
 
         opacityEditor.AddHandler(PointerPressedEvent, Inspector_PointerPressed, RoutingStrategies.Tunnel, true);
         colorEditor.AddHandler(PointerPressedEvent, Inspector_PointerPressed, RoutingStrategies.Tunnel, true);
+        EditorSurface.PointerMoved += EditorSurface_PointerMoved;
+        EditorSurface.PointerCaptureLost += EditorSurface_PointerCaptureLost;
         AddHandler(PointerReleasedEvent, Window_PointerReleased, RoutingStrategies.Bubble, true);
     }
 
@@ -82,7 +84,7 @@ public sealed partial class MainWindow : Window
         ViewModel.BeginContinuousEdit();
         ViewModel.BringToFront(item);
         _capturedControl = control;
-        e.Pointer.Capture(control);
+        e.Pointer.Capture(EditorSurface);
         e.Handled = true;
     }
 
@@ -90,6 +92,11 @@ public sealed partial class MainWindow : Window
     {
         if (_capturedControl is null || _moveStartPositions.Count is 0)
             return;
+        if (!e.GetCurrentPoint(EditorSurface).Properties.IsLeftButtonPressed)
+        {
+            EndPointerOperation(e.Pointer);
+            return;
+        }
 
         var delta = e.GetPosition(EditorSurface) - _pointerStart;
         foreach (var (item, start) in _moveStartPositions)
@@ -127,7 +134,7 @@ public sealed partial class MainWindow : Window
         ViewModel.BeginContinuousEdit();
         ViewModel.BringToFront(item);
         _capturedControl = control;
-        e.Pointer.Capture(control);
+        e.Pointer.Capture(EditorSurface);
         e.Handled = true;
     }
 
@@ -135,6 +142,11 @@ public sealed partial class MainWindow : Window
     {
         if (_resizeObject is null || _capturedControl is null)
             return;
+        if (!e.GetCurrentPoint(EditorSurface).Properties.IsLeftButtonPressed)
+        {
+            EndPointerOperation(e.Pointer);
+            return;
+        }
 
         var delta = e.GetPosition(EditorSurface) - _pointerStart;
         ApplyResize(_resizeObject, _resizeDirection, _resizeStartBounds, delta);
@@ -148,6 +160,20 @@ public sealed partial class MainWindow : Window
 
         EndPointerOperation(e.Pointer);
         e.Handled = true;
+    }
+
+    private void EditorSurface_PointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (_resizeObject is not null)
+            ResizeHandle_PointerMoved(sender, e);
+        else if (_moveStartPositions.Count > 0)
+            Object_PointerMoved(sender, e);
+    }
+
+    private void EditorSurface_PointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+    {
+        if (_capturedControl is not null)
+            CompletePointerOperation();
     }
 
     private static void ApplyResize(DemoObject item, ResizeDirection direction, Rect start, Vector delta)
@@ -202,6 +228,9 @@ public sealed partial class MainWindow : Window
 
     private void Window_PointerReleased(object? sender, PointerReleasedEventArgs e)
     {
+        if (_capturedControl is not null)
+            EndPointerOperation(e.Pointer);
+
         if (_inspectorContinuousEdit)
         {
             _inspectorContinuousEdit = false;
@@ -219,7 +248,14 @@ public sealed partial class MainWindow : Window
 
     private void EndPointerOperation(IPointer pointer)
     {
-        pointer.Capture(null);
+        CompletePointerOperation();
+
+        if (ReferenceEquals(pointer.Captured, EditorSurface))
+            pointer.Capture(null);
+    }
+
+    private void CompletePointerOperation()
+    {
         _capturedControl = null;
         _moveStartPositions.Clear();
         _resizeObject = null;
