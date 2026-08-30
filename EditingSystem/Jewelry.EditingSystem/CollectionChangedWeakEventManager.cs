@@ -8,83 +8,101 @@ namespace Jewelry.EditingSystem;
 
 internal sealed class CollectionChangedWeakEventManager : IDisposable
 {
-    private readonly List<Registration> _listeners = new();
+    private ConditionalWeakTable<INotifyCollectionChanged, Registration> _lookup = new();
+    private readonly List<WeakReference<Registration>> _registrations = new();
+    private int _staleRegistrationCount;
 
     public void AddWeakEventListener(INotifyCollectionChanged source, NotifyCollectionChangedEventHandler handler)
     {
-        for (var i = _listeners.Count - 1; i >= 0; --i)
+        if (_lookup.TryGetValue(source, out var registration))
         {
-            var registration = _listeners[i];
-            if (registration.Listener.IsAlive is false)
-            {
-                registration.Listener.Dispose();
-                _listeners.RemoveAt(i);
-                continue;
-            }
-
-            if (ReferenceEquals(registration.Listener.Source, source))
-            {
-                ++registration.ReferenceCount;
-                return;
-            }
+            ++registration.ReferenceCount;
+            return;
         }
 
-        _listeners.Add(new Registration(source, handler));
+        registration = new Registration(source, handler);
+        _lookup.Add(source, registration);
+        _registrations.Add(new WeakReference<Registration>(registration));
     }
 
     public void RemoveWeakEventListener(INotifyCollectionChanged source)
     {
-        for (var i = _listeners.Count - 1; i >= 0; --i)
+        if (_lookup.TryGetValue(source, out var registration) is false)
+            return;
+
+        if (registration.ReferenceCount > 1)
         {
-            var registration = _listeners[i];
-            if (registration.Listener.IsAlive is false)
-            {
-                registration.Listener.Dispose();
-                _listeners.RemoveAt(i);
-                continue;
-            }
-
-            if (ReferenceEquals(registration.Listener.Source, source) is false)
-                continue;
-
-            if (registration.ReferenceCount > 1)
-                --registration.ReferenceCount;
-            else
-            {
-                registration.Listener.Dispose();
-                _listeners.RemoveAt(i);
-            }
-
+            --registration.ReferenceCount;
             return;
         }
+
+        _lookup.Remove(source);
+        registration.Dispose();
+        ++_staleRegistrationCount;
+        CompactRegistrationsIfNeeded();
     }
 
     public IReadOnlyList<object?> GetSnapshot(INotifyCollectionChanged source)
     {
-        foreach (var registration in _listeners)
-        {
-            if (ReferenceEquals(registration.Listener.Source, source))
-                return registration.Listener.Snapshot;
-        }
+        if (_lookup.TryGetValue(source, out var registration))
+            return registration.Listener.Snapshot;
 
         throw new InvalidOperationException("The collection is not registered.");
     }
 
     public void Dispose()
     {
-        foreach (var registration in _listeners)
-            registration.Listener.Dispose();
+        foreach (var weakRegistration in _registrations)
+        {
+            if (weakRegistration.TryGetTarget(out var registration))
+                registration.Dispose();
+        }
 
-        _listeners.Clear();
+        _registrations.Clear();
+        _lookup = new ConditionalWeakTable<INotifyCollectionChanged, Registration>();
+        _staleRegistrationCount = 0;
     }
 
-    private sealed class Registration(INotifyCollectionChanged source, NotifyCollectionChangedEventHandler handler)
+    private void CompactRegistrationsIfNeeded()
+    {
+        const int minStaleRegistrationCount = 32;
+        if (_staleRegistrationCount < minStaleRegistrationCount ||
+            _staleRegistrationCount * 2 < _registrations.Count)
+            return;
+
+        var writeIndex = 0;
+        for (var readIndex = 0; readIndex < _registrations.Count; ++readIndex)
+        {
+            var weakRegistration = _registrations[readIndex];
+            if (weakRegistration.TryGetTarget(out var registration) is false || registration.IsActive is false)
+                continue;
+
+            _registrations[writeIndex++] = weakRegistration;
+        }
+
+        if (writeIndex < _registrations.Count)
+            _registrations.RemoveRange(writeIndex, _registrations.Count - writeIndex);
+
+        _staleRegistrationCount = 0;
+    }
+
+    private sealed class Registration(INotifyCollectionChanged source, NotifyCollectionChangedEventHandler handler) : IDisposable
     {
         public CollectionChangedWeakEventListener Listener { get; } = new(source, handler);
 
         // Keep the weak listener's delegate alive for as long as this registration is active.
         public NotifyCollectionChangedEventHandler Handler { get; } = handler;
         public int ReferenceCount { get; set; } = 1;
+        public bool IsActive { get; private set; } = true;
+
+        public void Dispose()
+        {
+            if (IsActive is false)
+                return;
+
+            IsActive = false;
+            Listener.Dispose();
+        }
     }
 
     private sealed class CollectionChangedWeakEventListener : IDisposable
@@ -191,15 +209,9 @@ internal sealed class CollectionChangedWeakEventManager : IDisposable
                             return e;
                         }
 
-                        var items = new List<object?>(count);
-                        for (var i = 0; i < count; ++i)
-                        {
-                            items.Add(_snapshot[e.OldStartingIndex]);
-                            _snapshot.RemoveAt(e.OldStartingIndex);
-                        }
-
-                        for (var i = 0; i < items.Count; ++i)
-                            _snapshot.Insert(e.NewStartingIndex + i, items[i]);
+                        var items = _snapshot.GetRange(e.OldStartingIndex, count);
+                        _snapshot.RemoveRange(e.OldStartingIndex, count);
+                        _snapshot.InsertRange(e.NewStartingIndex, items);
                         return e;
                     }
 

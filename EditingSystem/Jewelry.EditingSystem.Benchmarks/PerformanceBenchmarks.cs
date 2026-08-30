@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using BenchmarkDotNet.Attributes;
 using Jewelry.Collections;
 
@@ -149,4 +150,54 @@ public class ObservableCollectionMoveBenchmarks
 
     private History? _history;
     private ObservableCollection<int> _items = null!;
+}
+
+[MemoryDiagnoser]
+public class CollectionListenerLookupBenchmarks
+{
+    [Params(1, 64, 1_024, 16_384)]
+    public int ObservedCollectionCount { get; set; }
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        _history = new History { MaxUndoCount = 0 };
+        _collections = new ResettableObservableCollection<int>[ObservedCollectionCount];
+
+        for (var i = 0; i < _collections.Length; ++i)
+        {
+            var collection = new ResettableObservableCollection<int> { i };
+            _collections[i] = collection;
+            _history.RecordPropertyChange<ResettableObservableCollection<int>?>(
+                static _ => { },
+                null,
+                collection);
+        }
+
+        _target = _collections[^1];
+    }
+
+    [GlobalCleanup]
+    public void Cleanup()
+    {
+        _history.Dispose();
+    }
+
+    [Benchmark]
+    public void RaiseResetOnLastObservedCollection()
+    {
+        _target.RaiseReset();
+    }
+
+    private History _history = null!;
+    private ResettableObservableCollection<int>[] _collections = null!;
+    private ResettableObservableCollection<int> _target = null!;
+
+    private sealed class ResettableObservableCollection<T> : ObservableCollection<T>
+    {
+        public void RaiseReset()
+        {
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+        }
+    }
 }
