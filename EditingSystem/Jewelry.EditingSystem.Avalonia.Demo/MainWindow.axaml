@@ -52,6 +52,7 @@
                             Content="Delete"
                             IsEnabled="{Binding HasSelection}" />
                     <Button Command="{Binding AlignLeftCommand}"
+                            Margin="24,0,0,0"
                             Content="Align Left"
                             IsEnabled="{Binding HasMultipleSelection}" />
                     <Button Command="{Binding AlignTopCommand}"
