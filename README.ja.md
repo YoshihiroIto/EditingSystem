@@ -74,7 +74,32 @@ public sealed partial class Document(History history) : INotifyPropertyChanged
 }
 ```
 
-通知方法は次の順で探索します。
+#### 通知メソッドを明示する
+
+通知メソッド名が `RaisePropertyChanged` / `OnPropertyChanged` ではない場合は、`[EditingPropertyChanged]` で使用するメソッドを明示できます。
+
+```cs
+[EditingHistory(nameof(history))]
+[EditingPropertyChanged(nameof(NotifyPropertyChanged))]
+public sealed partial class Document(History history) : INotifyPropertyChanged
+{
+    [Undoable]
+    public partial string? Name { get; set; }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void NotifyPropertyChanged(string propertyName)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+}
+```
+
+`EditingPropertyChanged` で指定したメソッドは自動探索より優先され、通常変更・Undo・Redo のすべてで呼び出されます。指定できるのは、生成対象型からアクセス可能なインスタンス `void` メソッドで、引数は `string` または `PropertyChangedEventArgs` の1つです。ジェネリックメソッドは使用できません。
+
+指定したメソッドが存在しない、シグネチャが異なる、またはアクセスできない場合は `JES006` error になります。
+
+`EditingPropertyChanged` を指定していない場合、通知方法は次の順で探索します。
 
 1. アクセス可能な `RaisePropertyChanged(string)`
 2. アクセス可能な `OnPropertyChanged(string)`
@@ -290,6 +315,7 @@ public sealed class ManualModel : EditableModelBase
 - `History` メンバーの解決
 - partial property の実装生成
 - `INotifyPropertyChanged` 実装判定
+- `[EditingPropertyChanged]` で明示された通知メソッドの解決
 - 通知メソッドの継承階層探索
 - 通知メソッドのアクセシビリティ判定
 - Undo/Redo setter の生成
