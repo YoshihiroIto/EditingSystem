@@ -29,6 +29,7 @@ if (notified != 3)
 Console.WriteLine("Core package smoke passed.");
 
 [EditingHistory(nameof(_history))]
+[EditingPropertyChanged(nameof(NotifyPropertyChanged))]
 internal sealed partial class Model : INotifyPropertyChanged
 {
     private readonly History _history;
@@ -42,4 +43,9 @@ internal sealed partial class Model : INotifyPropertyChanged
     public partial int Value { get; set; }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void NotifyPropertyChanged(string propertyName)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
 }
