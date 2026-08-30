@@ -169,7 +169,46 @@ using (history.Pause())
 
 ## Undo 可能なコレクション操作
 
-`History` が監視している `INotifyCollectionChanged` コレクションは、要素操作も Undo/Redo できます。
+`History` が監視している `INotifyCollectionChanged` コレクションは、要素操作も Undo/Redo できます。`[Undoable]` プロパティにコレクションを代入すると、そのコレクションの変更が自動的に監視されます。
+
+```cs
+using System.Collections.ObjectModel;
+using Jewelry.EditingSystem;
+using Jewelry.EditingSystem.Annotations;
+
+[EditingHistory(nameof(_history))]
+public sealed partial class CollectionDocument
+{
+    private readonly History _history;
+
+    public CollectionDocument(History history)
+    {
+        _history = history;
+        using (history.Pause())
+            Items = [];
+    }
+
+    [Undoable]
+    public partial ObservableCollection<string> Items { get; set; }
+}
+
+using var history = new History();
+var document = new CollectionDocument(history);
+
+document.Items.Add("A");
+document.Items.Add("B");
+
+history.Undo(); // ["A"]
+history.Redo(); // ["A", "B"]
+
+document.Items.Move(1, 0); // ["B", "A"]
+history.Undo();             // ["A", "B"]
+
+document.Items.Clear();
+history.Undo(); // ["A", "B"]
+```
+
+主な操作と通知は次のとおりです。
 
 | 操作 | 初回通知 | Undo 通知 | Redo 通知 |
 | --- | --- | --- | --- |
@@ -180,6 +219,36 @@ using (history.Pause())
 | `ClearEx(history)` | 要素ごとに `Remove` | 要素ごとに `Add` | 要素ごとに `Remove` |
 
 `ClearEx`、`UnionWithEx`、`IntersectWithEx`、`ExceptWithEx`、`SymmetricExceptWithEx`、`RemoveWhereEx` は、コレクションプロパティとして監視されていない場合でも明示的に `History` へ記録できます。
+
+```cs
+var values = new List<int> { 1, 2, 3 };
+
+values.ClearEx(history);
+// values == []
+
+history.Undo();
+// values == [1, 2, 3]
+
+history.Redo();
+// values == []
+```
+
+セット操作も1回の Undo/Redo として記録できます。
+
+```cs
+using Jewelry.Collections;
+
+var values = new ObservableHashSet<int>([10]);
+
+values.UnionWithEx([20, 30], history);
+// values == [10, 20, 30]
+
+history.Undo();
+// values == [10]
+
+history.Redo();
+// values == [10, 20, 30]
+```
 
 ## 履歴数の制限
 
