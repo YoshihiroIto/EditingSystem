@@ -232,6 +232,14 @@
                     BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                     BorderThickness="1"
                     CornerRadius="6">
+                <Border.Styles>
+                    <Style Selector="TextBlock.info">
+                        <Setter Property="FontSize" Value="12" />
+                        <Setter Property="Foreground" Value="Orange" />
+                        <Setter Property="VerticalAlignment" Value="Bottom" />
+                    </Style>
+                </Border.Styles>
+
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <TextBlock FontSize="20"
@@ -249,8 +257,17 @@
 
                         <Separator Margin="0,4,0,16" />
 
-                        <TextBlock FontWeight="SemiBold"
-                                   Text="Name" />
+                        <StackPanel Margin="0,8,0,0"
+                                    Orientation="Horizontal"
+                                    Spacing="8">
+                            <TextBlock FontWeight="SemiBold"
+                                       Text="Name:" />
+
+                            <TextBlock Classes="info"
+                                       IsVisible="{Binding HasMultipleSelection}"
+                                       Text="Name editing is available for a single selection." />
+                        </StackPanel>
+
                         <TextBox x:Name="NameEditor"
                                  Margin="0,6,0,8"
                                  IsEnabled="{Binding HasSingleSelection}"
@@ -258,18 +275,13 @@
                                  Text="{Binding SelectedObject?.Name,
                                                 Mode=TwoWay,
                                                 UpdateSourceTrigger=LostFocus}" />
-                        <TextBlock FontSize="12"
-                                   Foreground="#F59E0B"
-                                   IsVisible="{Binding HasMultipleSelection}"
-                                   Text="Name editing is available for a single selection." />
 
                         <StackPanel Margin="0,8,0,0"
                                     Orientation="Horizontal"
                                     Spacing="8">
                             <TextBlock FontWeight="SemiBold"
-                                       Text="Opacity" />
-                            <TextBlock FontSize="12"
-                                       Foreground="#F59E0B"
+                                       Text="Opacity:" />
+                            <TextBlock Classes="info"
                                        IsVisible="{Binding HasMixedOpacity}"
                                        Text="Mixed values" />
                         </StackPanel>
@@ -287,14 +299,12 @@
                                                     Mode=TwoWay}" />
                         </DockPanel>
 
-                        <StackPanel Margin="0,16,0,8"
+                        <StackPanel Margin="0,8,0,8"
                                     Orientation="Horizontal"
                                     Spacing="8">
                             <TextBlock FontWeight="SemiBold"
-                                       Text="Color" />
-                            <TextBlock VerticalAlignment="Center"
-                                       FontSize="12"
-                                       Foreground="#F59E0B"
+                                       Text="Color:" />
+                            <TextBlock Classes="info"
                                        IsVisible="{Binding HasMixedColor}"
                                        Text="Mixed values" />
                         </StackPanel>
