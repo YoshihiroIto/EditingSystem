@@ -169,7 +169,46 @@ using (history.Pause())
 
 ## Undoable collection operations
 
-Collections observed through `INotifyCollectionChanged` can participate in undo/redo.
+Collections observed through `INotifyCollectionChanged` can participate in undo/redo. Assigning a collection to an `[Undoable]` property automatically attaches collection-change tracking.
+
+```cs
+using System.Collections.ObjectModel;
+using Jewelry.EditingSystem;
+using Jewelry.EditingSystem.Annotations;
+
+[EditingHistory(nameof(_history))]
+public sealed partial class CollectionDocument
+{
+    private readonly History _history;
+
+    public CollectionDocument(History history)
+    {
+        _history = history;
+        using (history.Pause())
+            Items = [];
+    }
+
+    [Undoable]
+    public partial ObservableCollection<string> Items { get; set; }
+}
+
+using var history = new History();
+var document = new CollectionDocument(history);
+
+document.Items.Add("A");
+document.Items.Add("B");
+
+history.Undo(); // ["A"]
+history.Redo(); // ["A", "B"]
+
+document.Items.Move(1, 0); // ["B", "A"]
+history.Undo();             // ["A", "B"]
+
+document.Items.Clear();
+history.Undo(); // ["A", "B"]
+```
+
+The main operations and notifications are:
 
 | Operation | Initial notification | Undo notification | Redo notification |
 | --- | --- | --- | --- |
@@ -180,6 +219,36 @@ Collections observed through `INotifyCollectionChanged` can participate in undo/
 | `ClearEx(history)` | one `Remove` per item | one `Add` per item | one `Remove` per item |
 
 `ClearEx`, `UnionWithEx`, `IntersectWithEx`, `ExceptWithEx`, `SymmetricExceptWithEx`, and `RemoveWhereEx` can explicitly record changes even when the collection is not currently assigned to an observed property.
+
+```cs
+var values = new List<int> { 1, 2, 3 };
+
+values.ClearEx(history);
+// values == []
+
+history.Undo();
+// values == [1, 2, 3]
+
+history.Redo();
+// values == []
+```
+
+Set operations can also be recorded as a single undo/redo action.
+
+```cs
+using Jewelry.Collections;
+
+var values = new ObservableHashSet<int>([10]);
+
+values.UnionWithEx([20, 30], history);
+// values == [10, 20, 30]
+
+history.Undo();
+// values == [10]
+
+history.Redo();
+// values == [10, 20, 30]
+```
 
 ## Limiting history
 
