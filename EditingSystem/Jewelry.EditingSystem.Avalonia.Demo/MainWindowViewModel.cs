@@ -68,7 +68,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         get;
         set
         {
-            value = Math.Clamp(value, 0.0, 1.0);
+            value = Math.Clamp(value, 0d, 1d);
             var changed = SetProperty(ref field, value);
             if (_isRefreshingInspector || (!changed && !HasMixedOpacity))
                 return;
@@ -76,7 +76,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             ApplyToSelection(item => item.Opacity = value);
             HasMixedOpacity = false;
         }
-    } = 1.0;
+    } = 1d;
 
     public MainWindowViewModel()
     {
@@ -86,9 +86,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             // but keep all startup state out of the undo history.
             Objects =
             [
-                CreateObject(80, 70, 150, 100),
-                CreateObject(320, 150, 170, 110),
-                CreateObject(170, 330, 140, 120)
+                CreateObject(80d, 70d, 150d, 100d),
+                CreateObject(320d, 150d, 170d, 110d),
+                CreateObject(170d, 330d, 140d, 120d)
             ];
         }
 
