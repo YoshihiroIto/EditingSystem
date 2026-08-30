@@ -21,8 +21,8 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
 
     private static readonly DiagnosticDescriptor MissingObservableProperty = new(
         "JESCT001",
-        "Undoable requires ObservableProperty",
-        "'{0}' must also be annotated with ObservablePropertyAttribute",
+        "CommunityToolkit.Mvvm Undoable requires ObservableProperty",
+        "CommunityToolkit.Mvvm integration requires '{0}' to also be annotated with ObservablePropertyAttribute; for standalone [Undoable] properties, use Jewelry.EditingSystem.Annotations.UndoableAttribute",
         "Jewelry.EditingSystem.CommunityToolkit.Mvvm",
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
