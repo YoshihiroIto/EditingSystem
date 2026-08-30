@@ -13,9 +13,11 @@ public sealed partial class MainWindow : Window
     private readonly Dictionary<DemoObject, Point> _moveStartPositions = [];
     private Point _pointerStart;
     private Control? _capturedControl;
+    private DemoObject? _pointerOperationObject;
     private DemoObject? _resizeObject;
     private ResizeDirection _resizeDirection;
     private Rect _resizeStartBounds;
+    private bool _pointerContinuousEdit;
     private bool _inspectorContinuousEdit;
 
     public MainWindow()
@@ -59,16 +61,7 @@ public sealed partial class MainWindow : Window
 
         if ((e.KeyModifiers & KeyModifiers.Control) is not 0)
         {
-            var isSelecting = !item.IsSelected;
             ViewModel.ToggleSelection(item);
-
-            if (isSelecting)
-            {
-                ViewModel.BeginContinuousEdit();
-                ViewModel.BringToFront(item);
-                ViewModel.EndContinuousEdit();
-            }
-
             e.Handled = true;
             return;
         }
@@ -81,8 +74,7 @@ public sealed partial class MainWindow : Window
         foreach (var selected in ViewModel.GetSelectedObjects())
             _moveStartPositions[selected] = new Point(selected.X, selected.Y);
 
-        ViewModel.BeginContinuousEdit();
-        ViewModel.BringToFront(item);
+        _pointerOperationObject = item;
         _capturedControl = control;
         e.Pointer.Capture(EditorSurface);
         e.Handled = true;
@@ -99,6 +91,10 @@ public sealed partial class MainWindow : Window
         }
 
         var delta = e.GetPosition(EditorSurface) - _pointerStart;
+        if (delta.X == 0d && delta.Y == 0d)
+            return;
+
+        EnsurePointerContinuousEdit();
         foreach (var (item, start) in _moveStartPositions)
         {
             item.X = start.X + delta.X;
@@ -130,9 +126,7 @@ public sealed partial class MainWindow : Window
         _resizeDirection = direction;
         _resizeStartBounds = new Rect(item.X, item.Y, item.Width, item.Height);
         _pointerStart = e.GetPosition(EditorSurface);
-
-        ViewModel.BeginContinuousEdit();
-        ViewModel.BringToFront(item);
+        _pointerOperationObject = item;
         _capturedControl = control;
         e.Pointer.Capture(EditorSurface);
         e.Handled = true;
@@ -149,6 +143,10 @@ public sealed partial class MainWindow : Window
         }
 
         var delta = e.GetPosition(EditorSurface) - _pointerStart;
+        if (delta.X == 0d && delta.Y == 0d)
+            return;
+
+        EnsurePointerContinuousEdit();
         ApplyResize(_resizeObject, _resizeDirection, _resizeStartBounds, delta);
         e.Handled = true;
     }
@@ -174,6 +172,17 @@ public sealed partial class MainWindow : Window
     {
         if (_capturedControl is not null)
             CompletePointerOperation();
+    }
+
+    private void EnsurePointerContinuousEdit()
+    {
+        if (_pointerContinuousEdit)
+            return;
+
+        ViewModel.BeginContinuousEdit();
+        if (_pointerOperationObject is not null)
+            ViewModel.BringToFront(_pointerOperationObject);
+        _pointerContinuousEdit = true;
     }
 
     private static void ApplyResize(DemoObject item, ResizeDirection direction, Rect start, Vector delta)
@@ -258,7 +267,13 @@ public sealed partial class MainWindow : Window
     {
         _capturedControl = null;
         _moveStartPositions.Clear();
+        _pointerOperationObject = null;
         _resizeObject = null;
-        ViewModel.EndContinuousEdit();
+
+        if (_pointerContinuousEdit)
+        {
+            _pointerContinuousEdit = false;
+            ViewModel.EndContinuousEdit();
+        }
     }
 }
