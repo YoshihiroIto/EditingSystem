@@ -4,7 +4,7 @@
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
-JESCT001 | Jewelry.EditingSystem.CommunityToolkit.Mvvm | Error | Undoable requires ObservableProperty
+JESCT001 | Jewelry.EditingSystem.CommunityToolkit.Mvvm | Error | CommunityToolkit.Mvvm Undoable requires ObservableProperty; use Jewelry.EditingSystem.Annotations.UndoableAttribute for standalone Undoable properties
 JESCT002 | Jewelry.EditingSystem.CommunityToolkit.Mvvm | Error | Unsupported undoable target
 JESCT003 | Jewelry.EditingSystem.CommunityToolkit.Mvvm | Error | EditingHistory configuration is required
 JESCT004 | Jewelry.EditingSystem.CommunityToolkit.Mvvm | Error | Invalid editing history member
