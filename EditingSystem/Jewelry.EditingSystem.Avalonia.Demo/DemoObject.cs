@@ -1,4 +1,5 @@
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Jewelry.EditingSystem.CommunityToolkit.Mvvm;
 
@@ -46,7 +47,7 @@ public sealed partial class DemoObject(
     [ObservableProperty]
     public partial bool IsSelected { get; set; }
 
-    public IBrush Brush => new SolidColorBrush(Color);
+    public IBrush Brush => new ImmutableSolidColorBrush(Color);
 
     partial void OnColorChanged(Color oldValue, Color newValue)
         => OnPropertyChanged(nameof(Brush));
