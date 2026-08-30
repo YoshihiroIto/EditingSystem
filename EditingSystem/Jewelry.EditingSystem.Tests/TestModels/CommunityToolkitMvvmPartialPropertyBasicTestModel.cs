@@ -18,28 +18,22 @@ public sealed partial class CommunityToolkitMvvmPartialPropertyBasicTestModel : 
 
     public int ChangingCount { get; private set; }
 
-    [Undoable]
-    [ObservableProperty]
+    [Undoable, ObservableProperty]
     public partial int IntValue { get; set; }
 
-    [Undoable]
-    [ObservableProperty]
+    [Undoable, ObservableProperty]
     public partial string StringValue { get; set; } = "";
 
-    [Undoable]
-    [ObservableProperty]
+    [Undoable, ObservableProperty]
     public partial ObservableCollection<int> IntCollection { get; set; } = new();
 
-    [Undoable]
-    [ObservableProperty]
+    [Undoable, ObservableProperty]
     public partial ObservableCollection<CollectionItem> Collection { get; set; } = new();
 
-    [Undoable]
-    [ObservableProperty]
+    [Undoable, ObservableProperty]
     public partial ObservableHashSet<int> IntSet { get; set; } = new();
 
-    [Undoable]
-    [ObservableProperty]
+    [Undoable, ObservableProperty]
     public partial ObservableDictionary<string, int> IntDictionary { get; set; } = new();
 
     partial void OnIntValueChanged(int oldValue, int newValue) => ++ChangingCount;

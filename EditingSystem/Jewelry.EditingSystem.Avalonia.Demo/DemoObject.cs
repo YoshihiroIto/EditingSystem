@@ -16,32 +16,25 @@ public sealed partial class DemoObject(
     Color color)
     : ObservableObject
 {
-    [ObservableProperty]
-    [Undoable]
+    [Undoable, ObservableProperty]
     public partial string Name { get; set; } = name;
 
-    [ObservableProperty]
-    [Undoable]
+    [Undoable, ObservableProperty]
     public partial double X { get; set; } = x;
 
-    [ObservableProperty]
-    [Undoable]
+    [Undoable, ObservableProperty]
     public partial double Y { get; set; } = y;
 
-    [ObservableProperty]
-    [Undoable]
+    [Undoable, ObservableProperty]
     public partial double Width { get; set; } = width;
 
-    [ObservableProperty]
-    [Undoable]
+    [Undoable, ObservableProperty]
     public partial double Height { get; set; } = height;
 
-    [ObservableProperty]
-    [Undoable]
+    [Undoable, ObservableProperty]
     public partial Color Color { get; set; } = color;
 
-    [ObservableProperty]
-    [Undoable]
+    [Undoable, ObservableProperty]
     public partial double Opacity { get; set; } = 1d;
 
     [ObservableProperty]

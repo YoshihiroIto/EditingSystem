@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
@@ -19,7 +19,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    
+    <ProjectReference Include="..\Jewelry.EditingSystem.SourceGenerators\Jewelry.EditingSystem.SourceGenerators.csproj">
+      <OutputItemType>Analyzer</OutputItemType>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
     <ProjectReference Include="..\Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators\Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators.csproj">
       <OutputItemType>Analyzer</OutputItemType>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

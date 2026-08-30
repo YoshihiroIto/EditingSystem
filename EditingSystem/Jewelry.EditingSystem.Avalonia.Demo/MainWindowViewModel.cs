@@ -28,8 +28,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private bool _isContinuousEdit;
     private int _nextObjectId = 1;
 
-    [ObservableProperty]
-    [Undoable]
+    [Undoable, ObservableProperty]
     public partial ObservableCollection<DemoObject> Objects { get; set; }
 
     [ObservableProperty]

@@ -16,6 +16,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Jewelry.EditingSystem\Jewelry.EditingSystem.csproj" />
     <ProjectReference Include="..\Jewelry.EditingSystem.CommunityToolkit.Mvvm\Jewelry.EditingSystem.CommunityToolkit.Mvvm.csproj" />
+    <ProjectReference Include="..\Jewelry.EditingSystem.SourceGenerators\Jewelry.EditingSystem.SourceGenerators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators\Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />

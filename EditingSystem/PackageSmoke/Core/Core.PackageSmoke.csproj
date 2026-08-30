@@ -6,10 +6,10 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <RestorePackagesPath>$(BaseIntermediateOutputPath)packages</RestorePackagesPath>
-    <RestoreAdditionalProjectSources>$(MSBuildThisFileDirectory)..\..\Jewelry.EditingSystem\bin\Release;$(MSBuildThisFileDirectory)..\..\Jewelry.EditingSystem.CommunityToolkit.Mvvm\bin\Release</RestoreAdditionalProjectSources>
+    <RestoreAdditionalProjectSources>$(MSBuildThisFileDirectory)..\..\Jewelry.EditingSystem\bin\Release</RestoreAdditionalProjectSources>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Jewelry.EditingSystem.CommunityToolkit.Mvvm" Version="1.1.0" />
+    <PackageReference Include="Jewelry.EditingSystem" Version="2.3.0" />
   </ItemGroup>
 </Project>

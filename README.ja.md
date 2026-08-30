@@ -1,30 +1,96 @@
 # EditingSystem
-[![Biaui NuGet package](https://img.shields.io/nuget/v/Jewelry.EditingSystem)](https://www.nuget.org/packages/Jewelry.EditingSystem) [![Build status](https://ci.appveyor.com/api/projects/status/x42th0lpkuldqhg8?svg=true)](https://ci.appveyor.com/project/YoshihiroIto/editingsystem) [![MIT License](http://img.shields.io/badge/license-MIT-lightgray)](LICENSE)  
+
+[![Biaui NuGet package](https://img.shields.io/nuget/v/Jewelry.EditingSystem)](https://www.nuget.org/packages/Jewelry.EditingSystem) [![Build status](https://ci.appveyor.com/api/projects/status/x42th0lpkuldqhg8?svg=true)](https://ci.appveyor.com/project/YoshihiroIto/editingsystem) [![MIT License](http://img.shields.io/badge/license-MIT-lightgray)](LICENSE)
 
 [English](README.md)
 
-.NET 向けの使いやすい Undo/Redo システムです。
-
-## Avalonia デモ
-
-[`EditingSystem/Jewelry.EditingSystem.Avalonia.Demo`](EditingSystem/Jewelry.EditingSystem.Avalonia.Demo) に Avalonia のデモを用意しています。EditingSystem と CommunityToolkit.Mvvm をアプリへ組み込む際のコード量や、Undo/Redo、`Batch`、`CoalescingBatch`、複数オブジェクトの移動・リサイズ・プロパティ編集、Z-order 変更に使う `ObservableCollection<T>.Move` の Undo/Redo などを、実際の操作とコードから確認できます。
-
-![demo](demo00.png)
+.NET 向けの Undo/Redo ライブラリです。通常のプロパティ編集、連続編集、バッチ処理、コレクション変更を同じ `History` で扱えます。実行時リフレクションに依存せず、NativeAOT に対応しています。
 
 ## インストール
-```
+
+```text
 PM> Install-Package Jewelry.EditingSystem
 ```
 
-### CommunityToolkit.Mvvm との連携
+## 基本パターン: `[Undoable]`
 
-`CommunityToolkit.Mvvm` によって生成された Observable プロパティも編集履歴の対象にしたい場合は、連携パッケージをインストールしてください。
+通常は、Undo/Redo したいプロパティを C# の partial プロパティとして宣言し、`[Undoable]` を付けます。
+
+```cs
+using Jewelry.EditingSystem;
+using Jewelry.EditingSystem.Annotations;
+
+[EditingHistory(nameof(history))]
+public sealed partial class Document(History history)
+{
+    [Undoable]
+    public partial string? Name { get; set; }
+
+    [Undoable]
+    public partial double X { get; set; }
+
+    [Undoable]
+    public partial double Y { get; set; }
+}
+```
+
+Source Generator がプロパティの実装と履歴登録コードを生成します。
+
+```cs
+using var history = new History();
+var document = new Document(history);
+
+document.X = 100;
+document.X = 200;
+
+history.Undo(); // X == 100
+history.Undo(); // X == 0
+history.Redo(); // X == 100
+```
+
+`EditingHistory` には、非 null の `History` フィールド、プロパティ、または primary constructor parameter を指定できます。
+
+### `INotifyPropertyChanged` との同時利用
+
+`[Undoable]` は `INotifyPropertyChanged` を必須にしません。ただし対象型が `INotifyPropertyChanged` を実装している場合は、Source Generator が通知経路をコンパイル時に解決し、通常変更・Undo・Redo のすべてで `PropertyChanged` を発生させます。
+
+```cs
+using System.ComponentModel;
+using Jewelry.EditingSystem;
+using Jewelry.EditingSystem.Annotations;
+
+[EditingHistory(nameof(history))]
+public sealed partial class Document(History history) : INotifyPropertyChanged
+{
+    [Undoable]
+    public partial string? Name { get; set; }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void OnPropertyChanged(string propertyName)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+}
+```
+
+通知方法は次の順で探索します。
+
+1. アクセス可能な `RaisePropertyChanged(string)`
+2. アクセス可能な `OnPropertyChanged(string)`
+3. アクセス可能な `RaisePropertyChanged(PropertyChangedEventArgs)`
+4. アクセス可能な `OnPropertyChanged(PropertyChangedEventArgs)`
+5. 対象 partial class 自身が宣言している `PropertyChanged` event
+
+基底クラス上の `protected` 通知メソッドも対象です。アクセシビリティは Roslyn がコンパイル時に判定します。`INotifyPropertyChanged` を実装しているのに通知経路を解決できない場合、Undo/Redo は有効なまま `JES005` warning を報告します。
+
+## CommunityToolkit.Mvvm との連携
+
+CommunityToolkit.Mvvm との連携は主要な利用方法の一つです。従来の使用方法はそのまま利用できます。
 
 ```text
 PM> Install-Package Jewelry.EditingSystem.CommunityToolkit.Mvvm
 ```
-
-partial ViewModel に対して履歴を一度設定し、Undo 可能にしたい各 Observable プロパティに属性を付けます。フィールド宣言と C# 13 の partial プロパティ宣言の両方に対応しています。
 
 ```cs
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -41,362 +107,138 @@ public sealed partial class SampleViewModel : ObservableObject
         _history = history;
     }
 
-    [ObservableProperty]
-    [Undoable]
+    [Undoable, ObservableProperty]
     private string? name;
 
-    [ObservableProperty]
-    [Undoable]
+    [Undoable, ObservableProperty]
     public partial int Count { get; set; }
 }
 ```
 
-`ObservableObject` の継承は必須ではありません。ViewModel がすでに別の基底クラスを継承している場合は、CommunityToolkit.Mvvm の `[INotifyPropertyChanged]` 属性を使用できます。EditingSystem は変更を履歴へ記録し、Undo / Redo 時にも `PropertyChanged` 通知を維持します。
+この連携では CommunityToolkit.Mvvm が生成する setter をそのまま Undo/Redo に利用します。そのため `PropertyChanged` / `PropertyChanging`、validation、command notification、recipient broadcast など CommunityToolkit.Mvvm の setter pipeline が Undo/Redo 時にも維持されます。
+
+`ObservableObject` の継承は必須ではありません。既存の基底クラスがある場合は CommunityToolkit.Mvvm の `[INotifyPropertyChanged]` 属性も利用できます。
 
 ```cs
 [INotifyPropertyChanged]
 [EditingHistory(nameof(history))]
 public sealed partial class DerivedViewModel(History history) : ExistingViewModelBase
 {
-    [ObservableProperty]
-    [Undoable]
+    [Undoable, ObservableProperty]
     public partial int Count { get; set; }
 }
 ```
 
-1 引数版の `OnXChanging(T value)` と `OnXChanged(T value)` フックは、この連携機能によって予約されています。2 引数版の changing / changed フックはアプリケーションコードから引き続き利用できます。
+CommunityToolkit.Mvvm 連携では、1 引数版の `OnXChanging(T value)` / `OnXChanged(T value)` を EditingSystem が使用します。アプリケーション固有処理には2引数版フックを利用してください。
 
-### 安全な記録スコープ
+> `Jewelry.EditingSystem.Annotations` の属性は EditingSystem 単体の partial property 用、`Jewelry.EditingSystem.CommunityToolkit.Mvvm` の属性は CommunityToolkit.Mvvm の `[ObservableProperty]` 連携用です。既存の CommunityToolkit.Mvvm コードは変更不要です。
 
-`IDisposable` スコープを使うことで、アプリケーションコードが例外を送出した場合でも pause や batch の深さが確実に元へ戻ります。
+## Batch と連続編集
+
+複数の変更を1回の Undo として扱う場合は `Batch()` を使います。
+
+```cs
+using (history.Batch())
+{
+    document.X = 100;
+    document.Y = 200;
+}
+```
+
+スライダー、カラーピッカー、ドラッグ、3D ギズモなどの連続操作には `CoalescingBatch()` を使用します。
+
+```cs
+using (history.CoalescingBatch())
+{
+    document.X = 100;
+    document.X = 120;
+    document.X = 140;
+}
+```
+
+同じ対象・同じプロパティへの連続変更は、最初の古い値と最後の新しい値だけにまとめられます。`[Undoable]` で生成されたプロパティは対象オブジェクトとプロパティ名を自動的に履歴キーとして使用します。
+
+`Pause()` を使うと、初期値ロードなどを履歴に残さず実行できます。
 
 ```cs
 using (history.Pause())
 {
     LoadInitialValues();
 }
-
-using (history.Batch())
-{
-    model.Width = 100;
-    model.Height = 200;
-}
-
-if (history.TryUndo())
-{
-    // 1つの操作が Undo されました。
-}
 ```
 
-スライダー、カラーピッカー、3D ギズモなど、連続的な UI 操作には coalescing batch を使用します。同じオブジェクトの同じプロパティに対する連続変更では、最初の古い値と最後の新しい値だけが保持されます。異なるプロパティや異なるオブジェクトは、それぞれ独立してまとめられます。
+## Undo 可能なコレクション操作
 
-```cs
-void OnDragStarted()
-{
-    history.BeginCoalescingBatch();
-}
-
-void OnDragChanged(Color colorValue, Vector3 position1, Vector3 position2)
-{
-    // 1回のドラッグ中に繰り返し呼び出されます。
-    color.R = colorValue.R;
-    color.G = colorValue.G;
-    color.B = colorValue.B;
-
-    selectedObject1.Position = position1;
-    selectedObject2.Position = position2;
-}
-
-void OnDragCompleted()
-{
-    history.EndCoalescingBatch();
-}
-
-// 同等のスコープ形式:
-using (history.CoalescingBatch())
-{
-    ApplyContinuousChanges();
-}
-```
-
-途中の値は引き続き即座に適用されますが、Undo / Redo 時には最終的に得られた各プロパティ値がそれぞれ 1 回だけ適用されます。最終値が初期値と同じになったプロパティについては、履歴エントリは作成されません。
-
-コレクション変更や明示的な `Push` 呼び出しなど、プロパティ変更以外のアクションは順序上の境界として扱われます。そのため、境界をまたいで同じプロパティが変更された場合、それらは別々の変更として保持されます。
-
-`EditableModelBase`、direct-mode の `SetEditableProperty`、CommunityToolkit.Mvvm 連携では、プロパティキーが自動的に提供されます。`History` を直接使って変更を記録するコードでは、対象オブジェクトとプロパティ名を指定するオーバーロードを使用してください。
-
-```cs
-history.RecordAppliedPropertyChange(
-    this,
-    nameof(Value),
-    value => Value = value,
-    oldValue,
-    newValue);
-```
-
-通常の batch と coalescing batch を互いにネストすることはできません。同種の通常 batch 同士、または同種の coalescing batch 同士のネストには対応しています。すべての中間操作とその順序をそのまま再生する必要がある場合は通常の `Batch` を、連続的なプロパティ編集には `CoalescingBatch` を使用してください。
-
-長時間動作するエディターでは、デフォルトの無制限動作を変えることなく、保持する履歴数に上限を設定できます。
-
-```cs
-history.MaxUndoCount = 500;
-```
-
-### Undo 可能なコレクション操作
-
-編集可能なコレクションプロパティに設定されたコレクションへの変更は、自動的に記録されます。`ObservableCollection<T>` では、通常の insert、remove、move 操作について、Undo / Redo 時にも差分通知が維持されます。
+`History` が監視している `INotifyCollectionChanged` コレクションは、要素操作も Undo/Redo できます。
 
 | 操作 | 初回通知 | Undo 通知 | Redo 通知 |
 | --- | --- | --- | --- |
 | `Add` / `Insert` | `Add` | `Remove` | `Add` |
 | `Remove` / `RemoveAt` | `Remove` | `Add` | `Remove` |
 | `Move` | `Move` | `Move` | `Move` |
-| `Clear` | `Reset` | 要素ごとに 1 回の `Add` | 要素ごとに 1 回の `Remove` |
-| `ClearEx(history)` | 要素ごとに 1 回の `Remove` | 要素ごとに 1 回の `Add` | 要素ごとに 1 回の `Remove` |
+| `Clear` | `Reset` | 要素ごとに `Add` | 要素ごとに `Remove` |
+| `ClearEx(history)` | 要素ごとに `Remove` | 要素ごとに `Add` | 要素ごとに `Remove` |
 
-`ObservableCollection<T>.Clear()` は、最初に呼び出された時点で必ず `Reset` を通知します。EditingSystem はこの最初の通知を防ぐことはできませんが、Undo / Redo では要素単位で差分再生するため、追加の `Reset` は発生しません。
+`ClearEx`、`UnionWithEx`、`IntersectWithEx`、`ExceptWithEx`、`SymmetricExceptWithEx`、`RemoveWhereEx` は、コレクションプロパティとして監視されていない場合でも明示的に `History` へ記録できます。
 
-バインドされたコントロールに `Reset` を受け取らせたくない場合は `ClearEx` を使用してください。たとえば、`Reset` によって WPF の `ListBox` 全体が再描画されることを避けたい場合に有効です。`ClearEx` は要素ごとに `Remove` 通知を発生させますが、クリア操作全体は 1 つの Undo 操作として記録されます。
+## 履歴数の制限
+
+デフォルトでは履歴数に上限はありません。長時間動作するエディターでは上限を設定できます。
 
 ```cs
-model.IntCollection.ClearEx(history);
-history.Undo(); // Add 通知で要素を復元します。Reset は発生しません。
-history.Redo(); // Remove 通知で要素を削除します。Reset は発生しません。
+history.MaxUndoCount = 500;
 ```
 
-`Clear` は、対象コレクションがすでに `History` によって監視されている場合にのみ Undo 可能です。一方 `ClearEx` は、編集可能なプロパティに設定されていないコレクションに対しても使用できます。その代わり、大きなコレクションでは単一の `Reset` ではなく要素ごとに 1 回の通知が発生します。
+## 手書き方式: 低レベル・オプション API
 
-`UnionWithEx`、`IntersectWithEx`、`ExceptWithEx`、`SymmetricExceptWithEx`、`RemoveWhereEx` も同様に、1 つの Undo 操作を直接記録し、監視対象プロパティに設定されていないコレクションでも使用できます。
+`[Undoable]` を基本パターンとして推奨します。
 
-## 使用例
-
-```cs
-using Jewelry.EditingSystem;
-
-public class TestModel : EditableModelBase
-{
-    public TestModel(History history) : base(history)
-    {
-    }
-
-    #region IntValue
-
-    private int _IntValue;
-
-    public int IntValue
-    {
-        get => _IntValue;
-        set => SetEditableProperty(v => _IntValue = v, _IntValue, value);
-    }
-
-    #endregion
-
-
-    #region IntCollection
-
-    private ObservableCollection<int> _IntCollection = new();
-
-    public ObservableCollection<int> IntCollection
-    {
-        get => _IntCollection;
-        set => SetEditableProperty(v => _IntCollection = v, _IntCollection, value);
-    }
-
-    #endregion
-}
-
-public void Basic()
-{
-    using var history = new History();
-    var model = new TestModel(history);
-
-
-
-    model.IntValue = 123;
-    model.IntValue = 456;
-    model.IntValue = 789;
-
-
-
-    history.Undo();
-    Assert.Equal(456, model.IntValue);
-
-    history.Undo();
-    Assert.Equal(123, model.IntValue);
-
-    history.Undo();
-    Assert.Equal(0, model.IntValue);
-
-
-
-    history.Redo();
-    Assert.Equal(123, model.IntValue);
-
-    history.Redo();
-    Assert.Equal(456, model.IntValue);
-
-    history.Redo();
-    Assert.Equal(789, model.IntValue);
-}
-
-public void Collection()
-{
-    using var history = new History();
-    var model = new TestModel(history);
-
-    model.IntCollection = new ObservableCollection<int>();
-
-
-
-    model.IntCollection.Add(100);
-    model.IntCollection.Add(101);
-    model.IntCollection.Add(102);
-    model.IntCollection.Add(103);
-
-
-
-    model.IntCollection.RemoveAt(3);
-    Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102}));
-
-
-
-    history.Undo();
-    Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
-
-
-
-    history.Redo();
-    Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102}));
-}
-
-```
-
-### 通常の INotifyPropertyChanged オブジェクトのサポート
-
-`INotifyPropertyChanged` を実装したオブジェクトでも、実装方法を問わず利用できます。
+既存コードとの統合や、setter の制御を完全にアプリケーション側で持ちたい場合は、従来の `EditableModelBase` / `SetEditableProperty` / `RecordPropertyChange` / `RecordAppliedPropertyChange` も引き続き利用できます。
 
 ```cs
-public sealed class TestModel : INotifyPropertyChanged
+public sealed class ManualModel : EditableModelBase
 {
-    private readonly History _history;
+    private int _value;
 
-    public TestModel(History history)
+    public ManualModel(History history) : base(history)
     {
-        _history = history;
-    }
-    
-    #region IntValue
-
-    private int _IntValue;
-
-    public int IntValue
-    {
-        get => _IntValue;
-        set => this.SetEditableProperty(_history, v => SetField(ref _IntValue, v), _IntValue, value);
     }
 
-    #endregion
-
-    #region IntCollection
-
-    private ObservableCollection<int> _IntCollection = new();
-
-    public ObservableCollection<int> IntCollection
+    public int Value
     {
-        get => _IntCollection;
-        set => this.SetEditableProperty(_history, v => SetField(ref _IntCollection, v), _IntCollection, value);
+        get => _value;
+        set => SetEditableProperty(v => _value = v, _value, value);
     }
-
-    #endregion
-
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-
-    private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
-    {
-        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
-        field = value;
-        OnPropertyChanged(propertyName);
-        return true;
-    }
-}
-
-public void Basic()
-{
-    using var history = new History();
-    var model = new TestModel(history);
-
-
-
-    model.IntValue = 123;
-    model.IntValue = 456;
-    model.IntValue = 789;
-
-
-
-    history.Undo();
-    Assert.Equal(456, model.IntValue);
-
-    history.Undo();
-    Assert.Equal(123, model.IntValue);
-
-    history.Undo();
-    Assert.Equal(0, model.IntValue);
-
-
-
-    history.Redo();
-    Assert.Equal(123, model.IntValue);
-
-    history.Redo();
-    Assert.Equal(456, model.IntValue);
-
-    history.Redo();
-    Assert.Equal(789, model.IntValue);
-}
-
-public void Collection()
-{
-    using var history = new History();
-    var model = new TestModel(history);
-
-    model.IntCollection = new ObservableCollection<int>();
-
-
-
-    model.IntCollection.Add(100);
-    model.IntCollection.Add(101);
-    model.IntCollection.Add(102);
-    model.IntCollection.Add(103);
-
-
-
-    model.IntCollection.RemoveAt(3);
-    Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102}));
-
-
-
-    history.Undo();
-    Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102, 103}));
-
-
-
-    history.Redo();
-    Assert.True(model.IntCollection.SequenceEqual(new[] {100, 101, 102}));
 }
 ```
 
-## 作者
+この手書き方式は互換性のため維持しますが、一般的なプロパティでは `[Undoable]` の利用を優先してください。
+
+## Source Generator と NativeAOT
+
+`[Undoable]` の以下の処理はすべてコンパイル時に解決されます。
+
+- `History` メンバーの解決
+- partial property の実装生成
+- `INotifyPropertyChanged` 実装判定
+- 通知メソッドの継承階層探索
+- 通知メソッドのアクセシビリティ判定
+- Undo/Redo setter の生成
+
+実行時リフレクションや動的コード生成は使用しません。
+
+## Avalonia デモ
+
+[`EditingSystem/Jewelry.EditingSystem.Avalonia.Demo`](EditingSystem/Jewelry.EditingSystem.Avalonia.Demo) に Avalonia 12 のデモがあります。CommunityToolkit.Mvvm 連携、Undo/Redo、`Batch`、`CoalescingBatch`、複数オブジェクト編集、Z-order の Undo/Redo などを確認できます。
+
+![demo](demo00.png)
+
+## Author
 
 Yoshihiro Ito  
 Twitter: [https://twitter.com/yoiyoi322](https://twitter.com/yoiyoi322)  
-Email: yo.i.jewelry.bab@gmail.com  
+Email: yo.i.jewelry.bab@gmail.com
 
-## ライセンス
+## License
 
 MIT

@@ -24,11 +24,9 @@ if (model.Name != "field" || model.Count != 42)
 [EditingHistory(nameof(history))]
 internal sealed partial class PackageModel(History history) : ObservableObject
 {
-    [ObservableProperty]
-    [Undoable]
+    [Undoable, ObservableProperty]
     public partial string? Name { get; set; }
 
-    [ObservableProperty]
-    [Undoable]
+    [Undoable, ObservableProperty]
     public partial int Count { get; set; }
 }
