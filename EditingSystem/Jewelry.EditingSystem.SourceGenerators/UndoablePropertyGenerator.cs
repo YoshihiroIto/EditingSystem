@@ -12,6 +12,7 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
 {
     private const string UndoableAttributeName = "Jewelry.EditingSystem.Annotations.UndoableAttribute";
     private const string EditingHistoryAttributeName = "Jewelry.EditingSystem.Annotations.EditingHistoryAttribute";
+    private const string EditingPropertyChangedAttributeName = "Jewelry.EditingSystem.Annotations.EditingPropertyChangedAttribute";
     private const string HistoryTypeName = "Jewelry.EditingSystem.History";
     private const string NotifyPropertyChangedTypeName = "System.ComponentModel.INotifyPropertyChanged";
     private const string PropertyChangedEventHandlerTypeName = "System.ComponentModel.PropertyChangedEventHandler";
@@ -55,6 +56,14 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
         "Type '{0}' implements INotifyPropertyChanged, but no accessible RaisePropertyChanged/OnPropertyChanged method or locally declared PropertyChanged event was found; '{1}' remains undoable but will not raise PropertyChanged",
         "Jewelry.EditingSystem",
         DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor InvalidNotificationMethod = new(
+        "JES006",
+        "Invalid PropertyChanged notification method",
+        "EditingPropertyChanged method '{0}' on type '{1}' is invalid: {2}",
+        "Jewelry.EditingSystem",
+        DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -158,7 +167,20 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
                 containingType,
                 notifyPropertyChangedType,
                 propertyChangedEventHandlerType,
-                propertyChangedEventArgsType);
+                propertyChangedEventArgsType,
+                out var configuredNotificationName,
+                out var notificationReason);
+
+            if (notificationReason is not null)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    InvalidNotificationMethod,
+                    candidate.Location,
+                    configuredNotificationName ?? "<null>",
+                    containingType.ToDisplayString(),
+                    notificationReason));
+                continue;
+            }
 
             if (notification.Kind == NotificationKind.Unavailable)
             {
@@ -367,8 +389,13 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
         INamedTypeSymbol containingType,
         INamedTypeSymbol? notifyPropertyChangedType,
         INamedTypeSymbol? propertyChangedEventHandlerType,
-        INamedTypeSymbol? propertyChangedEventArgsType)
+        INamedTypeSymbol? propertyChangedEventArgsType,
+        out string? configuredNotificationName,
+        out string? notificationReason)
     {
+        configuredNotificationName = null;
+        notificationReason = null;
+
         if (notifyPropertyChangedType is null ||
             !containingType.AllInterfaces.Any(
                 implemented => SymbolEqualityComparer.Default.Equals(implemented, notifyPropertyChangedType)))
@@ -377,6 +404,46 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
         }
 
         var stringType = compilation.GetSpecialType(SpecialType.System_String);
+        var explicitAttribute = containingType.GetAttributes()
+            .FirstOrDefault(static attribute =>
+                attribute.AttributeClass?.ToDisplayString() == EditingPropertyChangedAttributeName);
+
+        if (explicitAttribute is not null)
+        {
+            configuredNotificationName = explicitAttribute.ConstructorArguments.Length == 1
+                ? explicitAttribute.ConstructorArguments[0].Value as string
+                : null;
+
+            if (string.IsNullOrWhiteSpace(configuredNotificationName))
+            {
+                notificationReason = "the configured method name is empty";
+                return default;
+            }
+
+            var explicitMethod = FindNotificationMethod(
+                compilation,
+                containingType,
+                configuredNotificationName!,
+                stringType);
+            if (explicitMethod is not null)
+                return new NotificationModel(NotificationKind.StringMethod, explicitMethod.Name);
+
+            if (propertyChangedEventArgsType is not null)
+            {
+                explicitMethod = FindNotificationMethod(
+                    compilation,
+                    containingType,
+                    configuredNotificationName!,
+                    propertyChangedEventArgsType);
+                if (explicitMethod is not null)
+                    return new NotificationModel(NotificationKind.EventArgsMethod, explicitMethod.Name);
+            }
+
+            notificationReason = propertyChangedEventArgsType is null
+                ? "the method must be an accessible instance void method with one string parameter"
+                : "the method must be an accessible instance void method with one string or PropertyChangedEventArgs parameter";
+            return default;
+        }
 
         var method = FindNotificationMethod(compilation, containingType, "RaisePropertyChanged", stringType);
         if (method is not null)
