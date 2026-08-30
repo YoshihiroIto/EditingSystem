@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -545,22 +545,12 @@ public class History : INotifyPropertyChanged, IDisposable
                     }
 
                     var movedItems = SnapshotItems(oldItems);
-
-                    void DoRedo()
-                    {
-                        MoveItems(sender!, list, e.OldStartingIndex, e.NewStartingIndex, movedItems.Count);
-                        NotifyCollectionItems(movedItems, CollectionItemChangedInfo.Move);
-                    }
-
-                    void DoUndo()
-                    {
-                        MoveItems(sender!, list, e.NewStartingIndex, e.OldStartingIndex, movedItems.Count);
-                        NotifyCollectionItems(movedItems, CollectionItemChangedInfo.Move);
-                    }
-
                     NotifyCollectionItems(movedItems, CollectionItemChangedInfo.Move);
-
-                    Push(DoUndo, DoRedo);
+                    PushAction(new MultiMoveHistoryAction(
+                        sender!,
+                        e.OldStartingIndex,
+                        e.NewStartingIndex,
+                        movedItems));
                     break;
                 }
 
@@ -702,30 +692,28 @@ public class History : INotifyPropertyChanged, IDisposable
         return snapshot;
     }
 
-    private static void MoveItems(
+    private static void MoveItem(
         object collectionObject,
         IList list,
         int sourceIndex,
-        int destinationIndex,
-        int count)
+        int destinationIndex)
     {
-        if (count is 1)
-        {
-            if (CollectionAdapter.TryMove(collectionObject, sourceIndex, destinationIndex))
-                return;
-
-            var item = list[sourceIndex];
-            list.RemoveAt(sourceIndex);
-            list.Insert(destinationIndex, item);
+        if (CollectionAdapter.TryMove(collectionObject, sourceIndex, destinationIndex))
             return;
-        }
 
-        var items = new List<object?>(count);
-        for (var i = 0; i < count; ++i)
-        {
-            items.Add(list[sourceIndex]);
+        var item = list[sourceIndex];
+        list.RemoveAt(sourceIndex);
+        list.Insert(destinationIndex, item);
+    }
+
+    private static void MoveItems(
+        IList list,
+        int sourceIndex,
+        int destinationIndex,
+        IReadOnlyList<object?> items)
+    {
+        for (var i = 0; i < items.Count; ++i)
             list.RemoveAt(sourceIndex);
-        }
 
         for (var i = 0; i < items.Count; ++i)
             list.Insert(destinationIndex + i, items[i]);
@@ -1066,9 +1054,25 @@ public class History : INotifyPropertyChanged, IDisposable
 
         private void Apply(int sourceIndex, int destinationIndex)
         {
-            MoveItems(collectionObject, (IList)collectionObject, sourceIndex, destinationIndex, 1);
+            MoveItem(collectionObject, (IList)collectionObject, sourceIndex, destinationIndex);
             if (movedItem is ICollectionItem collectionItem)
                 collectionItem.Changed(CollectionItemChangedInfo.Move);
+        }
+    }
+
+    private sealed class MultiMoveHistoryAction(
+        object collectionObject,
+        int oldIndex,
+        int newIndex,
+        List<object?> movedItems) : HistoryAction
+    {
+        public override void Undo() => Apply(newIndex, oldIndex);
+        public override void Redo() => Apply(oldIndex, newIndex);
+
+        private void Apply(int sourceIndex, int destinationIndex)
+        {
+            MoveItems((IList)collectionObject, sourceIndex, destinationIndex, movedItems);
+            NotifyCollectionItems(movedItems, CollectionItemChangedInfo.Move);
         }
     }
 
