@@ -1,8 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.SourceGenerators;
-using Jewelry.EditingSystem;
-using Jewelry.EditingSystem.CommunityToolkit.Mvvm;
-using Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Xunit;

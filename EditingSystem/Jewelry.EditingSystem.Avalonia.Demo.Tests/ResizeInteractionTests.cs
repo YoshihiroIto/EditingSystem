@@ -4,7 +4,6 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using Jewelry.EditingSystem.Avalonia.Demo;
 
 namespace Jewelry.EditingSystem.Avalonia.Demo.Tests;
 
@@ -20,19 +19,19 @@ public sealed class ResizeInteractionTests
             var start = GetCenterInWindow(handle, window);
             var dragPoint = start + new Vector(40, 0);
 
-            window.MouseMove(start, RawInputModifiers.None);
-            window.MouseDown(start, MouseButton.Left, RawInputModifiers.None);
+            window.MouseMove(start);
+            window.MouseDown(start, MouseButton.Left);
             Dispatcher.UIThread.RunJobs();
 
             window.MouseMove(dragPoint, RawInputModifiers.LeftMouseButton);
             Dispatcher.UIThread.RunJobs();
             Assert.True(item.Width > 150);
 
-            window.MouseUp(dragPoint, MouseButton.Left, RawInputModifiers.None);
+            window.MouseUp(dragPoint, MouseButton.Left);
             Dispatcher.UIThread.RunJobs();
 
             var widthAfterRelease = item.Width;
-            window.MouseMove(dragPoint + new Vector(40, 0), RawInputModifiers.None);
+            window.MouseMove(dragPoint + new Vector(40, 0));
             Dispatcher.UIThread.RunJobs();
 
             Assert.Equal(widthAfterRelease, item.Width);
@@ -54,8 +53,8 @@ public sealed class ResizeInteractionTests
             var start = GetCenterInWindow(handle, window);
             var dragPoint = start + new Vector(40, 0);
 
-            window.MouseMove(start, RawInputModifiers.None);
-            window.MouseDown(start, MouseButton.Left, RawInputModifiers.None);
+            window.MouseMove(start);
+            window.MouseDown(start, MouseButton.Left);
             Dispatcher.UIThread.RunJobs();
 
             window.MouseMove(dragPoint, RawInputModifiers.LeftMouseButton);
@@ -65,7 +64,7 @@ public sealed class ResizeInteractionTests
 
             // Simulate the platform no longer reporting the button as pressed even though
             // the PointerReleased event itself was missed by the resize handle.
-            window.MouseMove(dragPoint + new Vector(40, 0), RawInputModifiers.None);
+            window.MouseMove(dragPoint + new Vector(40, 0));
             Dispatcher.UIThread.RunJobs();
 
             Assert.Equal(widthWhileDragging, item.Width);

@@ -131,7 +131,7 @@ public class ObservableCollectionMoveBenchmarks
     {
         _history = new History();
         _items = new ObservableCollection<int>(Enumerable.Range(0, 1_000));
-        _history.RecordPropertyChange<ObservableCollection<int>>(static _ => { }, default!, _items);
+        _history.RecordPropertyChange(static _ => { }, null!, _items);
         _history.Clear();
     }
 

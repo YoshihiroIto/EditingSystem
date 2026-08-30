@@ -4,7 +4,6 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using Jewelry.EditingSystem.Avalonia.Demo;
 
 namespace Jewelry.EditingSystem.Avalonia.Demo.Tests;
 
@@ -24,12 +23,12 @@ public sealed class ZOrderInteractionTests
             var start = GetCenterInWindow(body, window);
             var end = start + new Vector(40, 0);
 
-            window.MouseMove(start, RawInputModifiers.None);
-            window.MouseDown(start, MouseButton.Left, RawInputModifiers.None);
+            window.MouseMove(start);
+            window.MouseDown(start, MouseButton.Left);
             Dispatcher.UIThread.RunJobs();
             window.MouseMove(end, RawInputModifiers.LeftMouseButton);
             Dispatcher.UIThread.RunJobs();
-            window.MouseUp(end, MouseButton.Left, RawInputModifiers.None);
+            window.MouseUp(end, MouseButton.Left);
             Dispatcher.UIThread.RunJobs();
 
             Assert.True(target.X > originalX);

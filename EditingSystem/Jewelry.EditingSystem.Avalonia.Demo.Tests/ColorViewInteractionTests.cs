@@ -5,7 +5,6 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using Jewelry.EditingSystem.Avalonia.Demo;
 
 namespace Jewelry.EditingSystem.Avalonia.Demo.Tests;
 
@@ -116,8 +115,8 @@ public sealed class ColorViewInteractionTests
         var point = target.TranslatePoint(localPoint, window);
         Assert.NotNull(point);
 
-        window.MouseMove(point.Value, RawInputModifiers.None);
-        window.MouseDown(point.Value, MouseButton.Left, RawInputModifiers.None);
-        window.MouseUp(point.Value, MouseButton.Left, RawInputModifiers.None);
+        window.MouseMove(point.Value);
+        window.MouseDown(point.Value, MouseButton.Left);
+        window.MouseUp(point.Value, MouseButton.Left);
     }
 }

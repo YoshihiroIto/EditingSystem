@@ -4,7 +4,6 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using Jewelry.EditingSystem.Avalonia.Demo;
 
 namespace Jewelry.EditingSystem.Avalonia.Demo.Tests;
 

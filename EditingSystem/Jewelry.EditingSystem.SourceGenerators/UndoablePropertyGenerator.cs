@@ -241,6 +241,7 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
             .OfType<PropertyDeclarationSyntax>()
             .FirstOrDefault(static syntax => syntax.Modifiers.Any(SyntaxKind.PartialKeyword))!;
 
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (declaration is null)
         {
             unsupportedReason = "the property must be declared partial";
@@ -769,16 +770,10 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
         public Location? Location { get; }
     }
 
-    private readonly struct NotificationModel
+    private readonly struct NotificationModel(NotificationKind kind, string? memberName)
     {
-        public NotificationModel(NotificationKind kind, string? memberName)
-        {
-            Kind = kind;
-            MemberName = memberName;
-        }
-
-        public NotificationKind Kind { get; }
-        public string? MemberName { get; }
+        public NotificationKind Kind { get; } = kind;
+        public string? MemberName { get; } = memberName;
         public bool RequiresEventArgs => Kind is NotificationKind.EventArgsMethod or NotificationKind.DirectEvent;
     }
 
@@ -791,47 +786,31 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
         Unavailable
     }
 
-    private readonly struct PropertyModel
+    private readonly struct PropertyModel(
+        string propertyName,
+        ITypeSymbol propertyType,
+        string modifiers,
+        string historyAccessExpression,
+        string? historyParameterName,
+        string? historyAccessorName,
+        string backingFieldName,
+        string setterFieldName,
+        string eventArgsFieldName,
+        string getAccessorModifiers,
+        string setAccessorModifiers,
+        NotificationModel notification)
     {
-        public PropertyModel(
-            string propertyName,
-            ITypeSymbol propertyType,
-            string modifiers,
-            string historyAccessExpression,
-            string? historyParameterName,
-            string? historyAccessorName,
-            string backingFieldName,
-            string setterFieldName,
-            string eventArgsFieldName,
-            string getAccessorModifiers,
-            string setAccessorModifiers,
-            NotificationModel notification)
-        {
-            PropertyName = propertyName;
-            PropertyType = propertyType;
-            Modifiers = modifiers;
-            HistoryAccessExpression = historyAccessExpression;
-            HistoryParameterName = historyParameterName;
-            HistoryAccessorName = historyAccessorName;
-            BackingFieldName = backingFieldName;
-            SetterFieldName = setterFieldName;
-            EventArgsFieldName = eventArgsFieldName;
-            GetAccessorModifiers = getAccessorModifiers;
-            SetAccessorModifiers = setAccessorModifiers;
-            Notification = notification;
-        }
-
-        public string PropertyName { get; }
-        public ITypeSymbol PropertyType { get; }
-        public string Modifiers { get; }
-        public string HistoryAccessExpression { get; }
-        public string? HistoryParameterName { get; }
-        public string? HistoryAccessorName { get; }
-        public string BackingFieldName { get; }
-        public string SetterFieldName { get; }
-        public string EventArgsFieldName { get; }
-        public string GetAccessorModifiers { get; }
-        public string SetAccessorModifiers { get; }
-        public NotificationModel Notification { get; }
+        public string PropertyName { get; } = propertyName;
+        public ITypeSymbol PropertyType { get; } = propertyType;
+        public string Modifiers { get; } = modifiers;
+        public string HistoryAccessExpression { get; } = historyAccessExpression;
+        public string? HistoryParameterName { get; } = historyParameterName;
+        public string? HistoryAccessorName { get; } = historyAccessorName;
+        public string BackingFieldName { get; } = backingFieldName;
+        public string SetterFieldName { get; } = setterFieldName;
+        public string EventArgsFieldName { get; } = eventArgsFieldName;
+        public string GetAccessorModifiers { get; } = getAccessorModifiers;
+        public string SetAccessorModifiers { get; } = setAccessorModifiers;
+        public NotificationModel Notification { get; } = notification;
     }
 }
