@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -44,6 +45,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public partial bool HasMixedOpacity { get; set; }
 
     public History History => _history;
+    public string WindowTitle => _history.IsDirty
+        ? "EditingSystem Avalonia Demo *"
+        : "EditingSystem Avalonia Demo";
+    public string SaveStateText => _history.IsDirty ? "Unsaved changes" : "Saved";
     public bool HasSelection => SelectionCount > 0;
     public bool HasSingleSelection => SelectionCount is 1;
     public bool HasMultipleSelection => SelectionCount > 1;
@@ -79,6 +84,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     public MainWindowViewModel()
     {
+        _history.PropertyChanged += HistoryOnPropertyChanged;
+
         using (_history.Pause())
         {
             // Assign through the generated property so collection change tracking is attached,
@@ -92,10 +99,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         }
 
         SelectOnly(Objects[0]);
+        _history.MarkSaved();
     }
 
     public void Dispose()
     {
+        _history.PropertyChanged -= HistoryOnPropertyChanged;
         _history.Dispose();
     }
 
@@ -143,6 +152,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _history.EndCoalescingBatch();
         _isContinuousEdit = false;
         RefreshInspector();
+    }
+
+    [RelayCommand]
+    private void MarkSaved()
+    {
+        _history.MarkSaved();
     }
 
     [RelayCommand]
@@ -326,5 +341,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             _isRefreshingInspector = false;
         }
+    }
+
+    private void HistoryOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(History.IsDirty))
+            return;
+
+        OnPropertyChanged(nameof(WindowTitle));
+        OnPropertyChanged(nameof(SaveStateText));
     }
 }

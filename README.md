@@ -239,6 +239,21 @@ using (history.Pause())
 
 `Pause()` is not a rollback mechanism. Changes made while paused remain applied, but `History` has no action with which to undo them.
 
+## Dirty state and save points
+
+`History.IsDirty` reports whether the current history position differs from the last successfully saved position. Call `MarkSaved()` only after saving succeeds:
+
+```csharp
+await SaveDocumentAsync(document);
+history.MarkSaved();
+```
+
+Immediately after `MarkSaved()`, `IsDirty` is false. A subsequent edit makes it true; undoing exactly back to the saved position makes it false, and redoing away from that position makes it true again. Changes recorded inside a batch become dirty when the outermost batch ends; transaction changes become dirty only after the outermost transaction commits. Empty operations and rolled-back transactions do not change the dirty state.
+
+Use `MarkDirty()` for changes that are not represented by undo history, such as an external document-side effect. This explicit dirty state remains true across Undo/Redo until `MarkSaved()` is called. `Clear()` only discards Undo/Redo entries and does not imply that the document was saved. Changes made during `Pause()` are intentionally excluded from both history and automatic dirty tracking.
+
+`History` raises `PropertyChanged` for `IsDirty` only when the value changes. `MarkSaved()` cannot be called while a batch or transaction is active.
+
 ## Undoable collection operations
 
 Collections observed through `INotifyCollectionChanged` can participate in undo/redo. Assigning a collection to an `[Undoable]` property automatically attaches collection-change tracking.

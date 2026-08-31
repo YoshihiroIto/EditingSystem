@@ -26,12 +26,26 @@ static void RunHistorySmoke()
 {
     using var history = new History { MaxUndoCount = 8 };
     var value = 0;
+    Assert(!history.IsDirty, "New history was dirty.");
     history.Push(() => value = 0, () => value = 1);
     value = 1;
+    Assert(history.IsDirty, "Recorded change did not mark history dirty.");
+    history.MarkSaved();
+    Assert(!history.IsDirty, "MarkSaved did not mark history clean.");
+    history.Push(() => value = 1, () => value = 2);
+    value = 2;
+    Assert(history.IsDirty, "Change after MarkSaved did not mark history dirty.");
     history.Undo();
-    Assert(value == 0, "History.Undo failed.");
+    Assert(value == 1, "History.Undo failed.");
+    Assert(!history.IsDirty, "Undo to the saved position did not mark history clean.");
     history.Redo();
-    Assert(value == 1, "History.Redo failed.");
+    Assert(value == 2, "History.Redo failed.");
+    Assert(history.IsDirty, "Redo away from the saved position did not mark history dirty.");
+    history.MarkDirty();
+    history.Undo();
+    Assert(history.IsDirty, "Undo cleared an explicitly marked dirty state.");
+    history.MarkSaved();
+    Assert(!history.IsDirty, "MarkSaved did not clear an explicitly marked dirty state.");
 }
 
 static void RunEditableModelSmoke()

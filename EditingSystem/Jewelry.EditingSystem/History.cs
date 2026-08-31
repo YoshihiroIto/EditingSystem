@@ -17,6 +17,11 @@ public class History : INotifyPropertyChanged, IDisposable
     public int UndoCount => _undoStack.Count;
     public int RedoCount => _redoStack.Count;
 
+    /// <summary>
+    /// Gets whether the current state differs from the last state recorded by <see cref="MarkSaved"/>.
+    /// </summary>
+    public bool IsDirty => _isManuallyDirty || _currentStateId != _savedStateId;
+
     public int MaxUndoCount
     {
         get;
@@ -29,13 +34,14 @@ public class History : INotifyPropertyChanged, IDisposable
 
             var currentFlags = CanUndoRedoClear;
             var currentUndoRedoCount = UndoRedoCount;
+            var wasDirty = IsDirty;
 
             field = value;
             _undoStack.TrimOldest(value);
             _redoStack.TrimOldest(value);
 
             PropertyChanged?.Invoke(this, MaxUndoCountArgs);
-            InvokePropertyChanged(currentFlags, currentUndoRedoCount);
+            InvokePropertyChanged(currentFlags, currentUndoRedoCount, wasDirty);
         }
     } = int.MaxValue;
 
@@ -146,6 +152,31 @@ public class History : INotifyPropertyChanged, IDisposable
     }
 
     /// <summary>
+    /// Records the current history position as the successfully saved state.
+    /// </summary>
+    public void MarkSaved()
+    {
+        ThrowIfInTransaction(nameof(MarkSaved));
+        if (IsInBatch)
+            throw new InvalidOperationException("Can't mark history as saved during batch recording.");
+
+        var wasDirty = IsDirty;
+        _savedStateId = _currentStateId;
+        _isManuallyDirty = false;
+        NotifyDirtyChanged(wasDirty);
+    }
+
+    /// <summary>
+    /// Marks an untracked change as unsaved. Undo and redo do not clear this state.
+    /// </summary>
+    public void MarkDirty()
+    {
+        var wasDirty = IsDirty;
+        _isManuallyDirty = true;
+        NotifyDirtyChanged(wasDirty);
+    }
+
+    /// <summary>
     /// Begins a transaction. Dispose the returned scope without committing it to roll back all
     /// changes recorded by this transaction.
     /// </summary>
@@ -248,6 +279,7 @@ public class History : INotifyPropertyChanged, IDisposable
 
         var currentFlags = CanUndoRedoClear;
         var currentUndoRedoCount = UndoRedoCount;
+        var wasDirty = IsDirty;
 
         var action = _undoStack.Pop();
 
@@ -255,6 +287,7 @@ public class History : INotifyPropertyChanged, IDisposable
         {
             IsInUndoing = true;
             action.Undo();
+            _currentStateId = action.BeforeStateId;
         }
         catch
         {
@@ -268,7 +301,7 @@ public class History : INotifyPropertyChanged, IDisposable
 
         _redoStack.Push(action, MaxUndoCount);
 
-        InvokePropertyChanged(currentFlags, currentUndoRedoCount);
+        InvokePropertyChanged(currentFlags, currentUndoRedoCount, wasDirty);
     }
 
     public bool TryUndo()
@@ -297,6 +330,7 @@ public class History : INotifyPropertyChanged, IDisposable
 
         var currentFlags = CanUndoRedoClear;
         var currentUndoRedoCount = UndoRedoCount;
+        var wasDirty = IsDirty;
 
         var action = _redoStack.Pop();
 
@@ -304,6 +338,7 @@ public class History : INotifyPropertyChanged, IDisposable
         {
             IsInUndoing = true;
             action.Redo();
+            _currentStateId = action.AfterStateId;
         }
         catch
         {
@@ -317,7 +352,7 @@ public class History : INotifyPropertyChanged, IDisposable
 
         _undoStack.Push(action, MaxUndoCount);
 
-        InvokePropertyChanged(currentFlags, currentUndoRedoCount);
+        InvokePropertyChanged(currentFlags, currentUndoRedoCount, wasDirty);
     }
 
     public bool TryRedo()
@@ -355,7 +390,10 @@ public class History : INotifyPropertyChanged, IDisposable
         if (IsInPaused || IsInUndoing)
             return;
         if (!IsInBatch && !IsInTransaction && MaxUndoCount is 0)
+        {
+            AdvanceCurrentState();
             return;
+        }
 
         PropertyChangeKey? key = target is { } && propertyKey is { }
             ? new PropertyChangeKey(target, propertyKey)
@@ -423,13 +461,18 @@ public class History : INotifyPropertyChanged, IDisposable
     {
         var currentFlags = CanUndoRedoClear;
         var currentUndoRedoCount = UndoRedoCount;
+        var wasDirty = IsDirty;
+
+        action.BeforeStateId = _currentStateId;
+        action.AfterStateId = NextStateId();
+        _currentStateId = action.AfterStateId;
 
         _undoStack.Push(action, MaxUndoCount);
 
         if (_redoStack.Count > 0)
             _redoStack.Clear();
 
-        InvokePropertyChanged(currentFlags, currentUndoRedoCount);
+        InvokePropertyChanged(currentFlags, currentUndoRedoCount, wasDirty);
     }
 
     /// <summary>
@@ -539,11 +582,12 @@ public class History : INotifyPropertyChanged, IDisposable
 
         var currentFlags = CanUndoRedoClear;
         var currentUndoRedoCount = UndoRedoCount;
+        var wasDirty = IsDirty;
 
         _undoStack.Clear();
         _redoStack.Clear();
 
-        InvokePropertyChanged(currentFlags, currentUndoRedoCount);
+        InvokePropertyChanged(currentFlags, currentUndoRedoCount, wasDirty);
     }
 
     internal void OnCollectionPropertyCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -927,7 +971,10 @@ public class History : INotifyPropertyChanged, IDisposable
         }
     }
 
-    private void InvokePropertyChanged((bool CanUndo, bool CanRedo, bool CanClear) flags, (int UndoCount, int RedoCount) undoRedoCount)
+    private void InvokePropertyChanged(
+        (bool CanUndo, bool CanRedo, bool CanClear) flags,
+        (int UndoCount, int RedoCount) undoRedoCount,
+        bool wasDirty)
     {
         if (PropertyChanged is null)
             return;
@@ -946,6 +993,29 @@ public class History : INotifyPropertyChanged, IDisposable
 
         if (undoRedoCount.RedoCount != RedoCount)
             PropertyChanged.Invoke(this, RedoCountArgs);
+
+        NotifyDirtyChanged(wasDirty);
+    }
+
+    private void AdvanceCurrentState()
+    {
+        var wasDirty = IsDirty;
+        _currentStateId = NextStateId();
+        NotifyDirtyChanged(wasDirty);
+    }
+
+    private ulong NextStateId()
+    {
+        checked
+        {
+            return ++_nextStateId;
+        }
+    }
+
+    private void NotifyDirtyChanged(bool wasDirty)
+    {
+        if (wasDirty != IsDirty)
+            PropertyChanged?.Invoke(this, IsDirtyArgs);
     }
 
     private void BeginBatchInternal(bool isCoalescing)
@@ -1076,6 +1146,10 @@ public class History : INotifyPropertyChanged, IDisposable
 
     private readonly HistoryStack<HistoryAction> _undoStack = new();
     private readonly HistoryStack<HistoryAction> _redoStack = new();
+    private ulong _currentStateId;
+    private ulong _savedStateId;
+    private ulong _nextStateId;
+    private bool _isManuallyDirty;
 
     private static readonly PropertyChangedEventArgs CanUndoArgs = new(nameof(CanUndo));
     private static readonly PropertyChangedEventArgs CanRedoArgs = new(nameof(CanRedo));
@@ -1086,6 +1160,7 @@ public class History : INotifyPropertyChanged, IDisposable
     private static readonly PropertyChangedEventArgs IsInPausedArgs = new(nameof(IsInPaused));
     private static readonly PropertyChangedEventArgs IsInBatchArgs = new(nameof(IsInBatch));
     private static readonly PropertyChangedEventArgs IsInTransactionArgs = new(nameof(IsInTransaction));
+    private static readonly PropertyChangedEventArgs IsDirtyArgs = new(nameof(IsDirty));
 
     private sealed class RecordingScope(History history, RecordingScopeKind kind) : IDisposable
     {
@@ -1241,6 +1316,8 @@ public class History : INotifyPropertyChanged, IDisposable
 
     private abstract class HistoryAction
     {
+        public ulong BeforeStateId { get; set; }
+        public ulong AfterStateId { get; set; }
         public abstract void Undo();
         public abstract void Redo();
         public virtual PropertyChangeKey? CoalescingKey => null;

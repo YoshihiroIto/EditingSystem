@@ -239,6 +239,21 @@ using (history.Pause())
 
 `Pause()` は Rollback 機能ではありません。Pause 中の変更は適用されたままですが、`History` には元へ戻すための action が記録されません。
 
+## Dirty 状態と保存地点
+
+`History.IsDirty` は、現在の履歴位置が最後に保存に成功した位置と異なるかを表します。新しい `History` の初期状態は false です。保存処理そのものはアプリケーション側で行い、`MarkSaved()` は保存が成功した後にだけ呼び出します。
+
+```cs
+await SaveDocumentAsync(document);
+history.MarkSaved();
+```
+
+`MarkSaved()` の呼び出し直後は `IsDirty` が false になります。その後、新たに編集すると true になり、Undo で保存位置へ正確に戻ると false、そこから Redo すると再び true になります。Batch 内の変更は最外 Batch の終了時、Transaction 内の変更は最外 Transaction の Commit 成功時に Dirty になります。空操作や Rollback された Transaction は Dirty を変更しません。
+
+Undo 履歴に含まれない外部副作用などは `MarkDirty()` で明示します。この Dirty 状態は Undo/Redo では解除されず、`MarkSaved()` まで維持されます。`Clear()` は Undo/Redo 履歴だけを破棄し、保存済みであることを意味しません。`Pause()` 中の変更は、履歴と自動 Dirty 追跡の両方から意図的に除外されます。
+
+`IsDirty` の値が変化した場合だけ、`History` の `PropertyChanged` から通知されます。Batch または Transaction の実行中には `MarkSaved()` を呼べません。
+
 ## Undo 可能なコレクション操作
 
 `History` が監視している `INotifyCollectionChanged` コレクションは、要素操作も Undo/Redo できます。`[Undoable]` プロパティにコレクションを代入すると、そのコレクションの変更が自動的に監視されます。
