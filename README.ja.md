@@ -76,11 +76,11 @@ public sealed partial class Document(History history) : INotifyPropertyChanged
 
 #### 通知メソッドを明示する
 
-通知メソッド名が `RaisePropertyChanged` / `OnPropertyChanged` ではない場合は、`[EditingPropertyChanged]` で使用するメソッドを明示できます。
+通知メソッド名が `RaisePropertyChanged`、`OnPropertyChanged`、`NotifyPropertyChanged` のいずれでもない場合は、`[EditingPropertyChanged]` で使用するメソッドを明示できます。
 
 ```cs
 [EditingHistory(nameof(history))]
-[EditingPropertyChanged(nameof(NotifyPropertyChanged))]
+[EditingPropertyChanged(nameof(InvokePropertyChanged))]
 public sealed partial class Document(History history) : INotifyPropertyChanged
 {
     [Undoable]
@@ -88,7 +88,7 @@ public sealed partial class Document(History history) : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    private void NotifyPropertyChanged(string propertyName)
+    private void InvokePropertyChanged(string propertyName)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
@@ -103,9 +103,11 @@ public sealed partial class Document(History history) : INotifyPropertyChanged
 
 1. アクセス可能な `RaisePropertyChanged(string)`
 2. アクセス可能な `OnPropertyChanged(string)`
-3. アクセス可能な `RaisePropertyChanged(PropertyChangedEventArgs)`
-4. アクセス可能な `OnPropertyChanged(PropertyChangedEventArgs)`
-5. 対象 partial class 自身が宣言している `PropertyChanged` event
+3. アクセス可能な `NotifyPropertyChanged(string)`
+4. アクセス可能な `RaisePropertyChanged(PropertyChangedEventArgs)`
+5. アクセス可能な `OnPropertyChanged(PropertyChangedEventArgs)`
+6. アクセス可能な `NotifyPropertyChanged(PropertyChangedEventArgs)`
+7. 対象 partial class 自身が宣言している `PropertyChanged` event
 
 基底クラス上の `protected` 通知メソッドも対象です。アクセシビリティは Roslyn がコンパイル時に判定します。`INotifyPropertyChanged` を実装しているのに通知経路を解決できない場合、Undo/Redo は有効なまま `JES005` warning を報告します。
 

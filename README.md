@@ -76,11 +76,11 @@ public sealed partial class Document(History history) : INotifyPropertyChanged
 
 #### Explicit notification method
 
-If your notification method is not named `RaisePropertyChanged` or `OnPropertyChanged`, use `[EditingPropertyChanged]` to select it explicitly.
+If your notification method is not named `RaisePropertyChanged`, `OnPropertyChanged`, or `NotifyPropertyChanged`, use `[EditingPropertyChanged]` to select it explicitly.
 
 ```cs
 [EditingHistory(nameof(history))]
-[EditingPropertyChanged(nameof(NotifyPropertyChanged))]
+[EditingPropertyChanged(nameof(InvokePropertyChanged))]
 public sealed partial class Document(History history) : INotifyPropertyChanged
 {
     [Undoable]
@@ -88,7 +88,7 @@ public sealed partial class Document(History history) : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    private void NotifyPropertyChanged(string propertyName)
+    private void InvokePropertyChanged(string propertyName)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
@@ -103,9 +103,11 @@ When `EditingPropertyChanged` is not specified, the generator looks for these no
 
 1. accessible `RaisePropertyChanged(string)`
 2. accessible `OnPropertyChanged(string)`
-3. accessible `RaisePropertyChanged(PropertyChangedEventArgs)`
-4. accessible `OnPropertyChanged(PropertyChangedEventArgs)`
-5. a `PropertyChanged` event declared by the target partial class itself
+3. accessible `NotifyPropertyChanged(string)`
+4. accessible `RaisePropertyChanged(PropertyChangedEventArgs)`
+5. accessible `OnPropertyChanged(PropertyChangedEventArgs)`
+6. accessible `NotifyPropertyChanged(PropertyChangedEventArgs)`
+7. a `PropertyChanged` event declared by the target partial class itself
 
 Protected methods on base classes are supported. Roslyn performs the accessibility check at compile time. If the type implements `INotifyPropertyChanged` but no supported path is available, undo/redo remains enabled and diagnostic `JES005` is reported as a warning.
 

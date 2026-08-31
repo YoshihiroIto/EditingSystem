@@ -453,6 +453,10 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
         if (method is not null)
             return new NotificationModel(NotificationKind.StringMethod, method.Name);
 
+        method = FindNotificationMethod(compilation, containingType, "NotifyPropertyChanged", stringType);
+        if (method is not null)
+            return new NotificationModel(NotificationKind.StringMethod, method.Name);
+
         if (propertyChangedEventArgsType is not null)
         {
             method = FindNotificationMethod(compilation, containingType, "RaisePropertyChanged", propertyChangedEventArgsType);
@@ -460,6 +464,10 @@ public sealed class UndoablePropertyGenerator : IIncrementalGenerator
                 return new NotificationModel(NotificationKind.EventArgsMethod, method.Name);
 
             method = FindNotificationMethod(compilation, containingType, "OnPropertyChanged", propertyChangedEventArgsType);
+            if (method is not null)
+                return new NotificationModel(NotificationKind.EventArgsMethod, method.Name);
+
+            method = FindNotificationMethod(compilation, containingType, "NotifyPropertyChanged", propertyChangedEventArgsType);
             if (method is not null)
                 return new NotificationModel(NotificationKind.EventArgsMethod, method.Name);
         }
