@@ -214,6 +214,11 @@ _pkginfo.txt
 ClientBin/
 ~$*
 *~
+.lunet/
+!site/.lunet/
+site/.lunet/*
+!site/.lunet/layouts/
+!site/.lunet/layouts/_default.sitemap.xml
 *.dbmdl
 *.dbproj.schemaview
 *.jfm

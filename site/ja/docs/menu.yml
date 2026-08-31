@@ -1,0 +1,9 @@
+ja_doc:
+  - {path: readme.md, title: "<i class='bi bi-book' aria-hidden='true'></i> ガイド"}
+  - {path: getting-started.md, title: "<i class='bi bi-rocket-takeoff' aria-hidden='true'></i> はじめに"}
+  - {path: recording-scopes.md, title: "<i class='bi bi-layers' aria-hidden='true'></i> 記録スコープ"}
+  - {path: dirty-state.md, title: "<i class='bi bi-save' aria-hidden='true'></i> Dirty 状態と保存地点"}
+  - {path: collections-and-notifications.md, title: "<i class='bi bi-collection' aria-hidden='true'></i> コレクションと通知"}
+  - {path: communitytoolkit-mvvm.md, title: "<i class='bi bi-grid' aria-hidden='true'></i> CommunityToolkit.Mvvm"}
+  - {path: manual-mode.md, title: "<i class='bi bi-sliders' aria-hidden='true'></i> 手動モードと NativeAOT"}
+  - {path: avalonia-demo.md, title: "<i class='bi bi-window' aria-hidden='true'></i> Avalonia デモ"}

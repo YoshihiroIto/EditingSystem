@@ -4,6 +4,12 @@
 
 [English](README.md)
 
+<p align="center">
+  <img src="site/img/EditingSystem.png" alt="EditingSystem" width="160">
+</p>
+
+> 詳しいガイドは [yoshihiroito.github.io/EditingSystem/ja](https://yoshihiroito.github.io/EditingSystem/ja/) でも読めます。
+
 .NET 向けの Undo/Redo ライブラリです。通常のプロパティ編集、連続編集、バッチ処理、コレクション変更を同じ `History` で扱えます。実行時リフレクションに依存せず、NativeAOT に対応しています。
 
 ## インストール

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{{ for entry in urls }}
+  <url>
+    <loc>{{ entry.loc | string.replace "/EditingSystem/EditingSystem" "/EditingSystem" }}</loc>
+    {{ if entry.lastmod }}<lastmod>{{ entry.lastmod }}</lastmod>{{ end }}
+    {{ if entry.changefreq }}<changefreq>{{ entry.changefreq }}</changefreq>{{ end }}
+    {{ if entry.priority }}<priority>{{ entry.priority }}</priority>{{ end }}
+  </url>
+{{ end }}
+</urlset>

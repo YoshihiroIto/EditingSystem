@@ -4,6 +4,12 @@
 
 [日本語](README.ja.md)
 
+<p align="center">
+  <img src="site/img/EditingSystem.png" alt="EditingSystem" width="160">
+</p>
+
+> Full documentation is also available at [yoshihiroito.github.io/EditingSystem](https://yoshihiroito.github.io/EditingSystem/).
+
 EditingSystem is an undo/redo library for .NET. Property edits, continuous edits, batches, and collection changes can share the same `History`. The runtime does not depend on reflection or dynamic code and is NativeAOT friendly.
 
 ## Install

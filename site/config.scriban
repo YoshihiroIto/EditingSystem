@@ -1,0 +1,26 @@
+# EditingSystem documentation site. Build from this folder with `lunet build`.
+extend "lunet-io/templates"
+
+# Keep the Tomlyn-inspired developer documentation experience dark by default.
+template_theme_default_mode = "dark"
+
+site_project_baseurl = "https://yoshihiroito.github.io"
+site_project_basepath = "/EditingSystem"
+site_project_name = "EditingSystem"
+site_project_description = "Undo/redo for .NET with source-generated undoable properties, batching, and collection support."
+site_project_package_id = "Jewelry.EditingSystem"
+site_project_github_user = "YoshihiroIto"
+site_project_github_repo = "EditingSystem"
+site_project_owner_name = "Yoshihiro Ito"
+site_project_owner_alias = "yoiyoi322"
+site_project_owner_url = "https://github.com/YoshihiroIto"
+site_project_logo_path = "/img/EditingSystem.png"
+site_project_favicon_path = "/img/EditingSystem.png"
+
+site_project_init
+
+# Dart Sass already compiles the theme's SCSS. Avoid a second Sass pass during
+# bundle minification so the same build works on Windows and GitHub Actions.
+with bundle
+    minify = false
+end
