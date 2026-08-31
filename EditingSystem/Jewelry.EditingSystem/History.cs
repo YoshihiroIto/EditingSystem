@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.ExceptionServices;
 using System.Runtime.CompilerServices;
 
 namespace Jewelry.EditingSystem;
@@ -43,8 +44,34 @@ public class History : INotifyPropertyChanged, IDisposable
     public bool IsInUndoing { get; private set; }
     public bool IsInPaused => PauseDepth > 0;
     public bool IsInBatch => BatchDepth > 0;
+    /// <summary>
+    /// Gets whether at least one transaction is active.
+    /// </summary>
+    public bool IsInTransaction => _transactionFrames.Count > 0;
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>
+    /// Occurs after the outermost transaction becomes active and before control returns to its
+    /// caller. Changes made by handlers are part of the transaction.
+    /// </summary>
+    public event EventHandler? TransactionBeginning;
+
+    /// <summary>
+    /// Occurs before the outermost transaction commits. Changes made by handlers are part of the
+    /// transaction; an exception rolls the transaction back.
+    /// </summary>
+    public event EventHandler? TransactionCommitting;
+
+    /// <summary>
+    /// Occurs after the outermost transaction has committed.
+    /// </summary>
+    public event EventHandler? TransactionCommitted;
+
+    /// <summary>
+    /// Occurs after the outermost transaction has rolled back.
+    /// </summary>
+    public event EventHandler? TransactionRolledBack;
 
     internal readonly CollectionChangedWeakEventManager CollectionChangedWeakEventManager = new();
 
@@ -55,6 +82,9 @@ public class History : INotifyPropertyChanged, IDisposable
 
     public void BeginPause()
     {
+        if (IsInTransaction)
+            throw new InvalidOperationException("Can't pause history recording during a transaction.");
+
         var wasInPaused = IsInPaused;
         ++PauseDepth;
 
@@ -116,6 +146,39 @@ public class History : INotifyPropertyChanged, IDisposable
     }
 
     /// <summary>
+    /// Begins a transaction. Dispose the returned scope without committing it to roll back all
+    /// changes recorded by this transaction.
+    /// </summary>
+    public HistoryTransaction BeginTransaction()
+    {
+        if (IsInPaused)
+            throw new InvalidOperationException("Can't begin a transaction while history recording is paused.");
+        if (IsInBatch)
+            throw new InvalidOperationException("Can't begin a transaction during batch recording.");
+        if (IsInUndoing)
+            throw new InvalidOperationException("Can't begin a transaction while applying history.");
+
+        var wasInTransaction = IsInTransaction;
+        var transaction = new HistoryTransaction(this);
+        _transactionFrames.Add(new TransactionFrame(transaction));
+
+        if (wasInTransaction)
+            return transaction;
+
+        try
+        {
+            PropertyChanged?.Invoke(this, IsInTransactionArgs);
+            TransactionBeginning?.Invoke(this, EventArgs.Empty);
+            return transaction;
+        }
+        catch (Exception beginningException)
+        {
+            RollbackAfterLifecycleFailure(transaction, beginningException);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Groups recorded changes into one undo action until the returned scope is disposed.
     /// </summary>
     public IDisposable Batch()
@@ -172,6 +235,8 @@ public class History : INotifyPropertyChanged, IDisposable
 
     public void Undo()
     {
+        ThrowIfInTransaction(nameof(Undo));
+
         if (IsInBatch)
             throw new InvalidOperationException("Can't call Undo() during batch recording.");
 
@@ -208,6 +273,8 @@ public class History : INotifyPropertyChanged, IDisposable
 
     public bool TryUndo()
     {
+        ThrowIfInTransaction(nameof(TryUndo));
+
         if (CanUndo is false)
             return false;
 
@@ -217,6 +284,8 @@ public class History : INotifyPropertyChanged, IDisposable
 
     public void Redo()
     {
+        ThrowIfInTransaction(nameof(Redo));
+
         if (IsInBatch)
             throw new InvalidOperationException("Can't call Redo() during batch recording.");
 
@@ -253,6 +322,8 @@ public class History : INotifyPropertyChanged, IDisposable
 
     public bool TryRedo()
     {
+        ThrowIfInTransaction(nameof(TryRedo));
+
         if (CanRedo is false)
             return false;
 
@@ -283,7 +354,7 @@ public class History : INotifyPropertyChanged, IDisposable
     {
         if (IsInPaused || IsInUndoing)
             return;
-        if (!IsInBatch && MaxUndoCount is 0)
+        if (!IsInBatch && !IsInTransaction && MaxUndoCount is 0)
             return;
 
         PropertyChangeKey? key = target is { } && propertyKey is { }
@@ -294,6 +365,19 @@ public class History : INotifyPropertyChanged, IDisposable
         {
             var batchRecorder = _batchRecorder ?? throw new InvalidOperationException();
             batchRecorder.AddPropertyChange(
+                this,
+                key,
+                setValue,
+                oldValue,
+                newValue,
+                notificationTarget,
+                notificationPropertyName);
+            return;
+        }
+
+        if (IsInTransaction)
+        {
+            CurrentTransactionFrame.Recorder.AddPropertyChange(
                 this,
                 key,
                 setValue,
@@ -323,6 +407,12 @@ public class History : INotifyPropertyChanged, IDisposable
         {
             var batchRecorder = _batchRecorder ?? throw new InvalidOperationException();
             batchRecorder.Add(action);
+            return;
+        }
+
+        if (IsInTransaction)
+        {
+            CurrentTransactionFrame.Recorder.Add(action);
             return;
         }
 
@@ -445,6 +535,8 @@ public class History : INotifyPropertyChanged, IDisposable
 
     public void Clear()
     {
+        ThrowIfInTransaction(nameof(Clear));
+
         var currentFlags = CanUndoRedoClear;
         var currentUndoRedoCount = UndoRedoCount;
 
@@ -868,7 +960,108 @@ public class History : INotifyPropertyChanged, IDisposable
         _batchRecorder = null;
 
         if (batchRecorder.CreateAction() is { } action)
+            PushAction(action);
+    }
+
+    internal void CommitTransaction(HistoryTransaction transaction)
+    {
+        ValidateTransactionCompletion(transaction);
+
+        var frame = CurrentTransactionFrame;
+        if (_transactionFrames.Count > 1)
+        {
+            _transactionFrames.RemoveAt(_transactionFrames.Count - 1);
+            transaction.Complete();
+
+            if (frame.GetAction() is { } nestedAction)
+                CurrentTransactionFrame.Recorder.Add(nestedAction);
+            return;
+        }
+
+        try
+        {
+            TransactionCommitting?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception committingException)
+        {
+            RollbackAfterLifecycleFailure(transaction, committingException);
+            throw;
+        }
+
+        if (!IsInTransaction || !ReferenceEquals(CurrentTransactionFrame.Transaction, transaction))
+            throw new InvalidOperationException(
+                "The active transaction changed during a TransactionCommitting handler.");
+
+        var action = frame.GetAction();
+        _transactionFrames.RemoveAt(0);
+        transaction.Complete();
+        PropertyChanged?.Invoke(this, IsInTransactionArgs);
+
+        if (action is { })
             PushRecordedAction(action);
+
+        TransactionCommitted?.Invoke(this, EventArgs.Empty);
+    }
+
+    internal void RollbackTransaction(HistoryTransaction transaction)
+    {
+        ValidateTransactionCompletion(transaction);
+
+        var isOutermost = _transactionFrames.Count is 1;
+        var frame = CurrentTransactionFrame;
+        var action = frame.GetAction();
+
+        try
+        {
+            IsInUndoing = true;
+            action?.Undo();
+        }
+        finally
+        {
+            IsInUndoing = false;
+        }
+
+        _transactionFrames.RemoveAt(_transactionFrames.Count - 1);
+        transaction.Complete();
+
+        if (!isOutermost)
+            return;
+
+        PropertyChanged?.Invoke(this, IsInTransactionArgs);
+        TransactionRolledBack?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void RollbackAfterLifecycleFailure(
+        HistoryTransaction transaction,
+        Exception lifecycleException)
+    {
+        try
+        {
+            RollbackTransaction(transaction);
+        }
+        catch (Exception rollbackException)
+        {
+            throw new AggregateException(
+                "The transaction lifecycle callback failed and the transaction could not be completely rolled back.",
+                lifecycleException,
+                rollbackException);
+        }
+
+        ExceptionDispatchInfo.Capture(lifecycleException).Throw();
+    }
+
+    private void ValidateTransactionCompletion(HistoryTransaction transaction)
+    {
+        if (IsInBatch)
+            throw new InvalidOperationException("Complete the active batch before completing its transaction.");
+        if (!IsInTransaction || !ReferenceEquals(CurrentTransactionFrame.Transaction, transaction))
+            throw new InvalidOperationException("Transactions must be completed in reverse order.");
+    }
+
+    private void ThrowIfInTransaction(string operation)
+    {
+        if (IsInTransaction)
+            throw new InvalidOperationException($"Can't call {operation}() during a transaction.");
     }
 
     private (int UndoCount, int RedoCount) UndoRedoCount => (UndoCount, RedoCount);
@@ -876,6 +1069,10 @@ public class History : INotifyPropertyChanged, IDisposable
 
     private BatchRecorder? _batchRecorder;
     private bool _isCoalescingBatch;
+    private readonly List<TransactionFrame> _transactionFrames = new();
+
+    private TransactionFrame CurrentTransactionFrame =>
+        _transactionFrames[_transactionFrames.Count - 1];
 
     private readonly HistoryStack<HistoryAction> _undoStack = new();
     private readonly HistoryStack<HistoryAction> _redoStack = new();
@@ -888,6 +1085,7 @@ public class History : INotifyPropertyChanged, IDisposable
     private static readonly PropertyChangedEventArgs MaxUndoCountArgs = new(nameof(MaxUndoCount));
     private static readonly PropertyChangedEventArgs IsInPausedArgs = new(nameof(IsInPaused));
     private static readonly PropertyChangedEventArgs IsInBatchArgs = new(nameof(IsInBatch));
+    private static readonly PropertyChangedEventArgs IsInTransactionArgs = new(nameof(IsInTransaction));
 
     private sealed class RecordingScope(History history, RecordingScopeKind kind) : IDisposable
     {
@@ -922,6 +1120,19 @@ public class History : INotifyPropertyChanged, IDisposable
         Pause,
         Batch,
         CoalescingBatch,
+    }
+
+    private sealed class TransactionFrame(HistoryTransaction transaction)
+    {
+        public HistoryTransaction Transaction { get; } = transaction;
+        public BatchRecorder Recorder { get; } = new(isCoalescing: false);
+
+        public BatchHistoryAction? GetAction()
+        {
+            return _action ??= Recorder.CreateAction();
+        }
+
+        private BatchHistoryAction? _action;
     }
 
     private sealed class BatchRecorder(bool isCoalescing)

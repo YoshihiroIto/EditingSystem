@@ -18,6 +18,7 @@ RunObservableHashSetSmoke();
 RunObservableDictionarySmoke();
 RunCustomComparerIdentitySmoke();
 RunCoalescingSmoke();
+RunTransactionSmoke();
 
 Console.WriteLine("NativeAOT smoke tests passed.");
 
@@ -223,6 +224,30 @@ static void RunCoalescingSmoke()
     Assert(model.Value == 0, "Coalescing batch undo failed.");
     history.Redo();
     Assert(model.Value == 100, "Coalescing batch redo failed.");
+}
+
+static void RunTransactionSmoke()
+{
+    using var history = new History();
+    var model = new CoreUndoableSmokeModel(history);
+
+    using (var transaction = history.BeginTransaction())
+    {
+        model.Value = 10;
+        model.Value = 20;
+        transaction.Commit();
+    }
+
+    Assert(history.UndoCount == 1, "Transaction did not create one undo entry.");
+    history.Undo();
+    Assert(model.Value == 0, "Transaction undo failed.");
+    history.Redo();
+    Assert(model.Value == 20, "Transaction redo failed.");
+
+    using (history.BeginTransaction())
+        model.Value = 30;
+
+    Assert(model.Value == 20, "Uncommitted transaction rollback failed.");
 }
 
 static void Assert(bool condition, string message)

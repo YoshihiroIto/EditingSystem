@@ -158,7 +158,44 @@ CommunityToolkit.Mvvm 連携では、1 引数版の `OnXChanging(T value)` / `On
 
 > `Jewelry.EditingSystem.Annotations` の属性は EditingSystem 単体の partial property 用、`Jewelry.EditingSystem.CommunityToolkit.Mvvm` の属性は CommunityToolkit.Mvvm の `[ObservableProperty]` 連携用です。既存の CommunityToolkit.Mvvm コードは変更不要です。
 
-## Batch と連続編集
+## 記録スコープの使い分け
+
+`Transaction`、`Batch`、`CoalescingBatch`、`Pause` は、いずれも `History` が変更をどう記録するかを制御しますが、目的が異なります。どのスコープでもモデルの変更はその場で適用されます。異なるのは、何を履歴へ残し、スコープ終了時にどう扱うかです。
+
+| スコープ | 目的 | スコープ終了時 | 履歴上の結果 | 主な用途 |
+| --- | --- | --- | --- | --- |
+| `Transaction` | 記録対象の一連の変更を「全成功または全取消」にする | `Commit()` すれば全変更を維持し、未 Commit の Dispose または `Rollback()` では元に戻す | Commit 後にだけ1回の Undo | 検証に失敗する可能性がある操作、全体を取り消せる必要がある操作 |
+| `Batch` | 複数の変更をひとまとまりにする | 例外でスコープを抜けた場合も変更は残る | すべての中間変更を含む1回の Undo | 複数オブジェクトの移動、関連する複数プロパティの更新 |
+| `CoalescingBatch` | 連続編集をまとめ、冗長なプロパティ履歴を除く | 例外でスコープを抜けた場合も変更は残る | 1回の Undo。同じ対象・同じプロパティへの反復変更は最初の旧値と最後の新値だけを保持 | スライダー、カラーピッカー、ドラッグ、ギズモ |
+| `Pause` | 一時的に履歴記録を止める | 変更は残るが、この `History` では元に戻せない | Undo 履歴を作らない | 初期化、読み込み、履歴へ含めない同期処理 |
+
+Rollback が必要なら `Transaction`、まとめるだけなら `Batch`、高頻度な連続値には `CoalescingBatch`、Undo 対象にしない変更には `Pause` を選びます。
+
+Transaction 内では `Batch()` と `CoalescingBatch()` を使用できます。Transaction 自体が1回の Undo として Commit されるため、単にまとめる目的だけなら内側の `Batch()` は不要です。内側の `CoalescingBatch()` は、中間値の再生を省くために有効です。Batch または Pause の中では Transaction を開始できず、Transaction 中に Pause を開始することもできません。
+
+## Transaction
+
+記録対象の変更をすべて1回の Undo として確定するか、すべて元に戻す必要がある操作には Transaction を使用します。`Commit()` せずに `using` スコープを抜けると自動的に Rollback されます。
+
+```cs
+using var transaction = history.BeginTransaction();
+
+document.X = 100;
+document.Y = 200;
+ValidateDocument();
+
+transaction.Commit();
+```
+
+Transaction はネストできます。内側の Transaction を Commit すると親へ統合され、Rollback すると内側を開始してからの変更だけが戻ります。外側を Rollback した場合は、Commit 済みの内側 Transaction の変更も戻ります。
+
+Transaction 内では `Batch()` と `CoalescingBatch()` を使用できます。これらのスコープは Transaction を Commit または Rollback する前に終了してください。Batch または Pause の中では Transaction を開始できず、Transaction 中に Pause を開始することもできません。
+
+最外 Transaction では `TransactionBeginning`、`TransactionCommitting`、`TransactionCommitted`、`TransactionRolledBack` が発生します。`TransactionBeginning` と `TransactionCommitting` の handler による変更も同じ Transaction に含まれ、いずれかの handler が例外を送出すると Transaction 全体が Rollback されます。
+
+Transaction の対象は、生成プロパティ、手動 action、監視中のコレクションなど、`History` に記録される変更です。追跡されていないフィールドや、ファイル・データベース・ネットワークなどの外部副作用は Rollback されません。
+
+## Batch
 
 複数の変更を1回の Undo として扱う場合は `Batch()` を使います。
 
@@ -169,6 +206,10 @@ using (history.Batch())
     document.Y = 200;
 }
 ```
+
+`Batch()` には Rollback 機能がありません。処理中に例外が発生しても、それまでの変更は適用されたままで、スコープの Dispose 時に1回の Undo として確定します。失敗時に元の状態へ戻す必要がある場合は `Transaction` を使用します。
+
+## CoalescingBatch
 
 スライダー、カラーピッカー、ドラッグ、3D ギズモなどの連続操作には `CoalescingBatch()` を使用します。
 
@@ -183,6 +224,10 @@ using (history.CoalescingBatch())
 
 同じ対象・同じプロパティへの連続変更は、最初の古い値と最後の新しい値だけにまとめられます。`[Undoable]` で生成されたプロパティは対象オブジェクトとプロパティ名を自動的に履歴キーとして使用します。
 
+`CoalescingBatch()` も `Batch()` と同様に履歴をまとめる機能であり、処理中の例外による変更を Rollback しません。コレクション変更と明示的に Push した action は順序境界として残り、その境界を越えてプロパティ変更が結合されることはありません。
+
+## Pause
+
 `Pause()` を使うと、初期値ロードなどを履歴に残さず実行できます。
 
 ```cs
@@ -191,6 +236,8 @@ using (history.Pause())
     LoadInitialValues();
 }
 ```
+
+`Pause()` は Rollback 機能ではありません。Pause 中の変更は適用されたままですが、`History` には元へ戻すための action が記録されません。
 
 ## Undo 可能なコレクション操作
 

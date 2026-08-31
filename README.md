@@ -158,7 +158,44 @@ The integration reserves the one-parameter `OnXChanging(T value)` and `OnXChange
 
 > Attributes in `Jewelry.EditingSystem.Annotations` are for standalone partial properties. Attributes in `Jewelry.EditingSystem.CommunityToolkit.Mvvm` are for CommunityToolkit.Mvvm `[ObservableProperty]` integration. Existing CommunityToolkit.Mvvm code does not need to change.
 
-## Batches and continuous editing
+## Choosing a recording scope
+
+`Transaction`, `Batch`, `CoalescingBatch`, and `Pause` all affect how `History` records changes, but they solve different problems. Model changes are applied immediately in every scope; the difference is what is recorded and what happens when the scope ends.
+
+| Scope | Purpose | When the scope ends | Result in history | Typical use |
+| --- | --- | --- | --- | --- |
+| `Transaction` | Make a group of recorded changes atomic | `Commit()` keeps all changes; no `Commit()` or `Rollback()` restores them | One undo action only after commit | An operation that can fail validation or must be cancelled as a whole |
+| `Batch` | Group a sequence of changes | Changes remain, including when the scope exits because of an exception | One undo action containing every intermediate change | Move several objects or update several related properties |
+| `CoalescingBatch` | Group a continuous edit while removing redundant property history | Changes remain, including when the scope exits because of an exception | One undo action; repeated writes to the same target property keep only the first old value and final new value | Sliders, color pickers, dragging, and gizmos |
+| `Pause` | Temporarily stop history recording | Changes remain and cannot be undone through this `History` | No undo action | Initialization, loading, or synchronization that must not enter history |
+
+Choose `Transaction` when rollback is required, `Batch` when grouping alone is enough, `CoalescingBatch` for high-frequency continuous values, and `Pause` when the change must not be undoable.
+
+`Batch()` and `CoalescingBatch()` can run inside a transaction. A transaction already commits as one undo action, so an inner `Batch()` is not required merely for grouping; an inner `CoalescingBatch()` is useful for avoiding replay of intermediate values. A transaction cannot begin inside a batch or pause, and a pause cannot begin inside a transaction.
+
+## Transaction
+
+Use a transaction when an operation must either commit all recorded changes as one undo action or roll them all back. A transaction that leaves its `using` scope without `Commit()` is rolled back automatically.
+
+```cs
+using var transaction = history.BeginTransaction();
+
+document.X = 100;
+document.Y = 200;
+ValidateDocument();
+
+transaction.Commit();
+```
+
+Transactions can be nested. Committing an inner transaction merges it into its parent; rolling it back restores only the changes made since that inner transaction began. Rolling back the outer transaction also restores changes from committed inner transactions.
+
+`Batch()` and `CoalescingBatch()` can be used inside a transaction. Begin and end those scopes before committing or rolling back the transaction. A transaction cannot begin inside a batch or while recording is paused, and recording cannot be paused while a transaction is active.
+
+`TransactionBeginning`, `TransactionCommitting`, `TransactionCommitted`, and `TransactionRolledBack` are raised for the outermost transaction. Changes made by `TransactionBeginning` and `TransactionCommitting` handlers are part of the transaction; an exception from either handler rolls it back.
+
+Transactions cover changes recorded by `History`, including generated properties, manual actions, and observed collections. They do not roll back untracked fields or external effects such as file, database, or network operations.
+
+## Batch
 
 Use `Batch()` to group multiple changes into a single undo action.
 
@@ -169,6 +206,10 @@ using (history.Batch())
     document.Y = 200;
 }
 ```
+
+`Batch()` does not provide rollback. If the body throws, changes made before the exception remain applied and are finalized as one undo action when the scope is disposed. Use `Transaction` instead when failure must restore the previous state.
+
+## CoalescingBatch
 
 Use `CoalescingBatch()` for sliders, color pickers, dragging, 3D gizmos, and other continuous gestures.
 
@@ -183,6 +224,10 @@ using (history.CoalescingBatch())
 
 Repeated changes to the same target property retain the first old value and final new value. Generated `[Undoable]` properties automatically provide the target and property key.
 
+Like `Batch()`, `CoalescingBatch()` groups history but does not roll changes back when its body throws. Collection changes and explicitly pushed actions remain ordering boundaries and are not coalesced with property changes across those boundaries.
+
+## Pause
+
 Use `Pause()` for initialization that should not be recorded.
 
 ```cs
@@ -191,6 +236,8 @@ using (history.Pause())
     LoadInitialValues();
 }
 ```
+
+`Pause()` is not a rollback mechanism. Changes made while paused remain applied, but `History` has no action with which to undo them.
 
 ## Undoable collection operations
 
