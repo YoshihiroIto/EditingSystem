@@ -31,10 +31,17 @@
                             VerticalAlignment="Top"
                             Orientation="Horizontal"
                             Spacing="8">
-                    <TextBlock x:Name="SaveStateText"
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                               Text="{Binding SaveStateText}" />
+                    <Grid>
+                        <TextBlock x:Name="SaveStateText"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   Text="{Binding SaveStateText}" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Foreground="Transparent"
+                                   Text="Unsaved changes" />
+                    </Grid>
+
                     <Button x:Name="MarkSavedButton"
                             Command="{Binding MarkSavedCommand}"
                             Content="Mark Saved"
@@ -53,8 +60,7 @@
                                 IsEnabled="{Binding HasSelection}" />
                     </StackPanel>
 
-                    <StackPanel 
-                                Orientation="Horizontal"
+                    <StackPanel Orientation="Horizontal"
                                 Spacing="8">
                         <Button Command="{Binding AlignLeftCommand}"
                                 Content="Align Left"
@@ -70,8 +76,7 @@
                                 IsEnabled="{Binding HasSelection}" />
                     </StackPanel>
 
-                    <StackPanel 
-                                Orientation="Horizontal"
+                    <StackPanel Orientation="Horizontal"
                                 Spacing="8">
                         <Button Command="{Binding UndoCommand}"
                                 Content="Undo"
