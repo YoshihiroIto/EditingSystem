@@ -3,7 +3,9 @@ doc:
   - {path: getting-started.md, title: "<i class='bi bi-rocket-takeoff' aria-hidden='true'></i> Getting started"}
   - {path: recording-scopes.md, title: "<i class='bi bi-layers' aria-hidden='true'></i> Recording scopes"}
   - {path: dirty-state.md, title: "<i class='bi bi-save' aria-hidden='true'></i> Dirty state and save points"}
+  - {path: history-limits.md, title: "<i class='bi bi-clock-history' aria-hidden='true'></i> Limiting history"}
   - {path: collections-and-notifications.md, title: "<i class='bi bi-collection' aria-hidden='true'></i> Collections and notifications"}
   - {path: communitytoolkit-mvvm.md, title: "<i class='bi bi-grid' aria-hidden='true'></i> CommunityToolkit.Mvvm"}
+  - {path: source-generation-nativeaot.md, title: "<i class='bi bi-cpu' aria-hidden='true'></i> Source generation and NativeAOT"}
   - {path: manual-mode.md, title: "<i class='bi bi-sliders' aria-hidden='true'></i> Manual mode"}
   - {path: avalonia-demo.md, title: "<i class='bi bi-window' aria-hidden='true'></i> Avalonia demo"}

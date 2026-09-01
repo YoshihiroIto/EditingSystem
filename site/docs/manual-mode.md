@@ -23,16 +23,38 @@ public sealed class ManualDocument : EditableModelBase
 }
 ```
 
-Use manual mode when migrating a legacy setter or when the setter pipeline cannot be expressed as a partial property. Prefer the generated model otherwise, so the ordinary edit and undo/redo paths remain consistent.
+## Direct mode without `EditableModelBase`
 
-## Limiting history
-
-History is unlimited by default. For a long-running editor, set an upper bound:
+When a model already has a base class, it can still participate in history. Implement `INotifyPropertyChanged` and call the `SetEditableProperty` extension with the `History` instance. The callback is used for the regular edit, Undo, and Redo, so it is the right place to update the field and raise the normal notification.
 
 ```csharp
-history.MaxUndoCount = 500;
+using System.ComponentModel;
+
+public sealed class ExistingDocument : SomeExistingBase, INotifyPropertyChanged
+{
+    private readonly History _history;
+    private double _x;
+
+    public ExistingDocument(History history) => _history = history;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public double X
+    {
+        get => _x;
+        set => this.SetEditableProperty(_history, ApplyX, _x, value);
+    }
+
+    private void ApplyX(double value)
+    {
+        _x = value;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(X)));
+    }
+}
 ```
 
-## Source generation and NativeAOT
+`SetEditableProperty` returns `false` when the value has not changed. If the setter has additional work that should run only for an actual edit, perform it only when the method returns `true`.
 
-The generator resolves the configured `History`, partial-property implementation, `INotifyPropertyChanged` support, notification method accessibility, and undo/redo setter code at compile time. No runtime reflection or dynamic code generation is required, so the default pattern is suitable for NativeAOT applications.
+For a setter pipeline that has to record before applying the value, use `history.RecordPropertyChange(this, nameof(X), ApplyX, _x, value)` and call `ApplyX(value)` only when it returns `true`. For a post-change hook where the value has already been applied, use `RecordAppliedPropertyChange` instead. In both cases, the callback must restore the same field and notifications during Undo and Redo.
+
+Use manual mode when migrating a legacy setter or when the setter pipeline cannot be expressed as a partial property. Prefer the generated model otherwise, so the ordinary edit and undo/redo paths remain consistent.

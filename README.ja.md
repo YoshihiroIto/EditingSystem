@@ -10,7 +10,7 @@
 
 > 詳しいガイドは [yoshihiroito.github.io/EditingSystem/ja](https://yoshihiroito.github.io/EditingSystem/ja/) でも読めます。
 
-.NET 向けの Undo/Redo ライブラリです。通常のプロパティ編集、連続編集、バッチ処理、コレクション変更を同じ `History` で扱えます。実行時リフレクションに依存せず、NativeAOT に対応しています。
+NativeAOT フレンドリーな .NET 向け Undo/Redo ライブラリです。通常のプロパティ編集、連続編集、バッチ処理、コレクション変更を同じ `History` で扱えます。Source Generator はプロパティ setter をコンパイル時に生成し、任意の `ICollection<T>` 実装を扱うコレクションアダプターにも NativeAOT 対応の経路があります。
 
 ## インストール
 
@@ -376,6 +376,36 @@ public sealed class ManualModel : EditableModelBase
 }
 ```
 
+### `EditableModelBase` を継承しない直接モード
+
+別の基底クラスを継承する必要があるモデルでは、`INotifyPropertyChanged` を実装し、`History` を渡す `SetEditableProperty` 拡張メソッドを使えます。コールバックは通常編集・Undo・Redo で共通して使われるため、値の適用と通常の通知をここで行います。
+
+```cs
+public sealed class ExistingModel : SomeExistingBase, INotifyPropertyChanged
+{
+    private readonly History _history;
+    private int _value;
+
+    public ExistingModel(History history) => _history = history;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public int Value
+    {
+        get => _value;
+        set => this.SetEditableProperty(_history, ApplyValue, _value, value);
+    }
+
+    private void ApplyValue(int value)
+    {
+        _value = value;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value)));
+    }
+}
+```
+
+値を適用する前に記録する setter は、`history.RecordPropertyChange(this, nameof(Value), ApplyValue, _value, value)` を呼び、`true` のときだけ値を適用します。すでに値が適用された post-change hook では `RecordAppliedPropertyChange` を使います。どちらも Undo/Redo でフィールドと通知を復元するコールバックを指定してください。
+
 この手書き方式は互換性のため維持しますが、一般的なプロパティでは `[Undoable]` の利用を優先してください。
 
 ## Source Generator と NativeAOT
@@ -390,13 +420,13 @@ public sealed class ManualModel : EditableModelBase
 - 通知メソッドのアクセシビリティ判定
 - Undo/Redo setter の生成
 
-実行時リフレクションや動的コード生成は使用しません。
+生成プロパティは NativeAOT フレンドリーです。setter と通知コードをコンパイル時に生成します。任意の `ICollection<T>` 実装を扱うコレクションアダプターにも NativeAOT 対応の経路があります。リフレクションの適用範囲はサイトの説明を参照してください。
 
 ## Avalonia デモ
 
 [`EditingSystem/Jewelry.EditingSystem.Avalonia.Demo`](EditingSystem/Jewelry.EditingSystem.Avalonia.Demo) に Avalonia 12 のデモがあります。CommunityToolkit.Mvvm 連携、Undo/Redo、`Batch`、`CoalescingBatch`、複数オブジェクト編集、Z-order の Undo/Redo などを確認できます。
 
-![demo](demo00.png)
+![demo](site/img/demo00.png)
 
 ## Author
 

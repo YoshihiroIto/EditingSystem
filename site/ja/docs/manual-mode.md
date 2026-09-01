@@ -24,16 +24,38 @@ public sealed class ManualDocument : EditableModelBase
 }
 ```
 
-レガシーな setter の移行時や、partial プロパティでは表せない setter 経路には手動モードを選択してください。それ以外では、通常編集と Undo/Redo の経路を揃えられる generated model を優先します。
+## `EditableModelBase` を継承しない直接モード
 
-## 履歴数の制限
-
-履歴数の既定値に上限はありません。長時間動作するエディターでは上限を設定できます。
+既存の基底クラスがあるモデルも、履歴へ参加できます。`INotifyPropertyChanged` を実装し、`History` を渡す `SetEditableProperty` 拡張メソッドを使います。コールバックは通常編集・Undo・Redo のすべてで使われるため、フィールドの更新と通常の通知はここで行います。
 
 ```csharp
-history.MaxUndoCount = 500;
+using System.ComponentModel;
+
+public sealed class ExistingDocument : SomeExistingBase, INotifyPropertyChanged
+{
+    private readonly History _history;
+    private double _x;
+
+    public ExistingDocument(History history) => _history = history;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public double X
+    {
+        get => _x;
+        set => this.SetEditableProperty(_history, ApplyX, _x, value);
+    }
+
+    private void ApplyX(double value)
+    {
+        _x = value;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(X)));
+    }
+}
 ```
 
-## Source Generator と NativeAOT
+値が変わらないとき、`SetEditableProperty` は `false` を返します。実際に変更されたときだけ実行する追加処理がある場合は、戻り値が `true` のときだけ行ってください。
 
-Generator は、指定された `History`、partial プロパティ実装、`INotifyPropertyChanged` 対応、通知メソッドのアクセシビリティ、Undo/Redo setter コードをコンパイル時に解決します。実行時リフレクションや動的コード生成を使わないため、基本パターンは NativeAOT アプリケーションに適しています。
+値を適用する前に記録する setter 経路では、`history.RecordPropertyChange(this, nameof(X), ApplyX, _x, value)` を使い、`true` のときだけ `ApplyX(value)` を呼びます。値がすでに適用済みの post-change hook では `RecordAppliedPropertyChange` を使います。どちらも Undo/Redo で同じフィールド更新と通知を行うコールバックを指定してください。
+
+レガシーな setter の移行時や、partial プロパティでは表せない setter 経路には手動モードを選択してください。それ以外では、通常編集と Undo/Redo の経路を揃えられる generated model を優先します。

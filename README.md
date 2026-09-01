@@ -10,7 +10,7 @@
 
 > Full documentation is also available at [yoshihiroito.github.io/EditingSystem](https://yoshihiroito.github.io/EditingSystem/).
 
-EditingSystem is an undo/redo library for .NET. Property edits, continuous edits, batches, and collection changes can share the same `History`. The runtime does not depend on reflection or dynamic code and is NativeAOT friendly.
+EditingSystem is a NativeAOT-friendly undo/redo library for .NET. Property edits, continuous edits, batches, and collection changes can share the same `History`. The generator emits property setters at compile time, and the collection adapter includes a NativeAOT-safe path for arbitrary `ICollection<T>` implementations.
 
 ## Install
 
@@ -376,6 +376,36 @@ public sealed class ManualModel : EditableModelBase
 }
 ```
 
+### Direct mode without `EditableModelBase`
+
+If the model must inherit another base class, implement `INotifyPropertyChanged` and use the `SetEditableProperty` extension with its `History`. The callback must apply the value and raise the usual notification because the same callback is used for the ordinary edit, Undo, and Redo.
+
+```cs
+public sealed class ExistingModel : SomeExistingBase, INotifyPropertyChanged
+{
+    private readonly History _history;
+    private int _value;
+
+    public ExistingModel(History history) => _history = history;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public int Value
+    {
+        get => _value;
+        set => this.SetEditableProperty(_history, ApplyValue, _value, value);
+    }
+
+    private void ApplyValue(int value)
+    {
+        _value = value;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value)));
+    }
+}
+```
+
+For a setter that records before applying the value, call `history.RecordPropertyChange(this, nameof(Value), ApplyValue, _value, value)` and apply only when it returns `true`. For an already-applied post-change hook, use `RecordAppliedPropertyChange`. In either case, use a callback that restores the field and notifications for Undo and Redo.
+
 Manual mode remains supported for compatibility, but ordinary properties should prefer `[Undoable]`.
 
 ## Source generation and NativeAOT
@@ -390,13 +420,13 @@ The generator resolves the following at compile time:
 - notification-method accessibility
 - undo/redo setter code
 
-No runtime reflection or dynamic code generation is required.
+Generated properties are NativeAOT-friendly: their setter and notification code is emitted at compile time. The collection adapter also has a NativeAOT-safe path for arbitrary `ICollection<T>` implementations; see the documentation for its reflection boundary.
 
 ## Avalonia demo
 
 [`EditingSystem/Jewelry.EditingSystem.Avalonia.Demo`](EditingSystem/Jewelry.EditingSystem.Avalonia.Demo) contains an Avalonia 12 demo covering CommunityToolkit.Mvvm integration, undo/redo, `Batch`, `CoalescingBatch`, multi-object editing, and undoable Z-order operations.
 
-![demo](demo00.png)
+![demo](site/img/demo00.png)
 
 ## Author
 

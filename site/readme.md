@@ -7,7 +7,7 @@ og_type: website
 <div class="text-center py-4 py-md-5">
   <img src="img/EditingSystem.png" alt="EditingSystem" width="160" height="160" class="rounded-4 mb-3">
   <h1>Undo/redo for modern .NET editors</h1>
-  <p class="lead mx-auto" style="max-width: 48rem;">Source-generated undo/redo for properties, continuous gestures, transactions, and observable collections — without runtime reflection.</p>
+  <p class="lead mx-auto" style="max-width: 48rem;">NativeAOT-friendly undo/redo for modern .NET editors: source-generated properties, continuous gestures, transactions, and observable collections.</p>
   <p>
     <a class="btn btn-primary btn-lg me-2 mb-2" href="docs/getting-started/">Get started</a>
     <a class="btn btn-outline-secondary btn-lg me-2 mb-2" href="https://www.nuget.org/packages/Jewelry.EditingSystem">NuGet</a>

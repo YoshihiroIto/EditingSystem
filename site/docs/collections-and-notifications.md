@@ -24,6 +24,10 @@ history.Undo(); // Items is empty again.
 
 `INotifyPropertyChanged` is optional. When a target implements it, the generator resolves a supported notification method at compile time and raises notifications for ordinary changes, undo, and redo. Use `[EditingPropertyChanged]` when the notification method has a custom name.
 
+## Reflection scope
+
+EditingSystem remains NativeAOT-friendly for collection replay. For an arbitrary collection that implements `ICollection<T>` but not non-generic `IList`, its adapter deliberately inspects the interface and invokes `Add`/`Remove` through reflection; the NativeAOT path preserves the required metadata. `ObservableCollection<T>` follows the `IList` path.
+
 ## Operations and notifications
 
 | Operation | Initial notification | Undo notification | Redo notification |

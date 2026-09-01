@@ -25,6 +25,10 @@ history.Undo(); // Items は再び空になる。
 
 `INotifyPropertyChanged` は必須ではありません。対象型が実装している場合、Generator は対応する通知メソッドをコンパイル時に解決し、通常変更、Undo、Redo すべてで通知を発生させます。通知メソッド名が独自の場合は `[EditingPropertyChanged]` で指定します。
 
+## リフレクションの適用範囲
+
+コレクション再生を含めて EditingSystem は NativeAOT フレンドリーです。非ジェネリック `IList` を実装せず `ICollection<T>` だけを実装する任意のコレクションでは、コレクションアダプターが意図的にインターフェイスを検査し、`Add` / `Remove` をリフレクション経由で呼び出します。NativeAOT の経路では必要なメタデータを保持します。`ObservableCollection<T>` は `IList` 経路を使います。
+
 ## 操作と通知
 
 | 操作 | 初回通知 | Undo 通知 | Redo 通知 |
