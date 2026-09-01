@@ -1,0 +1,44 @@
+/* Guide and API menus can contain long document titles or complete generic
+   signatures. Keep them readable without overflowing the documentation layout. */
+#docs-sidebar-menu a.menu-link {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.lunet-api #docs-sidebar-menu a.menu-link {
+  font-size: 0.875rem;
+  line-height: 1.35;
+  text-wrap: pretty;
+}
+
+@media (min-width: 768px) {
+  .lunet-api #docs-sidebar-menu {
+    flex: 0 0 auto;
+    width: 33.33333333%;
+  }
+
+  .lunet-api .js-toc-content {
+    flex: 0 0 auto;
+    width: 66.66666667%;
+  }
+}
+
+@media (min-width: 1400px) {
+  .lunet:not(.lunet-api) #docs-sidebar-menu {
+    flex: 0 0 auto;
+    width: 25%;
+  }
+
+  .lunet:not(.lunet-api) .js-toc-content {
+    flex: 0 0 auto;
+    width: 58.33333333%;
+  }
+
+  .lunet-api #docs-sidebar-menu {
+    width: 29.16666667%;
+  }
+
+  .lunet-api .js-toc-content {
+    width: 54.16666667%;
+  }
+}

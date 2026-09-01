@@ -18,6 +18,30 @@ site_project_logo_path = "/img/EditingSystem.png"
 site_project_favicon_path = "/img/EditingSystem.png"
 
 site_project_init
+html.head.metas.add '<link rel="stylesheet" href="' + site_project_basepath + '/css/api-reference.css">'
+
+# Generate the English public API reference directly from the package projects.
+# Per-project target frameworks keep the multi-targeted core and netstandard
+# CommunityToolkit integration on supported build targets.
+with api.dotnet
+    title = "EditingSystem API Reference"
+    path = "/api"
+    menu_name = "api"
+    menu_title = "API Reference"
+    config = "Release"
+    projects = [
+        {
+            name: "Jewelry.EditingSystem",
+            path: "../EditingSystem/Jewelry.EditingSystem/Jewelry.EditingSystem.csproj",
+            properties: { TargetFramework: "net10.0" }
+        },
+        {
+            name: "Jewelry.EditingSystem.CommunityToolkit.Mvvm",
+            path: "../EditingSystem/Jewelry.EditingSystem.CommunityToolkit.Mvvm/Jewelry.EditingSystem.CommunityToolkit.Mvvm.csproj",
+            properties: { TargetFramework: "netstandard2.0" }
+        }
+    ]
+end
 
 # Dart Sass already compiles the theme's SCSS. Avoid a second Sass pass during
 # bundle minification so the same build works on Windows and GitHub Actions.
