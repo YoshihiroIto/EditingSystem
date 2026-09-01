@@ -5,7 +5,7 @@ og_type: website
 ---
 
 <div class="text-center py-4 py-md-5">
-  <img src="img/EditingSystem.png" alt="EditingSystem" width="160" height="160" class="rounded-4 mb-3">
+  <img src="img/icon.svg" alt="EditingSystem" width="160" height="160" class="rounded-4 mb-3">
   <h1>Undo/redo for modern .NET editors</h1>
   <p class="lead mx-auto" style="max-width: 48rem;">NativeAOT-friendly undo/redo for modern .NET editors: source-generated properties, continuous gestures, transactions, and observable collections.</p>
   <p>

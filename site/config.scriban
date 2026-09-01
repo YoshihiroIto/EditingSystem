@@ -14,8 +14,8 @@ site_project_github_repo = "EditingSystem"
 site_project_owner_name = "Yoshihiro Ito"
 site_project_owner_alias = "yoiyoi322"
 site_project_owner_url = "https://github.com/YoshihiroIto"
-site_project_logo_path = "/img/EditingSystem.png"
-site_project_favicon_path = "/img/EditingSystem.png"
+site_project_logo_path = "/img/icon.svg"
+site_project_favicon_path = "/img/icon.svg"
 
 site_project_init
 html.head.metas.add '<script>if (window.location.pathname.includes("/ja/")) { document.documentElement.lang = "ja"; document.documentElement.classList.add("lang-ja"); }</script>'

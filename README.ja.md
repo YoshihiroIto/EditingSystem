@@ -5,7 +5,7 @@
 [English](README.md)
 
 <p align="center">
-  <img src="Resouces/icon.svg" alt="EditingSystem" width="160">
+  <img src="site/img/icon.svg" alt="EditingSystem" width="160">
 </p>
 
 > 詳しいガイドは [yoshihiroito.github.io/EditingSystem/ja](https://yoshihiroito.github.io/EditingSystem/ja/) でも読めます。
