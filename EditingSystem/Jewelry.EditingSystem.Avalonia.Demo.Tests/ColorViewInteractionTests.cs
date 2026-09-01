@@ -5,6 +5,7 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Jewelry.EditingSystem.Avalonia.Demo.Desktop;
 
 namespace Jewelry.EditingSystem.Avalonia.Demo.Tests;
 
@@ -16,7 +17,7 @@ public sealed class ColorViewInteractionTests
         var window = ShowWindow();
         try
         {
-            var viewModel = (MainWindowViewModel)window.DataContext!;
+            var viewModel = (MainViewViewModel)window.DataContext!;
             var item = Assert.Single(viewModel.Objects, x => x.IsSelected);
             var initialName = item.Name;
             var initialColor = item.Color;
@@ -58,7 +59,7 @@ public sealed class ColorViewInteractionTests
         var window = ShowWindow();
         try
         {
-            var viewModel = (MainWindowViewModel)window.DataContext!;
+            var viewModel = (MainViewViewModel)window.DataContext!;
             var item = Assert.Single(viewModel.Objects, x => x.IsSelected);
             var initialName = item.Name;
             var initialColor = item.Color;

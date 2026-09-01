@@ -4,7 +4,6 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
-using Jewelry.EditingSystem.Avalonia.Demo;
 
 namespace Jewelry.EditingSystem.Avalonia.Demo.Browser;
 
@@ -30,7 +29,7 @@ public sealed class BrowserApp : Application
         mainView.Focus();
 
         if (TopLevel.GetTopLevel(mainView) is not { } topLevel ||
-            mainView.DataContext is not MainWindowViewModel viewModel)
+            mainView.DataContext is not MainViewViewModel viewModel)
             return;
 
         topLevel.KeyBindings.Add(new KeyBinding

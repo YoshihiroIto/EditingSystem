@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace Jewelry.EditingSystem.Avalonia.Demo;
+namespace Jewelry.EditingSystem.Avalonia.Demo.Desktop;
 
 public sealed partial class MainWindow : Window
 {
@@ -11,5 +11,5 @@ public sealed partial class MainWindow : Window
     }
 
     private void Window_Closed(object? sender, EventArgs e)
-        => ((MainWindowViewModel)DataContext!).Dispose();
+        => ((MainViewViewModel)DataContext!).Dispose();
 }

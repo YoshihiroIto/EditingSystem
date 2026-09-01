@@ -8,7 +8,7 @@ using Jewelry.EditingSystem.CommunityToolkit.Mvvm;
 namespace Jewelry.EditingSystem.Avalonia.Demo;
 
 [EditingHistory(nameof(_history))]
-public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
+public sealed partial class MainViewViewModel : ObservableObject, IDisposable
 {
     private static readonly Color[] ObjectColors =
     [
@@ -82,7 +82,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         }
     } = 1d;
 
-    public MainWindowViewModel()
+    public MainViewViewModel()
     {
         _history.PropertyChanged += HistoryOnPropertyChanged;
 

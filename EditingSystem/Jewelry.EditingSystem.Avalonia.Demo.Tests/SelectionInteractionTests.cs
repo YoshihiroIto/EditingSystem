@@ -4,6 +4,7 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Jewelry.EditingSystem.Avalonia.Demo.Desktop;
 
 namespace Jewelry.EditingSystem.Avalonia.Demo.Tests;
 
@@ -15,7 +16,7 @@ public sealed class SelectionInteractionTests
         var window = ShowWindow();
         try
         {
-            var viewModel = (MainWindowViewModel)window.DataContext!;
+            var viewModel = (MainViewViewModel)window.DataContext!;
             var target = viewModel.Objects[1];
             var originalOrder = viewModel.Objects.ToArray();
 
@@ -39,7 +40,7 @@ public sealed class SelectionInteractionTests
         var window = ShowWindow();
         try
         {
-            var viewModel = (MainWindowViewModel)window.DataContext!;
+            var viewModel = (MainViewViewModel)window.DataContext!;
             var initiallySelected = viewModel.Objects[0];
             var target = viewModel.Objects[1];
             var originalOrder = viewModel.Objects.ToArray();

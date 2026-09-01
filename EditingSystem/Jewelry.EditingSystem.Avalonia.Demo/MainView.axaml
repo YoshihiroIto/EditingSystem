@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="using:Jewelry.EditingSystem.Avalonia.Demo">
     <UserControl.DataContext>
-        <local:MainWindowViewModel />
+        <local:MainViewViewModel />
     </UserControl.DataContext>
 
     <UserControl.Styles>

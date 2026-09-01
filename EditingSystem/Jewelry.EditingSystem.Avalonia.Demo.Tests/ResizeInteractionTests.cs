@@ -4,6 +4,7 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Jewelry.EditingSystem.Avalonia.Demo.Desktop;
 
 namespace Jewelry.EditingSystem.Avalonia.Demo.Tests;
 
@@ -76,10 +77,10 @@ public sealed class ResizeInteractionTests
         }
     }
 
-    private static (MainWindowViewModel ViewModel, DemoObject Item, Border Handle)
+    private static (MainViewViewModel ViewModel, DemoObject Item, Border Handle)
         PrepareMultiSelectionResize(MainWindow window)
     {
-        var viewModel = (MainWindowViewModel)window.DataContext!;
+        var viewModel = (MainViewViewModel)window.DataContext!;
         var item = viewModel.Objects[0];
 
         viewModel.ToggleSelection(viewModel.Objects[1]);

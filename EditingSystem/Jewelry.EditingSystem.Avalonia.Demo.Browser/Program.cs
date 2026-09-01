@@ -11,5 +11,6 @@ internal static class Program
     private static Task Main(string[] args)
         => BuildAvaloniaApp().StartBrowserAppAsync("out");
 
-    public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<BrowserApp>();
+    public static AppBuilder BuildAvaloniaApp()
+        => AppBuilder.Configure<BrowserApp>();
 }

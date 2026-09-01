@@ -33,7 +33,7 @@ public sealed partial class MainView : UserControl
         AddHandler(PointerReleasedEvent, View_PointerReleased, RoutingStrategies.Bubble, true);
     }
 
-    private MainWindowViewModel ViewModel => (MainWindowViewModel)DataContext!;
+    private MainViewViewModel ViewViewModel => (MainViewViewModel)DataContext!;
     
     private void EditorSurface_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
@@ -41,7 +41,7 @@ public sealed partial class MainView : UserControl
             return;
 
         CommitNameEdit();
-        ViewModel.ClearSelection();
+        ViewViewModel.ClearSelection();
     }
 
     private void Object_PointerPressed(object? sender, PointerPressedEventArgs e)
@@ -55,17 +55,17 @@ public sealed partial class MainView : UserControl
 
         if ((e.KeyModifiers & KeyModifiers.Control) is not 0)
         {
-            ViewModel.ToggleSelection(item);
+            ViewViewModel.ToggleSelection(item);
             e.Handled = true;
             return;
         }
 
         if (!item.IsSelected)
-            ViewModel.SelectOnly(item);
+            ViewViewModel.SelectOnly(item);
 
         _pointerStart = e.GetPosition(EditorSurface);
         _moveStartPositions.Clear();
-        foreach (var selected in ViewModel.GetSelectedObjects())
+        foreach (var selected in ViewViewModel.GetSelectedObjects())
             _moveStartPositions[selected] = new Point(selected.X, selected.Y);
 
         _capturedControl = control;
@@ -171,7 +171,7 @@ public sealed partial class MainView : UserControl
         if (_pointerContinuousEdit)
             return;
 
-        ViewModel.BeginContinuousEdit();
+        ViewViewModel.BeginContinuousEdit();
         _pointerContinuousEdit = true;
     }
 
@@ -222,7 +222,7 @@ public sealed partial class MainView : UserControl
 
         CommitNameEdit();
         _inspectorContinuousEdit = true;
-        ViewModel.BeginContinuousEdit();
+        ViewViewModel.BeginContinuousEdit();
     }
 
     private void View_PointerReleased(object? sender, PointerReleasedEventArgs e)
@@ -233,7 +233,7 @@ public sealed partial class MainView : UserControl
         if (_inspectorContinuousEdit)
         {
             _inspectorContinuousEdit = false;
-            ViewModel.EndContinuousEdit();
+            ViewViewModel.EndContinuousEdit();
         }
     }
 
@@ -262,7 +262,7 @@ public sealed partial class MainView : UserControl
         if (_pointerContinuousEdit)
         {
             _pointerContinuousEdit = false;
-            ViewModel.EndContinuousEdit();
+            ViewViewModel.EndContinuousEdit();
         }
     }
 }

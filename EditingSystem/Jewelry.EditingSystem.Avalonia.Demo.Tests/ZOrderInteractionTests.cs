@@ -4,6 +4,7 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Jewelry.EditingSystem.Avalonia.Demo.Desktop;
 
 namespace Jewelry.EditingSystem.Avalonia.Demo.Tests;
 
@@ -15,7 +16,7 @@ public sealed class ZOrderInteractionTests
         var window = ShowWindow();
         try
         {
-            var viewModel = (MainWindowViewModel)window.DataContext!;
+            var viewModel = (MainViewViewModel)window.DataContext!;
             var target = viewModel.Objects[1];
             var originalOrder = viewModel.Objects.ToArray();
             var originalX = target.X;
@@ -51,7 +52,7 @@ public sealed class ZOrderInteractionTests
         var window = ShowWindow();
         try
         {
-            var viewModel = (MainWindowViewModel)window.DataContext!;
+            var viewModel = (MainViewViewModel)window.DataContext!;
             var a = viewModel.Objects[0];
             var b = viewModel.Objects[1];
             var c = viewModel.Objects[2];
@@ -82,7 +83,7 @@ public sealed class ZOrderInteractionTests
         var window = ShowWindow();
         try
         {
-            var viewModel = (MainWindowViewModel)window.DataContext!;
+            var viewModel = (MainViewViewModel)window.DataContext!;
             var a = viewModel.Objects[0];
             var b = viewModel.Objects[1];
             var c = viewModel.Objects[2];

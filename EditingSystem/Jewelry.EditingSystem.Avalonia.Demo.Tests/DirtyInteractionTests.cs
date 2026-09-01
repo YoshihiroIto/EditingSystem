@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Jewelry.EditingSystem.Avalonia.Demo.Desktop;
 
 namespace Jewelry.EditingSystem.Avalonia.Demo.Tests;
 
@@ -14,7 +15,7 @@ public sealed class DirtyInteractionTests
         var window = ShowWindow();
         try
         {
-            var viewModel = (MainWindowViewModel)window.DataContext!;
+            var viewModel = (MainViewViewModel)window.DataContext!;
             var view = window.FindControl<MainView>("MainView")!;
             var markSavedButton = view.FindControl<Button>("MarkSavedButton")!;
             var saveStateText = view.FindControl<TextBlock>("SaveStateText")!;
