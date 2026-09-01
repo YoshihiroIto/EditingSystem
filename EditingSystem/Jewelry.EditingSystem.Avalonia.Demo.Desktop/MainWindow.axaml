@@ -1,0 +1,15 @@
+<Window x:Class="Jewelry.EditingSystem.Avalonia.Demo.MainWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:demo="using:Jewelry.EditingSystem.Avalonia.Demo"
+        x:DataType="demo:MainWindowViewModel"
+        Title="{Binding WindowTitle}"
+        Width="1200"
+        MinWidth="900"
+        MinHeight="600"
+        RequestedThemeVariant="Dark"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterScreen"
+        Closed="Window_Closed">
+    <demo:MainView x:Name="MainView" />
+</Window>

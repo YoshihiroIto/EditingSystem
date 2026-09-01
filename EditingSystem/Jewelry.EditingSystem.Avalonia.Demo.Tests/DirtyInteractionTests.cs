@@ -15,8 +15,9 @@ public sealed class DirtyInteractionTests
         try
         {
             var viewModel = (MainWindowViewModel)window.DataContext!;
-            var markSavedButton = window.FindControl<Button>("MarkSavedButton")!;
-            var saveStateText = window.FindControl<TextBlock>("SaveStateText")!;
+            var view = window.FindControl<MainView>("MainView")!;
+            var markSavedButton = view.FindControl<Button>("MarkSavedButton")!;
+            var saveStateText = view.FindControl<TextBlock>("SaveStateText")!;
 
             Assert.False(viewModel.History.IsDirty);
             Assert.Equal("EditingSystem Avalonia Demo", window.Title);

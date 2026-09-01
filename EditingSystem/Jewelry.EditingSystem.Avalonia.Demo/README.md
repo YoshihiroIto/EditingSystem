@@ -18,9 +18,10 @@ Small 2D-editor-style demo for `Jewelry.EditingSystem`.
 ## Run
 
 ```shell
-dotnet run --project Jewelry.EditingSystem.Avalonia.Demo/Jewelry.EditingSystem.Avalonia.Demo.csproj
+dotnet run --project Jewelry.EditingSystem.Avalonia.Demo.Desktop/Jewelry.EditingSystem.Avalonia.Demo.Desktop.csproj
+dotnet run --project Jewelry.EditingSystem.Avalonia.Demo.Browser/Jewelry.EditingSystem.Avalonia.Demo.Browser.csproj
 ```
 
-The demo intentionally keeps interaction code in `MainWindow.axaml.cs` and undo-aware state in the ViewModel/model. The point is to show that ordinary Avalonia pointer handling can be wrapped by only `BeginCoalescingBatch()` / `EndCoalescingBatch()` while `[Undoable]` properties remain normal CommunityToolkit.Mvvm observable properties.
+The shared `MainView` keeps interaction code and undo-aware state in the ViewModel/model; the Desktop and Browser projects contain only their platform-specific application lifetime and entry point. The point is to show that ordinary Avalonia pointer handling can be wrapped by only `BeginCoalescingBatch()` / `EndCoalescingBatch()` while `[Undoable]` properties remain normal CommunityToolkit.Mvvm observable properties.
 
 `Mark Saved` simulates a successful save by calling `History.MarkSaved()`; the demo does not write a file. Edit an object to make the title and toolbar show the unsaved state, mark that position as saved, edit again, and use Undo/Redo to see `History.IsDirty` change automatically when the current history position crosses the save point.

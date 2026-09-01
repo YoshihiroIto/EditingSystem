@@ -20,7 +20,7 @@ public sealed class ColorViewInteractionTests
             var item = Assert.Single(viewModel.Objects, x => x.IsSelected);
             var initialName = item.Name;
             var initialColor = item.Color;
-            var nameEditor = window.FindControl<TextBox>("NameEditor")!;
+            var nameEditor = window.FindControl<MainView>("MainView")!.FindControl<TextBox>("NameEditor")!;
 
             nameEditor.Focus();
             nameEditor.Text = "Renamed from spectrum";
@@ -62,7 +62,7 @@ public sealed class ColorViewInteractionTests
             var item = Assert.Single(viewModel.Objects, x => x.IsSelected);
             var initialName = item.Name;
             var initialColor = item.Color;
-            var nameEditor = window.FindControl<TextBox>("NameEditor")!;
+            var nameEditor = window.FindControl<MainView>("MainView")!.FindControl<TextBox>("NameEditor")!;
 
             nameEditor.Focus();
             nameEditor.Text = "Renamed from accent";
@@ -102,7 +102,7 @@ public sealed class ColorViewInteractionTests
         var window = new MainWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        window.FindControl<Grid>("EditorSurface")!.Focus();
+        window.FindControl<MainView>("MainView")!.FindControl<Grid>("EditorSurface")!.Focus();
         Dispatcher.UIThread.RunJobs();
         return window;
     }

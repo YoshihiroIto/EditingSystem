@@ -1,6 +1,6 @@
 using Avalonia;
 
-namespace Jewelry.EditingSystem.Avalonia.Demo;
+namespace Jewelry.EditingSystem.Avalonia.Demo.Desktop;
 
 internal static class Program
 {
@@ -9,7 +9,7 @@ internal static class Program
         => BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 
     public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>()
+        => AppBuilder.Configure<DesktopApp>()
             .UsePlatformDetect()
             .LogToTrace();
 }

@@ -6,7 +6,7 @@ using Avalonia.Interactivity;
 
 namespace Jewelry.EditingSystem.Avalonia.Demo;
 
-public sealed partial class MainWindow : Window
+public sealed partial class MainView : UserControl
 {
     private const double MinObjectSize = 32d;
 
@@ -19,7 +19,7 @@ public sealed partial class MainWindow : Window
     private bool _pointerContinuousEdit;
     private bool _inspectorContinuousEdit;
 
-    public MainWindow()
+    public MainView()
     {
         InitializeComponent();
 
@@ -30,16 +30,11 @@ public sealed partial class MainWindow : Window
         colorEditor.AddHandler(PointerPressedEvent, Inspector_PointerPressed, RoutingStrategies.Tunnel, true);
         EditorSurface.PointerMoved += EditorSurface_PointerMoved;
         EditorSurface.PointerCaptureLost += EditorSurface_PointerCaptureLost;
-        AddHandler(PointerReleasedEvent, Window_PointerReleased, RoutingStrategies.Bubble, true);
+        AddHandler(PointerReleasedEvent, View_PointerReleased, RoutingStrategies.Bubble, true);
     }
 
     private MainWindowViewModel ViewModel => (MainWindowViewModel)DataContext!;
     
-    private void Window_Closed(object? sender, EventArgs e)
-    {
-        ViewModel.Dispose();
-    }
-
     private void EditorSurface_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (!e.GetCurrentPoint(EditorSurface).Properties.IsLeftButtonPressed)
@@ -230,7 +225,7 @@ public sealed partial class MainWindow : Window
         ViewModel.BeginContinuousEdit();
     }
 
-    private void Window_PointerReleased(object? sender, PointerReleasedEventArgs e)
+    private void View_PointerReleased(object? sender, PointerReleasedEventArgs e)
     {
         if (_capturedControl is not null)
             EndPointerOperation(e.Pointer);

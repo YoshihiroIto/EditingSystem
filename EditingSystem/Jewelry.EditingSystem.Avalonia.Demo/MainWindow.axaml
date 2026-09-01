@@ -1,27 +1,21 @@
-﻿<Window x:Class="Jewelry.EditingSystem.Avalonia.Demo.MainWindow"
+<UserControl x:Class="Jewelry.EditingSystem.Avalonia.Demo.MainView"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="using:Jewelry.EditingSystem.Avalonia.Demo"
-        Title="{Binding WindowTitle}"
-        Width="1200"
         MinWidth="900"
-        MinHeight="600"
-        Closed="Window_Closed"
-        RequestedThemeVariant="Dark"
-        SizeToContent="Height"
-        WindowStartupLocation="CenterScreen">
-    <Window.DataContext>
+        MinHeight="600">
+    <UserControl.DataContext>
         <local:MainWindowViewModel />
-    </Window.DataContext>
+    </UserControl.DataContext>
 
-    <Window.KeyBindings>
+    <UserControl.KeyBindings>
         <KeyBinding Command="{Binding UndoCommand}"
                     Gesture="Ctrl+Z" />
         <KeyBinding Command="{Binding RedoCommand}"
                     Gesture="Ctrl+Y" />
-    </Window.KeyBindings>
+    </UserControl.KeyBindings>
 
-    <Window.Styles>
+    <UserControl.Styles>
         <Style Selector="Border.resize-handle">
             <Setter Property="Width" Value="10" />
             <Setter Property="Height" Value="10" />
@@ -33,7 +27,7 @@
         <Style Selector="Border.resize-handle:pointerover">
             <Setter Property="Background" Value="#DBEAFE" />
         </Style>
-    </Window.Styles>
+    </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,*"
           Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
@@ -360,4 +354,4 @@
             </Border>
         </Grid>
     </Grid>
-</Window>
+</UserControl>

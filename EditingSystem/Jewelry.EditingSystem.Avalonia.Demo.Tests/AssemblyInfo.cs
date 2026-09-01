@@ -9,7 +9,7 @@ using Jewelry.EditingSystem.Avalonia.Demo;
 
 public sealed class HeadlessTestApp
 {
-    public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>()
+    public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<Jewelry.EditingSystem.Avalonia.Demo.Desktop.DesktopApp>()
         .UseSkia()
         .UseHeadless(new AvaloniaHeadlessPlatformOptions
         {

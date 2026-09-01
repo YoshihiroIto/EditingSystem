@@ -35,6 +35,12 @@ jobs:
         working-directory: site
         run: ~/.dotnet/tools/lunet build
 
+      - name: Publish Avalonia browser demo
+        run: |
+          dotnet publish EditingSystem/Jewelry.EditingSystem.Avalonia.Demo.Browser/Jewelry.EditingSystem.Avalonia.Demo.Browser.csproj --configuration Release --output .artifacts/avalonia-demo
+          mkdir -p site/.lunet/build/www/demo
+          cp -R .artifacts/avalonia-demo/wwwroot/. site/.lunet/build/www/demo/
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 

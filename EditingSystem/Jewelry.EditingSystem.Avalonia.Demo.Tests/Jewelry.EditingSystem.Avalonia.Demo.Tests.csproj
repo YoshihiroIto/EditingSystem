@@ -16,6 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Jewelry.EditingSystem.Avalonia.Demo\Jewelry.EditingSystem.Avalonia.Demo.csproj" />
+    <ProjectReference Include="..\Jewelry.EditingSystem.Avalonia.Demo.Desktop\Jewelry.EditingSystem.Avalonia.Demo.Desktop.csproj" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-﻿<Application x:Class="Jewelry.EditingSystem.Avalonia.Demo.App"
+<Application x:Class="Jewelry.EditingSystem.Avalonia.Demo.Browser.BrowserApp"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              RequestedThemeVariant="Default">

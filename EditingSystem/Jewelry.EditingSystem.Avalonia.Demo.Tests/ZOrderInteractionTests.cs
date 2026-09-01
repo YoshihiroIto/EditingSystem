@@ -129,7 +129,7 @@ public sealed class ZOrderInteractionTests
         var window = new MainWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        window.FindControl<Grid>("EditorSurface")!.Focus();
+        window.FindControl<MainView>("MainView")!.FindControl<Grid>("EditorSurface")!.Focus();
         Dispatcher.UIThread.RunJobs();
         return window;
     }
