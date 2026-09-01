@@ -10,8 +10,11 @@
     <PackageTags>undo redo editing source-generator nativeaot</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RootNamespace>Jewelry.EditingSystem</RootNamespace>
-    <PackageVersion>2.3.0</PackageVersion>
+    <PackageVersion>3.0.0</PackageVersion>
     <Title>EditingSystem</Title>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageIcon>EditingSystem.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <TargetFrameworks>net10.0;net9.0;net8.0;netstandard2.0</TargetFrameworks>
     <IsAotCompatible Condition="'$(TargetFramework)' != 'netstandard2.0'">true</IsAotCompatible>
@@ -26,6 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\PackageAssets\EditingSystem.png" Pack="true" PackagePath="\" Link="EditingSystem.png" />
     <None Include="..\..\README.md" Pack="true" PackagePath="\" Link="README.md" />
     <None Include="$(MSBuildProjectDirectory)\..\Jewelry.EditingSystem.SourceGenerators\bin\$(Configuration)\netstandard2.0\Jewelry.EditingSystem.SourceGenerators.dll"
           Pack="true"

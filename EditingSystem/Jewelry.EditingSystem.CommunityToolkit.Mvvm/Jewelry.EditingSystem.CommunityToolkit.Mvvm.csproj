@@ -6,12 +6,16 @@
     <LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>Jewelry.EditingSystem.CommunityToolkit.Mvvm</PackageId>
-    <PackageVersion>1.1.0</PackageVersion>
+    <PackageVersion>3.0.0</PackageVersion>
+    <Title>EditingSystem CommunityToolkit.Mvvm</Title>
     <Authors>Yoshihiro Ito</Authors>
-    <Description>First-class CommunityToolkit.Mvvm integration for Jewelry.EditingSystem.</Description>
+    <Description>Undo/redo integration for CommunityToolkit.Mvvm observable properties.</Description>
     <PackageTags>undo editing mvvm communitytoolkit source-generator</PackageTags>
     <PackageProjectUrl>https://github.com/YoshihiroIto/EditingSystem</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YoshihiroIto/EditingSystem</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageIcon>EditingSystem.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
@@ -24,6 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\PackageAssets\EditingSystem.png" Pack="true" PackagePath="\" Link="EditingSystem.png" />
     <None Include="README.md" Pack="true" PackagePath="\" />
     <None Include="$(MSBuildProjectDirectory)\..\Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators\bin\$(Configuration)\netstandard2.0\Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators.dll"
           Pack="true"
