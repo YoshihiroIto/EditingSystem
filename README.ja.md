@@ -5,7 +5,7 @@
 [English](README.md)
 
 <p align="center">
-  <img src="site/img/EditingSystem.png" alt="EditingSystem" width="160">
+  <img src="Resouces/icon.svg" alt="EditingSystem" width="160">
 </p>
 
 > 詳しいガイドは [yoshihiroito.github.io/EditingSystem/ja](https://yoshihiroito.github.io/EditingSystem/ja/) でも読めます。
@@ -13,7 +13,6 @@
 NativeAOT フレンドリーな .NET 向け Undo/Redo ライブラリです。通常のプロパティ編集、連続編集、バッチ処理、コレクション変更を同じ `History` で扱えます。Source Generator はプロパティ setter をコンパイル時に生成し、任意の `ICollection<T>` 実装を扱うコレクションアダプターにも NativeAOT 対応の経路があります。
 
 [ブラウザでデモを試す。](https://yoshihiroito.github.io/EditingSystem/demo/)
-
 
 ## インストール
 
