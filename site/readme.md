@@ -19,42 +19,60 @@ og_type: website
 dotnet add package Jewelry.EditingSystem
 ```
 
-<div class="row row-cols-1 row-cols-md-2 g-4 my-2">
+<div class="row row-cols-1 row-cols-md-2 g-4 my-2 editing-feature-grid">
   <div class="col">
-    <div class="card h-100 bg-transparent border-secondary">
+    <div class="card h-100 editing-feature-card">
+      <div class="card-header">
+        <i class="bi bi-lightning-charge" aria-hidden="true"></i>
+        <h2>Generated properties</h2>
+      </div>
       <div class="card-body">
-        <h2 class="h3 card-title"><i class="bi bi-lightning-charge text-info me-2" aria-hidden="true"></i>Generated properties</h2>
         <p class="card-text"><code>[Undoable]</code> partial properties record normal edits, Undo, and Redo through the same generated setter path.</p>
       </div>
     </div>
   </div>
   <div class="col">
-    <div class="card h-100 bg-transparent border-secondary">
+    <div class="card h-100 editing-feature-card">
+      <div class="card-header">
+        <i class="bi bi-sliders" aria-hidden="true"></i>
+        <h2>Continuous edits</h2>
+      </div>
       <div class="card-body">
-        <h2 class="h3 card-title"><i class="bi bi-sliders text-info me-2" aria-hidden="true"></i>Continuous edits</h2>
         <p class="card-text"><code>CoalescingBatch()</code> reduces a slider, drag, or color-picker gesture to one meaningful Undo step.</p>
       </div>
     </div>
   </div>
   <div class="col">
-    <div class="card h-100 bg-transparent border-secondary">
+    <div class="card h-100 editing-feature-card">
+      <div class="card-header">
+        <i class="bi bi-layers" aria-hidden="true"></i>
+        <h2>Safe grouped edits</h2>
+      </div>
       <div class="card-body">
-        <h2 class="h3 card-title"><i class="bi bi-layers text-info me-2" aria-hidden="true"></i>Safe grouped edits</h2>
         <p class="card-text"><code>Transaction()</code> commits or restores tracked edits as a unit; <code>Batch()</code> groups changes that should remain applied.</p>
       </div>
     </div>
   </div>
   <div class="col">
-    <div class="card h-100 bg-transparent border-secondary">
+    <div class="card h-100 editing-feature-card">
+      <div class="card-header">
+        <i class="bi bi-collection" aria-hidden="true"></i>
+        <h2>Collections and MVVM</h2>
+      </div>
       <div class="card-body">
-        <h2 class="h3 card-title"><i class="bi bi-collection text-info me-2" aria-hidden="true"></i>Collections and MVVM</h2>
         <p class="card-text">Track observable collection changes and preserve CommunityToolkit.Mvvm notifications, validation, commands, and messaging.</p>
       </div>
     </div>
   </div>
 </div>
 
-## Quick example
+<div class="editing-example-card">
+  <div class="editing-feature-card card">
+    <div class="card-header">
+      <i class="bi bi-code-slash" aria-hidden="true"></i>
+      <h2>Quick example</h2>
+    </div>
+    <div class="card-body">
 
 ```csharp
 using Jewelry.EditingSystem;
@@ -73,8 +91,22 @@ document.X = 100;
 history.Undo(); // X == 0
 ```
 
-## Avalonia demo
+</div>
+</div>
+</div>
+
+<div class="editing-example-card">
+  <div class="editing-feature-card card">
+    <div class="card-header">
+      <i class="bi bi-window-desktop" aria-hidden="true"></i>
+      <h2>Avalonia demo</h2>
+    </div>
+    <div class="card-body">
 
 ![EditingSystem Avalonia demo](img/demo00.png)
+
+</div>
+</div>
+</div>
 
 > [日本語版はこちら](ja/)

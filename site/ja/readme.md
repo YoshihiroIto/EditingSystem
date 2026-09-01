@@ -19,42 +19,60 @@ og_type: website
 dotnet add package Jewelry.EditingSystem
 ```
 
-<div class="row row-cols-1 row-cols-md-2 g-4 my-2">
+<div class="row row-cols-1 row-cols-md-2 g-4 my-2 editing-feature-grid">
   <div class="col">
-    <div class="card h-100 bg-transparent border-secondary">
+    <div class="card h-100 editing-feature-card">
+      <div class="card-header">
+        <i class="bi bi-lightning-charge" aria-hidden="true"></i>
+        <h2>生成プロパティ</h2>
+      </div>
       <div class="card-body">
-        <h2 class="h3 card-title"><i class="bi bi-lightning-charge text-info me-2" aria-hidden="true"></i>生成プロパティ</h2>
         <p class="card-text"><code>[Undoable]</code> partial プロパティは、通常編集、Undo、Redo を同じ生成済み setter 経路で処理します。</p>
       </div>
     </div>
   </div>
   <div class="col">
-    <div class="card h-100 bg-transparent border-secondary">
+    <div class="card h-100 editing-feature-card">
+      <div class="card-header">
+        <i class="bi bi-sliders" aria-hidden="true"></i>
+        <h2>連続編集</h2>
+      </div>
       <div class="card-body">
-        <h2 class="h3 card-title"><i class="bi bi-sliders text-info me-2" aria-hidden="true"></i>連続編集</h2>
         <p class="card-text"><code>CoalescingBatch()</code> はスライダー、ドラッグ、カラーピッカーを一つの意味のある Undo 操作にまとめます。</p>
       </div>
     </div>
   </div>
   <div class="col">
-    <div class="card h-100 bg-transparent border-secondary">
+    <div class="card h-100 editing-feature-card">
+      <div class="card-header">
+        <i class="bi bi-layers" aria-hidden="true"></i>
+        <h2>安全な一括編集</h2>
+      </div>
       <div class="card-body">
-        <h2 class="h3 card-title"><i class="bi bi-layers text-info me-2" aria-hidden="true"></i>安全な一括編集</h2>
         <p class="card-text"><code>Transaction()</code> は追跡済みの編集をまとめて確定または復元し、<code>Batch()</code> は変更を残したまままとめます。</p>
       </div>
     </div>
   </div>
   <div class="col">
-    <div class="card h-100 bg-transparent border-secondary">
+    <div class="card h-100 editing-feature-card">
+      <div class="card-header">
+        <i class="bi bi-collection" aria-hidden="true"></i>
+        <h2>コレクションと MVVM</h2>
+      </div>
       <div class="card-body">
-        <h2 class="h3 card-title"><i class="bi bi-collection text-info me-2" aria-hidden="true"></i>コレクションと MVVM</h2>
         <p class="card-text">監視可能コレクションの変更を追跡し、CommunityToolkit.Mvvm の通知、検証、コマンド、メッセージングを維持します。</p>
       </div>
     </div>
   </div>
 </div>
 
-## 簡単な例
+<div class="editing-example-card">
+  <div class="editing-feature-card card">
+    <div class="card-header">
+      <i class="bi bi-code-slash" aria-hidden="true"></i>
+      <h2>簡単な例</h2>
+    </div>
+    <div class="card-body">
 
 ```csharp
 using Jewelry.EditingSystem;
@@ -73,8 +91,22 @@ document.X = 100;
 history.Undo(); // X == 0
 ```
 
-## Avalonia デモ
+</div>
+</div>
+</div>
+
+<div class="editing-example-card">
+  <div class="editing-feature-card card">
+    <div class="card-header">
+      <i class="bi bi-window-desktop" aria-hidden="true"></i>
+      <h2>Avalonia デモ</h2>
+    </div>
+    <div class="card-body">
 
 ![EditingSystem Avalonia demo](../img/demo00.png)
+
+</div>
+</div>
+</div>
 
 > [English version](../)
