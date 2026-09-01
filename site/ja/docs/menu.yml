@@ -13,7 +13,7 @@ ja_doc:
     }
   - {
       path: dirty-state.md,
-      title: "<i class='bi bi-save' aria-hidden='true'></i> ダーティー状態と保存地点",
+      title: "<i class='bi bi-save' aria-hidden='true'></i> ダーティー状態と保存ポイント",
     }
   - {
       path: history-limits.md,
@@ -25,7 +25,7 @@ ja_doc:
     }
   - {
       path: communitytoolkit-mvvm.md,
-      title: "<i class='bi bi-grid' aria-hidden='true'></i> CommunityToolkit.Mvvm",
+      title: "<i class='bi bi-grid' aria-hidden='true'></i> CommunityToolkit.Mvvm 連携",
     }
   - {
       path: source-generation-nativeaot.md,
