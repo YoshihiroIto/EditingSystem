@@ -1,9 +1,7 @@
-<UserControl x:Class="Jewelry.EditingSystem.Avalonia.Demo.MainView"
-        xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="using:Jewelry.EditingSystem.Avalonia.Demo"
-        MinWidth="900"
-        MinHeight="600">
+﻿<UserControl x:Class="Jewelry.EditingSystem.Avalonia.Demo.MainView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Jewelry.EditingSystem.Avalonia.Demo">
     <UserControl.DataContext>
         <local:MainWindowViewModel />
     </UserControl.DataContext>
@@ -28,61 +26,67 @@
                 Padding="10"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                 BorderThickness="0,0,0,1">
-            <Grid ColumnDefinitions="Auto,18,Auto,*,Auto"
-                  VerticalAlignment="Center">
-                <StackPanel Grid.Column="0"
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right"
+                            VerticalAlignment="Top"
                             Orientation="Horizontal"
                             Spacing="8">
-                    <Button Command="{Binding AddObjectCommand}"
-                            Content="Add" />
-                    <Button Command="{Binding DeleteSelectedCommand}"
-                            Content="Delete"
-                            IsEnabled="{Binding HasSelection}" />
-                    <Button Command="{Binding AlignLeftCommand}"
-                            Margin="24,0,0,0"
-                            Content="Align Left"
-                            IsEnabled="{Binding HasMultipleSelection}" />
-                    <Button Command="{Binding AlignTopCommand}"
-                            Content="Align Top"
-                            IsEnabled="{Binding HasMultipleSelection}" />
-                    <Button Command="{Binding BringSelectedToFrontCommand}"
-                            Content="To Front"
-                            IsEnabled="{Binding HasSelection}" />
-                    <Button Command="{Binding SendSelectedToBackCommand}"
-                            Content="To Back"
-                            IsEnabled="{Binding HasSelection}" />
-                </StackPanel>
-
-                <StackPanel Grid.Column="2"
-                            Margin="16,0,0,0"
-                            Orientation="Horizontal"
-                            Spacing="6">
-                    <Button Command="{Binding UndoCommand}"
-                            Content="Undo"
-                            IsEnabled="{Binding History.CanUndo}" />
-                    <TextBlock VerticalAlignment="Center"
-                               Text="{Binding History.UndoCount}" />
-                    <Button Margin="8,0,0,0"
-                            Command="{Binding RedoCommand}"
-                            Content="Redo"
-                            IsEnabled="{Binding History.CanRedo}" />
-                    <TextBlock VerticalAlignment="Center"
-                               Text="{Binding History.RedoCount}" />
-                </StackPanel>
-
-                <StackPanel Grid.Column="4"
-                            Orientation="Horizontal"
-                            Spacing="8">
-                    <Button x:Name="MarkSavedButton"
-                            Command="{Binding MarkSavedCommand}"
-                            Content="Mark Saved"
-                            IsEnabled="{Binding History.IsDirty}" />
                     <TextBlock x:Name="SaveStateText"
                                VerticalAlignment="Center"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                Text="{Binding SaveStateText}" />
+                    <Button x:Name="MarkSavedButton"
+                            Command="{Binding MarkSavedCommand}"
+                            Content="Mark Saved"
+                            IsEnabled="{Binding History.IsDirty}" />
                 </StackPanel>
-            </Grid>
+
+                <WrapPanel ItemSpacing="24"
+                           LineSpacing="4"
+                           Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="8">
+                        <Button Command="{Binding AddObjectCommand}"
+                                Content="Add" />
+                        <Button Command="{Binding DeleteSelectedCommand}"
+                                Content="Delete"
+                                IsEnabled="{Binding HasSelection}" />
+                    </StackPanel>
+
+                    <StackPanel 
+                                Orientation="Horizontal"
+                                Spacing="8">
+                        <Button Command="{Binding AlignLeftCommand}"
+                                Content="Align Left"
+                                IsEnabled="{Binding HasMultipleSelection}" />
+                        <Button Command="{Binding AlignTopCommand}"
+                                Content="Align Top"
+                                IsEnabled="{Binding HasMultipleSelection}" />
+                        <Button Command="{Binding BringSelectedToFrontCommand}"
+                                Content="To Front"
+                                IsEnabled="{Binding HasSelection}" />
+                        <Button Command="{Binding SendSelectedToBackCommand}"
+                                Content="To Back"
+                                IsEnabled="{Binding HasSelection}" />
+                    </StackPanel>
+
+                    <StackPanel 
+                                Orientation="Horizontal"
+                                Spacing="8">
+                        <Button Command="{Binding UndoCommand}"
+                                Content="Undo"
+                                IsEnabled="{Binding History.CanUndo}" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Text="{Binding History.UndoCount}" />
+                        <Button Margin="8,0,0,0"
+                                Command="{Binding RedoCommand}"
+                                Content="Redo"
+                                IsEnabled="{Binding History.CanRedo}" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Text="{Binding History.RedoCount}" />
+                    </StackPanel>
+                </WrapPanel>
+            </DockPanel>
         </Border>
 
         <Grid ColumnDefinitions="*,400"
@@ -117,10 +121,10 @@
                                 <Grid Width="{Binding Width}"
                                       Height="{Binding Height}">
                                     <Border Background="{Binding Brush}"
+                                            BorderBrush="#121212"
+                                            BorderThickness="1"
                                             CornerRadius="4"
                                             Opacity="{Binding Opacity}"
-                                            BorderThickness="1"
-                                            BorderBrush="#121212"
                                             PointerMoved="Object_PointerMoved"
                                             PointerPressed="Object_PointerPressed"
                                             PointerReleased="Object_PointerReleased">
