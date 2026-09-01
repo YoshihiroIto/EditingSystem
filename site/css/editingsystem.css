@@ -45,7 +45,7 @@ html.lang-ja :not(pre) > code {
 .editing-feature-card .card-header {
   display: flex;
   gap: 0.85rem;
-  align-items: flex-start;
+  align-items: center;
   padding: 0.9rem 1rem;
   color: #f2f7fb;
   background: #101B24;
@@ -55,7 +55,7 @@ html.lang-ja :not(pre) > code {
 .editing-feature-card .card-header > i {
   flex: 0 0 auto;
   width: 2.25rem !important;
-  margin-top: 0.1rem;
+  margin-top: 0;
   color: #8170FB;
   font-size: 2.25rem !important;
   line-height: 1;
