@@ -8,13 +8,6 @@
         <local:MainWindowViewModel />
     </UserControl.DataContext>
 
-    <UserControl.KeyBindings>
-        <KeyBinding Command="{Binding UndoCommand}"
-                    Gesture="Ctrl+Z" />
-        <KeyBinding Command="{Binding RedoCommand}"
-                    Gesture="Ctrl+Y" />
-    </UserControl.KeyBindings>
-
     <UserControl.Styles>
         <Style Selector="Border.resize-handle">
             <Setter Property="Width" Value="10" />

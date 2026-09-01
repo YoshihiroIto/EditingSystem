@@ -44,8 +44,6 @@ public sealed class DirtyInteractionTests
             Dispatcher.UIThread.RunJobs();
             Assert.True(viewModel.History.IsDirty);
 
-            view.Focusable = true;
-            Assert.True(view.Focus());
             window.KeyPressQwerty(PhysicalKey.Z, RawInputModifiers.Control);
             Dispatcher.UIThread.RunJobs();
             Assert.False(viewModel.History.IsDirty);

@@ -11,5 +11,12 @@
         SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
         Closed="Window_Closed">
+    <Window.KeyBindings>
+        <KeyBinding Command="{Binding UndoCommand}"
+                    Gesture="Ctrl+Z" />
+        <KeyBinding Command="{Binding RedoCommand}"
+                    Gesture="Ctrl+Y" />
+    </Window.KeyBindings>
+
     <demo:MainView x:Name="MainView" />
 </Window>
