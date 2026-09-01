@@ -23,7 +23,7 @@ document.Items.Add("A");
 history.Undo(); // Items は再び空になる。
 ```
 
-`INotifyPropertyChanged` は必須ではありません。対象型が実装している場合、Generator は対応する通知メソッドをコンパイル時に解決し、通常変更、Undo、Redo すべてで通知を発生させます。通知メソッド名が独自の場合は `[EditingPropertyChanged]` で指定します。
+`INotifyPropertyChanged` は必須ではありません。対象型が実装している場合、ジェネレーターは対応する通知メソッドをコンパイル時に解決し、通常変更、アンドゥ、リドゥすべてで通知を発生させます。通知メソッド名が独自の場合は `[EditingPropertyChanged]` で指定します。
 
 ## リフレクションの適用範囲
 
@@ -31,7 +31,7 @@ history.Undo(); // Items は再び空になる。
 
 ## 操作と通知
 
-| 操作 | 初回通知 | Undo 通知 | Redo 通知 |
+| 操作 | 初回通知 | アンドゥ通知 | リドゥ通知 |
 |---|---|---|---|
 | `Add` / `Insert` | `Add` | `Remove` | `Add` |
 | `Remove` / `RemoveAt` | `Remove` | `Add` | `Remove` |
@@ -47,7 +47,7 @@ values.ClearEx(history);
 history.Undo(); // [1, 2, 3]
 ```
 
-Set 操作も一つの Undo/Redo action として記録できます。
+設定操作も一つのアンドゥ/リドゥアクションとして記録できます。
 
 ```csharp
 using Jewelry.Collections;
