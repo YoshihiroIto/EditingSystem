@@ -54,12 +54,16 @@ html.lang-ja :not(pre) > code {
 
 .editing-feature-card .card-header > i {
   flex: 0 0 auto;
-  width: 2.25rem;
+  width: 2.25rem !important;
   margin-top: 0.1rem;
   color: #8170FB;
-  font-size: 2.25rem;
+  font-size: 2.25rem !important;
   line-height: 1;
   text-align: center;
+}
+
+.editing-feature-card .card-header > i::before {
+  font-size: 2.25rem !important;
 }
 
 .editing-feature-card .card-header h2 {
