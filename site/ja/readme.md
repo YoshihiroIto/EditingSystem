@@ -9,9 +9,9 @@ og_type: website
   <h1>.NET エディターのための Undo/Redo</h1>
   <p class="lead mx-auto" style="max-width: 48rem;">生成プロパティ、連続操作、Transaction、監視可能コレクションを扱う、NativeAOT フレンドリーな .NET 向け Undo/Redo。</p>
   <p>
-    <a class="btn btn-primary btn-lg me-2 mb-2" href="docs/getting-started/">はじめる</a>
-    <a class="btn btn-outline-secondary btn-lg me-2 mb-2" href="https://www.nuget.org/packages/Jewelry.EditingSystem">NuGet</a>
-    <a class="btn btn-outline-secondary btn-lg mb-2" href="https://github.com/YoshihiroIto/EditingSystem">GitHub</a>
+    <a class="btn btn-primary btn-lg me-2 mb-2" href="docs/getting-started/"><i class="bi bi-rocket-takeoff me-2" aria-hidden="true"></i>はじめる</a>
+    <a class="btn btn-outline-secondary btn-lg me-2 mb-2" href="https://www.nuget.org/packages/Jewelry.EditingSystem"><i class="bi bi-box-seam me-2" aria-hidden="true"></i>NuGet</a>
+    <a class="btn btn-outline-secondary btn-lg mb-2" href="https://github.com/YoshihiroIto/EditingSystem"><i class="bi bi-github me-2" aria-hidden="true"></i>GitHub</a>
   </p>
 </div>
 
