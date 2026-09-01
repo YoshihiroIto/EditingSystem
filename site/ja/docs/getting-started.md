@@ -32,7 +32,7 @@ var document = new Document(history);
 
 document.X = 100;
 document.X = 200;
-history.アンドゥ(); // 100
+history.Undo(); // 100
 history.Redo(); // 200
 ```
 
