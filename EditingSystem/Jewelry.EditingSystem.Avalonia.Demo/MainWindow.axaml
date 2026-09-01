@@ -288,13 +288,13 @@
 
                             <TextBlock Classes="info"
                                        IsVisible="{Binding HasMultipleSelection}"
-                                       Text="Name editing is available for a single selection." />
+                                       Text="Select a single object to rename." />
                         </StackPanel>
 
                         <TextBox x:Name="NameEditor"
                                  Margin="0,6,0,8"
                                  IsEnabled="{Binding HasSingleSelection}"
-                                 PlaceholderText="Select one object to edit its name"
+                                 PlaceholderText="Select 1 object to rename"
                                  Text="{Binding SelectedObject?.Name,
                                                 Mode=TwoWay,
                                                 UpdateSourceTrigger=LostFocus}" />
