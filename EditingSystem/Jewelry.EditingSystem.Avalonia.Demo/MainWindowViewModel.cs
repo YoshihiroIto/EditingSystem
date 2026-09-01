@@ -177,7 +177,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void AddObject()
     {
-        var x = 40d;
+        var x = Random.Shared.NextDouble() * 800d + 20d;
         var y = Random.Shared.NextDouble() * 800d + 20d;
         var item = CreateObject(x, y, 140d, 90d);
 
