@@ -29,6 +29,11 @@ html.lang-ja :not(pre) > code {
   color: var(--bs-code-color);
 }
 
+/* Match language-switch callouts to the active navigation underline. */
+blockquote {
+  border-left-color: var(--bs-primary) !important;
+}
+
 /* Home-page feature cards follow the Tomlyn-style title-and-body treatment. */
 .editing-feature-grid {
   margin-top: 3rem !important;
