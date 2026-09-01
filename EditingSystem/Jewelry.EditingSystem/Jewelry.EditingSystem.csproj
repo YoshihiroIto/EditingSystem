@@ -3,19 +3,20 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <Authors>Yoshihiro Ito</Authors>
-    <Description>Undo/redo for .NET with attribute-based undoable properties, batching, and collection support.</Description>
+    <Description>NativeAOT-friendly, source-generated undo/redo for .NET: undoable partial properties, transactions, continuous edits, collection tracking, and dirty save points.</Description>
     <Copyright>Copyright (c) 2018-2026 copyright Yoshihiro Ito (yo.i.jewelry.bab@gmail.com)</Copyright>
     <PackageProjectUrl>https://github.com/YoshihiroIto/EditingSystem</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YoshihiroIto/EditingSystem</RepositoryUrl>
-    <PackageTags>undo redo editing source-generator nativeaot</PackageTags>
+    <PackageTags>undo redo undo-redo editing history source-generator nativeaot mvvm avalonia</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RootNamespace>Jewelry.EditingSystem</RootNamespace>
-    <PackageVersion>3.0.0</PackageVersion>
+    <PackageVersion>3.0.1</PackageVersion>
     <Title>EditingSystem</Title>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageIcon>EditingSystem.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
     <TargetFrameworks>net10.0;net9.0;net8.0;netstandard2.0</TargetFrameworks>
     <IsAotCompatible Condition="'$(TargetFramework)' != 'netstandard2.0'">true</IsAotCompatible>
   </PropertyGroup>

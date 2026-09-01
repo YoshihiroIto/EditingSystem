@@ -10,6 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Jewelry.EditingSystem" Version="2.3.0" />
+    <PackageReference Include="Jewelry.EditingSystem" Version="3.0.1" />
   </ItemGroup>
 </Project>

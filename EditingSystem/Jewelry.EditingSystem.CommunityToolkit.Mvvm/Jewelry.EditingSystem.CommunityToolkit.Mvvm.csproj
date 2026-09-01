@@ -6,17 +6,18 @@
     <LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>Jewelry.EditingSystem.CommunityToolkit.Mvvm</PackageId>
-    <PackageVersion>3.0.0</PackageVersion>
+    <PackageVersion>3.0.1</PackageVersion>
     <Title>EditingSystem CommunityToolkit.Mvvm</Title>
     <Authors>Yoshihiro Ito</Authors>
-    <Description>Undo/redo integration for CommunityToolkit.Mvvm observable properties.</Description>
-    <PackageTags>undo editing mvvm communitytoolkit source-generator</PackageTags>
+    <Description>Source-generated undo/redo integration for CommunityToolkit.Mvvm observable properties, preserving Undo/Redo notification and command pipelines.</Description>
+    <PackageTags>undo redo undo-redo editing history mvvm communitytoolkit source-generator nativeaot</PackageTags>
     <PackageProjectUrl>https://github.com/YoshihiroIto/EditingSystem</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YoshihiroIto/EditingSystem</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageIcon>EditingSystem.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
