@@ -1,5 +1,34 @@
 /* Guide and API menus can contain long document titles or complete generic
    signatures. Keep them readable without overflowing the documentation layout. */
+@font-face {
+  font-family: "Noto Sans JP Japanese";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/notosansjp/v56/-F6jfjtqLzI2JPCgQBnw7HFyzSD-AsregP8VFBEj75s.ttf") format("truetype");
+  unicode-range: U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF01-FF60, U+FFE0-FFE6;
+}
+
+html.lang-ja body {
+  font-family: "Noto Sans JP Japanese", var(--bs-body-font-family);
+}
+
+/* Keep all code styles identical in both language versions. */
+html.lang-ja pre,
+html.lang-ja code,
+html.lang-ja pre * {
+  font-family: var(--bs-font-monospace) !important;
+}
+
+/* The Japanese body font must not change the appearance of inline code. */
+html.lang-ja :not(pre) > code {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--bs-code-color);
+}
+
 #docs-sidebar-menu a.menu-link {
   overflow-wrap: anywhere;
   word-break: break-word;
