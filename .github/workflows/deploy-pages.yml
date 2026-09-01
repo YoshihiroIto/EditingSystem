@@ -35,6 +35,9 @@ jobs:
         working-directory: site
         run: ~/.dotnet/tools/lunet build
 
+      - name: Install WebAssembly build tools
+        run: dotnet workload install wasm-tools
+
       - name: Publish Avalonia browser demo
         run: |
           dotnet publish EditingSystem/Jewelry.EditingSystem.Avalonia.Demo.Browser/Jewelry.EditingSystem.Avalonia.Demo.Browser.csproj --configuration Release --output .artifacts/avalonia-demo

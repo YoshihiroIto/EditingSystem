@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <WasmBuildNative>true</WasmBuildNative>
     <!-- The shared demo intentionally uses reflection bindings. Keep their targets in the WASM publish. -->
     <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>

@@ -44,13 +44,15 @@ public sealed class DirtyInteractionTests
             Dispatcher.UIThread.RunJobs();
             Assert.True(viewModel.History.IsDirty);
 
-            viewModel.UndoCommand.Execute(null);
+            view.Focusable = true;
+            Assert.True(view.Focus());
+            window.KeyPressQwerty(PhysicalKey.Z, RawInputModifiers.Control);
             Dispatcher.UIThread.RunJobs();
             Assert.False(viewModel.History.IsDirty);
             Assert.Equal("EditingSystem Avalonia Demo", window.Title);
             Assert.Equal("Saved", saveStateText.Text);
 
-            viewModel.RedoCommand.Execute(null);
+            window.KeyPressQwerty(PhysicalKey.Y, RawInputModifiers.Control);
             Dispatcher.UIThread.RunJobs();
             Assert.True(viewModel.History.IsDirty);
             Assert.Equal("EditingSystem Avalonia Demo *", window.Title);

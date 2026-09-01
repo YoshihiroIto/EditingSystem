@@ -12,6 +12,8 @@
 
 EditingSystem is a NativeAOT-friendly undo/redo library for .NET. Property edits, continuous edits, batches, and collection changes can share the same `History`. The generator emits property setters at compile time, and the collection adapter includes a NativeAOT-safe path for arbitrary `ICollection<T>` implementations.
 
+[Try the demo in your browser.](https://yoshihiroito.github.io/EditingSystem/demo/)
+
 ## Install
 
 ```text

@@ -12,3 +12,10 @@ body {
     color: #ffffff;
     font-family: system-ui, sans-serif;
 }
+
+.startup-error {
+    box-sizing: border-box;
+    padding: 24px;
+    color: #fecaca;
+    white-space: pre-wrap;
+}
