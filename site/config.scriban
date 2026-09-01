@@ -19,7 +19,7 @@ site_project_favicon_path = "/img/EditingSystem.png"
 
 site_project_init
 html.head.metas.add '<script>if (window.location.pathname.includes("/ja/")) { document.documentElement.lang = "ja"; document.documentElement.classList.add("lang-ja"); }</script>'
-html.head.metas.add '<link rel="stylesheet" href="' + site_project_basepath + '/css/editingsystem.css?v=20260901-0202">'
+html.head.metas.add '<link rel="stylesheet" href="' + site_project_basepath + '/css/editingsystem.css?v=20260901-0203">'
 
 # Generate the English public API reference directly from the package projects.
 # Per-project target frameworks keep the multi-targeted core and netstandard
