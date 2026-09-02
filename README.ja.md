@@ -1,6 +1,6 @@
 # EditingSystem
 
-[![Jewelry.EditingSystem NuGet package](https://img.shields.io/nuget/v/Jewelry.EditingSystem)](https://www.nuget.org/packages/Jewelry.EditingSystem) [![Build status](https://ci.appveyor.com/api/projects/status/x42th0lpkuldqhg8?svg=true)](https://ci.appveyor.com/project/YoshihiroIto/editingsystem) [![MIT License](http://img.shields.io/badge/license-MIT-lightgray)](LICENSE)
+[![Jewelry.EditingSystem NuGet package](https://img.shields.io/nuget/v/Jewelry.EditingSystem)](https://www.nuget.org/packages/Jewelry.EditingSystem) [![MIT License](http://img.shields.io/badge/license-MIT-lightgray)](LICENSE)
 
 [English](README.md)
 
