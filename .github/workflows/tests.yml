@@ -1,0 +1,44 @@
+name: Tests
+
+on:
+  push:
+    paths:
+      - EditingSystem/**
+      - .github/workflows/tests.yml
+  pull_request:
+    paths:
+      - EditingSystem/**
+      - .github/workflows/tests.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Run core tests
+        run: dotnet test EditingSystem/Jewelry.EditingSystem.Tests/Jewelry.EditingSystem.Tests.csproj --configuration Release
+
+      - name: Run source generator tests
+        run: dotnet test EditingSystem/Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators.Tests/Jewelry.EditingSystem.CommunityToolkit.Mvvm.SourceGenerators.Tests.csproj --configuration Release
+
+      - name: Run Avalonia headless demo tests
+        env:
+          AVALONIA_TELEMETRY_OPTOUT: '1'
+        run: dotnet run --project EditingSystem/Jewelry.EditingSystem.Avalonia.Demo.Tests/Jewelry.EditingSystem.Avalonia.Demo.Tests.csproj --configuration Release --no-launch-profile

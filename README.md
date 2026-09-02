@@ -1,6 +1,6 @@
 # EditingSystem
 
-[![Jewelry.EditingSystem NuGet package](https://img.shields.io/nuget/v/Jewelry.EditingSystem)](https://www.nuget.org/packages/Jewelry.EditingSystem) [![MIT License](http://img.shields.io/badge/license-MIT-lightgray)](LICENSE)
+[![Tests](https://github.com/YoshihiroIto/EditingSystem/actions/workflows/tests.yml/badge.svg)](https://github.com/YoshihiroIto/EditingSystem/actions/workflows/tests.yml) [![Jewelry.EditingSystem NuGet package](https://img.shields.io/nuget/v/Jewelry.EditingSystem)](https://www.nuget.org/packages/Jewelry.EditingSystem) [![MIT License](http://img.shields.io/badge/license-MIT-lightgray)](LICENSE)
 
 [日本語](README.ja.md)
 
