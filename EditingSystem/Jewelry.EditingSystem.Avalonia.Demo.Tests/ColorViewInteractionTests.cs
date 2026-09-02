@@ -1,8 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Shapes;
 using Avalonia.Headless;
 using Avalonia.Input;
+using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Jewelry.EditingSystem.Avalonia.Demo.Desktop;
@@ -12,7 +14,7 @@ namespace Jewelry.EditingSystem.Avalonia.Demo.Tests;
 public sealed class ColorViewInteractionTests
 {
     [AvaloniaFact]
-    public void Spectrum_edit_commits_pending_name_without_stealing_focus()
+    public async Task Spectrum_edit_commits_pending_name_without_stealing_focus()
     {
         var window = ShowWindow();
         try
@@ -32,7 +34,11 @@ public sealed class ColorViewInteractionTests
             Assert.Equal(0, viewModel.History.UndoCount);
 
             var spectrum = Assert.Single(window.GetVisualDescendants().OfType<ColorSpectrum>());
-            Click(window, spectrum, new Point(spectrum.Bounds.Width * 0.25, spectrum.Bounds.Height * 0.25));
+            await WaitForSpectrumReadyAsync(spectrum);
+            var inputTarget = Assert.Single(
+                spectrum.GetVisualDescendants().OfType<Canvas>(),
+                x => x.Name == "PART_InputTarget");
+            Click(window, inputTarget, new Point(inputTarget.Bounds.Width * 0.25, inputTarget.Bounds.Height * 0.25));
             Dispatcher.UIThread.RunJobs();
 
             Assert.True(nameEditor.IsKeyboardFocusWithin);
@@ -110,6 +116,29 @@ public sealed class ColorViewInteractionTests
 
     private static Point Center(Control control)
         => new(control.Bounds.Width / 2, control.Bounds.Height / 2);
+
+    private static async Task WaitForSpectrumReadyAsync(ColorSpectrum spectrum)
+    {
+        for (var i = 0; i < 500; i++)
+        {
+            Dispatcher.UIThread.RunJobs();
+
+            var inputTarget = spectrum.GetVisualDescendants().OfType<Canvas>()
+                .SingleOrDefault(x => x.Name == "PART_InputTarget");
+            var spectrumRectangle = spectrum.GetVisualDescendants().OfType<Rectangle>()
+                .SingleOrDefault(x => x.Name == "PART_SpectrumRectangle");
+
+            if (inputTarget is { Bounds.Width: > 0, Bounds.Height: > 0 } &&
+                spectrumRectangle?.Fill is ImageBrush)
+            {
+                return;
+            }
+
+            await Task.Delay(10);
+        }
+
+        Assert.Fail("The ColorSpectrum did not finish initializing.");
+    }
 
     private static void Click(Window window, Visual target, Point localPoint)
     {
