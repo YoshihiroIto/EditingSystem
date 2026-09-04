@@ -1,4 +1,7 @@
-﻿using Xunit;
+﻿using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using Xunit;
 
 namespace Jewelry.EditingSystem.Tests.Tests;
 
@@ -73,6 +76,18 @@ public sealed class HistoryTests
                 nameof(History.IsInBatch)
             ],
             propertyNames);
+    }
+
+    [Fact]
+    public void Dispose_releases_all_event_subscribers()
+    {
+        var history = new History();
+        var subscriberReference = AddSubscriber(history);
+
+        history.Dispose();
+        CollectGarbage();
+
+        Assert.False(subscriberReference.IsAlive);
     }
 
     [Fact]
@@ -212,5 +227,33 @@ public sealed class HistoryTests
         var items = itemsField.GetValue(stack) as System.Array
             ?? throw new System.InvalidOperationException("HistoryStack._items was not an array.");
         return items.Length;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference AddSubscriber(History history)
+    {
+        var subscriber = new HistoryEventSubscriber();
+        history.PropertyChanged += subscriber.OnPropertyChanged;
+        history.TransactionBeginning += subscriber.OnTransaction;
+        history.TransactionCommitting += subscriber.OnTransaction;
+        history.TransactionCommitted += subscriber.OnTransaction;
+        history.TransactionRolledBack += subscriber.OnTransaction;
+        return new WeakReference(subscriber);
+    }
+
+    private static void CollectGarbage()
+    {
+        for (var i = 0; i < 3; ++i)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
+    }
+
+    private sealed class HistoryEventSubscriber
+    {
+        public void OnPropertyChanged(object? sender, PropertyChangedEventArgs e) { }
+        public void OnTransaction(object? sender, EventArgs e) { }
     }
 }

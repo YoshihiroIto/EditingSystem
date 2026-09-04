@@ -81,9 +81,17 @@ public class History : INotifyPropertyChanged, IDisposable
 
     internal readonly CollectionChangedWeakEventManager CollectionChangedWeakEventManager = new();
 
+    /// <summary>
+    /// Releases collection listeners and event subscribers associated with this instance.
+    /// </summary>
     public void Dispose()
     {
         CollectionChangedWeakEventManager.Dispose();
+        PropertyChanged = null;
+        TransactionBeginning = null;
+        TransactionCommitting = null;
+        TransactionCommitted = null;
+        TransactionRolledBack = null;
     }
 
     public void BeginPause()
